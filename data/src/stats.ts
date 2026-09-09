@@ -61,3 +61,42 @@ export function fingerprint(values: readonly number[]): string {
   }
   return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
 }
+
+/**
+ * Statistique de Ljung-Box sur `m` retards.
+ *
+ *   Q = T(T+2) Σ_{k=1..m} ρ_k² / (T−k)
+ *
+ * Appliquée aux rendements *au carré*, c'est le test standard de détection d'effets
+ * ARCH : elle agrège la corrélation sérielle sur plusieurs retards au lieu de parier
+ * sur un retard isolé. Sous l'hypothèse nulle d'absence d'autocorrélation, Q suit
+ * approximativement une loi du khi-deux à m degrés de liberté.
+ */
+export function ljungBox(xs: readonly number[], m: number): number {
+  const T = xs.length;
+  let q = 0;
+  for (let k = 1; k <= m; k++) {
+    const rho = autocorrelation(xs, k);
+    q += (rho * rho) / (T - k);
+  }
+  return T * (T + 2) * q;
+}
+
+/** Valeurs critiques du khi-deux au seuil de 1 %, indexées par les degrés de liberté. */
+export const CHI2_99: Readonly<Record<number, number>> = {
+  5: 15.086,
+  10: 23.209,
+  20: 37.566,
+};
+
+/** Mélange déterministe de Fisher-Yates — sert de contrôle négatif dans les tests. */
+export function shuffled<T>(xs: readonly T[], nextU32: () => number): T[] {
+  const out = xs.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = nextU32() % (i + 1);
+    const tmp = out[i]!;
+    out[i] = out[j]!;
+    out[j] = tmp;
+  }
+  return out;
+}
