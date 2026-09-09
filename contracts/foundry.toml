@@ -1,0 +1,18 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+# Les avertissements de licence et de taille de code sont des erreurs : sur un dépôt
+# destiné à être lu par des juges, un build bruyant coûte plus cher qu'il ne rapporte.
+deny_warnings = true
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
