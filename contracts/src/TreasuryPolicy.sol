@@ -61,7 +61,7 @@ contract TreasuryPolicy {
     }
 
     /// @notice Délai d'application des changements de paramètres.
-    uint256 public immutable timelockDelay;
+    uint256 public immutable TIMELOCK_DELAY;
 
     uint32 public policyVersion;
     bool public paused;
@@ -112,17 +112,25 @@ contract TreasuryPolicy {
     /* ---------------------------------------------------------------------- */
 
     modifier onlyRole(bytes32 role) {
-        if (!_roles[role][msg.sender]) revert Unauthorized(role, msg.sender);
+        _requireRole(role);
         _;
     }
 
     modifier whenNotPaused() {
-        if (paused) revert SystemPaused();
+        _requireNotPaused();
         _;
     }
 
+    function _requireRole(bytes32 role) private view {
+        if (!_roles[role][msg.sender]) revert Unauthorized(role, msg.sender);
+    }
+
+    function _requireNotPaused() private view {
+        if (paused) revert SystemPaused();
+    }
+
     constructor(address admin, uint256 delay) {
-        timelockDelay = delay;
+        TIMELOCK_DELAY = delay;
         _roles[ADMIN][admin] = true;
         emit RoleGranted(ADMIN, admin, msg.sender);
     }
@@ -188,7 +196,7 @@ contract TreasuryPolicy {
     {
         if (!(p.lowerBand <= p.target && p.target <= p.upperBand)) revert InvalidBands();
         id = keccak256(abi.encode("currency", token, p));
-        pendingEta[id] = block.timestamp + timelockDelay;
+        pendingEta[id] = block.timestamp + TIMELOCK_DELAY;
         _pendingPayload[id] = abi.encode(token, p);
         emit ChangeQueued(id, pendingEta[id]);
     }
@@ -199,7 +207,7 @@ contract TreasuryPolicy {
         returns (bytes32 id)
     {
         id = keccak256(abi.encode("risk", r));
-        pendingEta[id] = block.timestamp + timelockDelay;
+        pendingEta[id] = block.timestamp + TIMELOCK_DELAY;
         _pendingPayload[id] = abi.encode(r);
         emit ChangeQueued(id, pendingEta[id]);
     }
@@ -270,6 +278,11 @@ contract TreasuryPolicy {
     function _requireMature(bytes32 id) private view {
         uint256 eta = pendingEta[id];
         if (eta == 0) revert ChangeNotQueued(id);
+        // Le linter signale block.timestamp comme manipulable par un validateur. La marge
+        // exploitable se compte en secondes, pour un délai nominal de 24 heures : ce n'est
+        // pas une surface d'attaque ici. Un délai qu'on pourrait raccourcir de quinze
+        // secondes reste un délai.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < eta) revert TimelockNotElapsed(id, eta);
     }
 }
