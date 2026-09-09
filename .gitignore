@@ -1,0 +1,41 @@
+# Node
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Foundry / Hardhat
+out/
+cache/
+cache_forge/
+artifacts/
+typechain-types/
+broadcast/*/dry-run/
+
+# Secrets — jamais commités
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Sorties de backtest (volumineuses, reproductibles par seed)
+data/generated/
+results/runs/
+*.parquet
+
+# OS / éditeurs
+.DS_Store
+.idea/
+.vscode/
