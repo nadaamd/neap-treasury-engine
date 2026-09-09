@@ -38,7 +38,7 @@ export const CORRIDORS: readonly CorridorSpec[] = [
     imbalance: 0.06, // quasi équilibré, léger biais sortant
     gammaFixedUsd: 0.02, // gas Arc en USDC
     latencySec: 0.35, // finalité mesurée d'Arc
-    etaImpact: 0.35, // NON CALIBRÉ — paramètre exposé, sensibilité affichée
+    etaImpact: 0.002, // NON CALIBRÉ — coût relatif d'un ordre à pleine profondeur, ~20 bps
     maxDepthUsd: 5_000_000,
   },
   {
@@ -52,7 +52,7 @@ export const CORRIDORS: readonly CorridorSpec[] = [
     imbalance: -0.04,
     gammaFixedUsd: 0.02,
     latencySec: 0.35,
-    etaImpact: 0.35,
+    etaImpact: 0.0025,
     maxDepthUsd: 2_000_000,
   },
   {
@@ -66,7 +66,7 @@ export const CORRIDORS: readonly CorridorSpec[] = [
     imbalance: 0.02,
     gammaFixedUsd: 0.02,
     latencySec: 0.35,
-    etaImpact: 0.35,
+    etaImpact: 0.003,
     maxDepthUsd: 1_500_000,
   },
   {

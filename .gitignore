@@ -39,3 +39,5 @@ results/runs/
 .DS_Store
 .idea/
 .vscode/
+results/*.json
+results/*.txt
