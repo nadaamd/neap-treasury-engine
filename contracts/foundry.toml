@@ -11,6 +11,13 @@ via_ir = false
 # destiné à être lu par des juges, un build bruyant coûte plus cher qu'il ne rapporte.
 deny = "warnings"
 
+[lint]
+# Le code de production est traité en strict : tout avertissement est une erreur.
+# Les tests sont exclus du linter, parce que leurs conventions diffèrent légitimement —
+# ignorer la valeur de retour d'un appel dont on ne teste que la révocation n'est pas un
+# défaut, c'est le propos du test.
+ignore = ["**/*.t.sol"]
+
 [fmt]
 line_length = 100
 tab_width = 4
