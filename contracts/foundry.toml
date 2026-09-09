@@ -11,6 +11,11 @@ via_ir = false
 # destiné à être lu par des juges, un build bruyant coûte plus cher qu'il ne rapporte.
 deny = "warnings"
 
+# Lecture seule, et strictement sur le dossier du jeu de conformité. Foundry ferme
+# l'accès au système de fichiers par défaut, et c'est une bonne chose : un test qui peut
+# lire n'importe quoi peut aussi exfiltrer n'importe quoi. On ouvre le minimum.
+fs_permissions = [{ access = "read", path = "./test/fixtures" }]
+
 [lint]
 # Le code de production est traité en strict : tout avertissement est une erreur.
 # Les tests sont exclus du linter, parce que leurs conventions diffèrent légitimement —

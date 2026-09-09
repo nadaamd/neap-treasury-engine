@@ -191,6 +191,13 @@ contract ReportVerifier {
             block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : _buildDomainSeparator();
     }
 
+    /// @notice Empreinte de structure EIP-712, exposée pour l'outillage hors chaîne.
+    /// @dev Le moteur la recalcule en TypeScript ; une suite de conformité vérifie que
+    ///      les deux implémentations produisent les mêmes octets.
+    function structHash(RebalanceReport calldata r) external pure returns (bytes32) {
+        return _structHash(r);
+    }
+
     function digest(RebalanceReport calldata r) public view returns (bytes32) {
         return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), _structHash(r)));
     }

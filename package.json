@@ -10,6 +10,7 @@
     "test": "node --test 'data/test/*.test.ts' 'engine/test/*.test.ts' 'app/test/*.test.ts'",
     "test:data": "node --test 'data/test/*.test.ts'",
     "dev": "node app/server.ts",
-    "backtest": "node engine/scripts/backtest.ts --json results/backtest.json"
+    "backtest": "node engine/scripts/backtest.ts --json results/backtest.json",
+    "fixtures": "node engine/scripts/fixtures.ts"
   }
 }

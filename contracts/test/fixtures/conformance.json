@@ -1,0 +1,36 @@
+{
+  "salt": "0xabababababababababababababababababababababababababababababababab",
+  "orders": [
+    {
+      "sell": "0x1111111111111111111111111111111111111111",
+      "buy": "0x2222222222222222222222222222222222222222",
+      "amountIn": 500000000000,
+      "minAmountOut": 0
+    },
+    {
+      "sell": "0x3333333333333333333333333333333333333333",
+      "buy": "0x1111111111111111111111111111111111111111",
+      "amountIn": 250000000000,
+      "minAmountOut": 7
+    }
+  ],
+  "ordersCommitment": "0xf9b24bbc1ef0f414741bda585286edb3a807fec1292388ca15df5ed8593be762",
+  "report": {
+    "epoch": 100,
+    "nonce": 7,
+    "expiry": 1800000000,
+    "inputsTimestamp": 1799999940,
+    "policyVersion": 3,
+    "bandParamsHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "inputsHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "ordersCommitment": "0xf9b24bbc1ef0f414741bda585286edb3a807fec1292388ca15df5ed8593be762",
+    "esBeforeBps": 120,
+    "esAfterBps": -45,
+    "costEstimate": 42000000,
+    "grossNotional": 750000000000
+  },
+  "reportTypeHash": "0x9d638afc807f11cc377fb50dd5235d615d4199dcb4cc3713afa20b3592126efa",
+  "domainTypeHash": "0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f",
+  "reportStructHash": "0x4d8dc2e8206390c2a1bfeb962c6379a41f5ec514436f944bdb501ca985ffa16e",
+  "reportId": "0x31bb957deb3690233b33dfb22d54bea0af9eb7226d1812ada46b6369b6b1f811"
+}
