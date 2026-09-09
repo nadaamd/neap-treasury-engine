@@ -90,6 +90,21 @@ const server = createServer(async (req, res) => {
   }
 });
 
+/**
+ * Un port occupé est le cas d'erreur le plus banal en développement, et la trace de pile
+ * que Node produit par défaut n'aide personne. On dit ce qui se passe et comment s'en
+ * sortir — y compris cinq minutes avant une démonstration.
+ */
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Le port ${PORT} est déjà occupé.`);
+    console.error(`  · pour libérer :        pkill -f "node app/server.ts"`);
+    console.error(`  · pour un autre port :  PORT=5174 npm run dev`);
+    process.exit(1);
+  }
+  throw err;
+});
+
 server.listen(PORT, () => {
   console.log(`FLOAT — tableau de bord sur http://localhost:${PORT}`);
 });
