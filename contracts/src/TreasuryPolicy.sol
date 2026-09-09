@@ -275,6 +275,34 @@ contract TreasuryPolicy {
         return (p.lowerBand, p.target, p.upperBand);
     }
 
+    /* ---------------------------------------------------------------------- */
+    /*                     Accesseurs unitaires de commodité                   */
+    /* ---------------------------------------------------------------------- */
+
+    /// @dev Le getter automatique d'une structure publique renvoie un n-uplet, que les
+    ///      contrats appelants devraient déballer position par position — fragile dès
+    ///      qu'on ajoute un champ. Ces accesseurs nommés rendent les dépendances
+    ///      explicites et résistent à l'évolution de la structure.
+    function maxStalenessSec() external view returns (uint32) {
+        return riskParams.maxStalenessSec;
+    }
+
+    function minEpochIntervalSec() external view returns (uint32) {
+        return riskParams.minEpochIntervalSec;
+    }
+
+    function autoApproveThreshold() external view returns (uint128) {
+        return riskParams.autoApproveThreshold;
+    }
+
+    function maxExecDeviationBps() external view returns (uint32) {
+        return riskParams.maxExecDeviationBps;
+    }
+
+    function isAdmin(address account) external view returns (bool) {
+        return _roles[ADMIN][account];
+    }
+
     function _requireMature(bytes32 id) private view {
         uint256 eta = pendingEta[id];
         if (eta == 0) revert ChangeNotQueued(id);

@@ -19,6 +19,9 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 | D13 | **Le coût de rupture est tarifé en espérance analytique, pas compté en simulation** | la probabilité de rupture à l'optimum est de l'ordre de 10⁻⁵ à 10⁻⁸ ; 120 000 périodes simulées ne la mesurent pas, donc le terme et son gradient valaient zéro partout |
 | D14 | **Le coût de rupture est une grandeur absolue**, pas un multiple de γ | la spec proposait c_b = 250·γ ; quand γ s'effondre d'un facteur 10⁴ en passant au rail rapide, c_b s'effondrerait avec lui — or une rupture de paiement coûte la même chose quel que soit le rail utilisé pour la corriger |
 
+| D15 | **Séquence croissante sur le couple (epoch, nonce)**, pas sur l'epoch seul | le parcours de crise (§2.3) exige un rapport hors cycle entre deux epochs ; la stricte croissance de l'epoch l'interdirait |
+| D16 | **Le contrôle d'idempotence passe avant le contrôle de séquence** | un rejeu doit échouer pour la bonne raison ; un rejet incident par le contrôle de séquence masquerait la vraie garantie |
+
 ## Décisions encore ouvertes
 
 - Existence de l'état `COMPENSATED` → dépend de l'atomicité du PvP Arc (jalon 0)
