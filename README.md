@@ -24,8 +24,31 @@ finalité de ~350 ms. Dans le modèle de Miller-Orr, la largeur de bande optimal
 **Le buffer de trésorerie optimal s'effondre.** Ce projet quantifie cet effondrement, par backtest
 walk-forward avec intervalles de confiance.
 
+## Résultats
+
+Backtest walk-forward, 20 germes × 6 fenêtres, calibration sur le passé strict
+([`docs/BACKTEST.md`](./docs/BACKTEST.md)) :
+
+| | Pré-financement conservateur | FLOAT | Écart |
+|---|---|---|---|
+| Capital immobilisé | 1,74 M$ | **269 k$** | **−84,6 %** |
+| ES 97,5 % | 77,8 k$ | **8,2 k$** | **−89,4 %** |
+| Coût total | 356 k$ | **269 k$** | −24,4 % |
+| Nombre d'ordres | 90 | 2 879 | +3 113 % |
+
+La réduction de capital est stable sur toute la plage de sensibilité au seul paramètre
+non calibré du modèle. La réduction de coût, elle, en dépend (−13 % à −38 %) et ne doit
+jamais être citée sans sa plage.
+
+Le mécanisme n'est pas celui qu'on attend : le coût d'exécution baisse **malgré** trente
+fois plus d'ordres, parce que sous impact en racine carrée beaucoup de petits ordres
+coûtent moins que quelques gros. Ce régime n'est accessible que parce que le coût fixe
+d'un rééquilibrage s'est effondré sur le rail stablecoin.
+
 ## Documentation
 
+- [`docs/BACKTEST.md`](./docs/BACKTEST.md) — résultats du backtest, avec leurs limites
+- [`docs/DECISIONS.md`](./docs/DECISIONS.md) — journal des décisions d'architecture
 - [`SPEC.md`](./SPEC.md) — spécification technique complète : périmètre, modèle quantitatif,
   architecture, contrats, sécurité, problématiques ouvertes et décisions arrêtées.
 
