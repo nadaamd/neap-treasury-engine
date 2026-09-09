@@ -24,6 +24,18 @@ finalité de ~350 ms. Dans le modèle de Miller-Orr, la largeur de bande optimal
 **Le buffer de trésorerie optimal s'effondre.** Ce projet quantifie cet effondrement, par backtest
 walk-forward avec intervalles de confiance.
 
+## Lancer
+
+```bash
+npm run dev        # tableau de bord sur http://localhost:5173
+npm test           # 109 tests TypeScript, aucune dépendance
+npm run backtest   # régénère results/backtest.json (~9 min)
+cd contracts && forge test   # 80 tests Solidity
+```
+
+Aucun `npm install` : Node 24 exécute le TypeScript nativement et le dépôt n'a pas de
+dépendance JavaScript. Les contrats utilisent Foundry et `forge-std` en sous-module.
+
 ## Résultats
 
 Backtest walk-forward, 20 germes × 6 fenêtres, calibration sur le passé strict

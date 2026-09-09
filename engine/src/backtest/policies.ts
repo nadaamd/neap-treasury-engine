@@ -11,6 +11,7 @@ import type { Currency } from '../../../data/src/types.ts';
 import { millerOrrBands } from '../bands/millerOrr.ts';
 import type { Bands } from '../bands/millerOrr.ts';
 import { bootstrapPaths } from '../bands/simulate.ts';
+import type { CostParams } from '../bands/simulate.ts';
 import { solveBands } from '../bands/solver.ts';
 import { empiricalLeftTail } from '../bands/tail.ts';
 import { mean, stdev } from '../../../data/src/stats.ts';
@@ -65,11 +66,12 @@ function solveFor(
   dailyVol: number,
   cfg: BacktestConfig,
   seed: number,
+  override?: CostParams,
 ): Bands {
   const drift = mean(flows);
   const centred = flows.map((x) => x - drift);
   const sigma = Math.max(stdev(centred), 1);
-  const base = CURRENCY_COSTS[currency]!.costs;
+  const base = override ?? CURRENCY_COSTS[currency]!.costs;
   const costs = { ...base, esPerUnit: esPerUnit(dailyVol) };
 
   // Les bandes sont amorcées par Miller-Orr sur la série sans dérive — c'est son cadre
@@ -106,6 +108,15 @@ export interface PolicyInput {
   readonly dailyVol: Record<Currency, number>;
   readonly cfg: BacktestConfig;
   readonly seed: number;
+  /**
+   * Coûts par devise se substituant à ceux du dépôt.
+   *
+   * Sans ce passage explicite, le solveur lisait toujours les constantes du module et
+   * les curseurs du tableau de bord n'avaient aucun effet sur les bandes : la page
+   * affichait des paramètres qu'elle prétendait faire varier. Le contrôle de contrat
+   * entre l'API et la page l'a détecté ; une capture d'écran ne l'aurait pas montré.
+   */
+  readonly costs?: Readonly<Record<string, CostParams>>;
 }
 
 export function buildPolicy(kind: PolicyKind, input: PolicyInput): PolicyBands {
@@ -130,10 +141,17 @@ export function buildPolicy(kind: PolicyKind, input: PolicyInput): PolicyBands {
         break;
       }
       case 'FLOAT':
-        bands[c] = solveFor(calib, c, input.dailyVol[c]!, input.cfg, input.seed);
+        bands[c] = solveFor(calib, c, input.dailyVol[c]!, input.cfg, input.seed, input.costs?.[c]);
         break;
       case 'CLAIRVOYANT':
-        bands[c] = solveFor(input.evaluation[c]!, c, input.dailyVol[c]!, input.cfg, input.seed);
+        bands[c] = solveFor(
+          input.evaluation[c]!,
+          c,
+          input.dailyVol[c]!,
+          input.cfg,
+          input.seed,
+          input.costs?.[c],
+        );
         break;
     }
   }
