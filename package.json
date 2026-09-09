@@ -1,0 +1,11 @@
+{
+  "name": "float-treasury-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test 'data/test/*.test.ts' 'engine/test/*.test.ts'",
+    "test:data": "node --test 'data/test/*.test.ts'"
+  }
+}
