@@ -80,7 +80,8 @@ contract ReportVerifierTest is Test {
             ordersCommitment: keccak256("orders"),
             esBeforeBps: 120,
             esAfterBps: 138,
-            costEstimate: 42e6
+            costEstimate: 42e6,
+            grossNotional: 500_000e6
         });
     }
 

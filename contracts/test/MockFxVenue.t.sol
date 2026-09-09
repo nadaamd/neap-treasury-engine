@@ -30,8 +30,15 @@ contract MockFxVenueTest is Test {
         usdc.approve(address(venue), type(uint256).max);
     }
 
-    function _prepare(uint256 amountIn) internal returns (uint256 out, bytes32 id) {
-        (out,, id) = venue.prepare(address(usdc), address(eurc), amountIn);
+    function _quoted(uint256 amountIn) internal view returns (uint256 out, bytes32 id) {
+        (out,, id) = venue.quote(address(usdc), address(eurc), amountIn);
+    }
+
+    function _settle(uint256 amountIn, uint256 minOut, bytes32 id, address to)
+        internal
+        returns (uint256)
+    {
+        return venue.settlePvP(address(usdc), address(eurc), amountIn, minOut, to, id);
     }
 
     /* ------------------------------------------------------------------ */
@@ -94,13 +101,13 @@ contract MockFxVenueTest is Test {
 
     function test_settlementMovesBothLegs() public {
         uint256 amountIn = 500_000e6;
-        (uint256 expected, bytes32 id) = _prepare(amountIn);
+        (uint256 expected, bytes32 id) = _quoted(amountIn);
 
         uint256 usdcBefore = usdc.balanceOf(vault);
         uint256 eurcBefore = eurc.balanceOf(vault);
 
         vm.prank(vault);
-        uint256 out = venue.settlePvP(id, amountIn, expected, vault);
+        uint256 out = _settle(amountIn, expected, id, vault);
 
         assertEq(out, expected);
         assertEq(usdc.balanceOf(vault), usdcBefore - amountIn);
@@ -112,22 +119,22 @@ contract MockFxVenueTest is Test {
     ///      contrôle, un carnet vidé entre l'annonce et l'exécution servirait au pire prix.
     function test_settlingADifferentSizeIsRejected() public {
         uint256 amountIn = 500_000e6;
-        (, bytes32 id) = _prepare(amountIn);
+        (, bytes32 id) = _quoted(amountIn);
 
         vm.prank(vault);
         vm.expectRevert();
-        venue.settlePvP(id, amountIn * 2, 0, vault);
+        _settle(amountIn * 2, 0, id, vault);
     }
 
     function test_slippageBoundIsEnforced() public {
         uint256 amountIn = 500_000e6;
-        (uint256 expected, bytes32 id) = _prepare(amountIn);
+        (uint256 expected, bytes32 id) = _quoted(amountIn);
 
         vm.prank(vault);
         vm.expectRevert(
             abi.encodeWithSelector(MockFxVenue.SlippageExceeded.selector, expected, expected + 1)
         );
-        venue.settlePvP(id, amountIn, expected + 1, vault);
+        _settle(amountIn, expected + 1, id, vault);
     }
 
     /// @dev Atomicité : si la jambe entrante ne peut pas être débitée, rien ne bouge.
@@ -136,14 +143,14 @@ contract MockFxVenueTest is Test {
     function test_settlementIsAtomicWhenTheInboundLegFails() public {
         address broke = makeAddr("broke");
         uint256 amountIn = 500_000e6;
-        (uint256 expected, bytes32 id) = _prepare(amountIn);
+        (uint256 expected, bytes32 id) = _quoted(amountIn);
 
         uint256 venueEurcBefore = eurc.balanceOf(address(venue));
 
         vm.startPrank(broke);
         usdc.approve(address(venue), type(uint256).max);
         vm.expectRevert();
-        venue.settlePvP(id, amountIn, expected, broke);
+        _settle(amountIn, expected, id, broke);
         vm.stopPrank();
 
         assertEq(

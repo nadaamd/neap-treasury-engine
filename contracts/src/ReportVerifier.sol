@@ -44,6 +44,20 @@ contract ReportVerifier {
         int32 esBeforeBps;
         int32 esAfterBps;
         uint128 costEstimate;
+        /**
+         * @notice Notionnel brut du plan, dans la devise de financement.
+         *
+         * @dev Concession assumée à la confidentialité (D6). Le principe est de ne
+         *      publier que des grandeurs relatives, et ce champ est un montant. Il est
+         *      pourtant nécessaire : le seuil d'approbation humaine porte sur la taille
+         *      du plan, or les ordres sont scellés jusqu'à l'exécution. Sans ce champ,
+         *      le trésorier approuverait à l'aveugle — ce qui ne serait pas une
+         *      approbation.
+         *
+         *      Ce qui reste protégé est la *décomposition* : quelles devises, dans quel
+         *      sens, pour quels montants. C'est elle qui trahirait la position.
+         */
+        uint128 grossNotional;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -51,7 +65,8 @@ contract ReportVerifier {
     bytes32 private constant REPORT_TYPEHASH = keccak256(
         "RebalanceReport(uint64 epoch,uint64 nonce,uint64 expiry,uint64 inputsTimestamp,"
         "uint32 policyVersion,bytes32 bandParamsHash,bytes32 inputsHash,"
-        "bytes32 ordersCommitment,int32 esBeforeBps,int32 esAfterBps,uint128 costEstimate)"
+        "bytes32 ordersCommitment,int32 esBeforeBps,int32 esAfterBps,uint128 costEstimate,"
+        "uint128 grossNotional)"
     );
 
     /// @dev Borne haute de s imposée par l'EIP-2 : sans elle, toute signature admet une
@@ -342,7 +357,8 @@ contract ReportVerifier {
                 r.ordersCommitment,
                 r.esBeforeBps,
                 r.esAfterBps,
-                r.costEstimate
+                r.costEstimate,
+                r.grossNotional
             )
         );
     }

@@ -96,14 +96,16 @@ contract MockFxVenue is IFxVenue {
     }
 
     /// @inheritdoc IFxVenue
-    function settlePvP(bytes32 quoteId, uint256 amountIn, uint256 minAmountOut, address to)
-        external
-        returns (uint256 amountOut)
-    {
-        (address tokenIn, address tokenOut) = _decodeSides(quoteId);
-        uint256 expiry;
+    function settlePvP(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        bytes32 quoteId
+    ) external returns (uint256 amountOut) {
         bytes32 expected;
-        (amountOut, expiry, expected) = quote(tokenIn, tokenOut, amountIn);
+        (amountOut,, expected) = quote(tokenIn, tokenOut, amountIn);
 
         // Le prix exécuté doit être celui qui a été annoncé. Sans ce contrôle, un carnet
         // qui s'est vidé entre l'annonce et l'exécution servirait au pire prix disponible.
@@ -124,25 +126,6 @@ contract MockFxVenue is IFxVenue {
     }
 
     /* ---------------------------------------------------------------- */
-
-    /// @dev Le `quoteId` ne porte pas les adresses de jetons en clair ; le mock les
-    ///      retrouve via l'enregistrement posé par `prepare`. Un lieu réel signerait un
-    ///      quote structuré et n'aurait pas besoin de ce détour.
-    mapping(bytes32 quoteId => address[2] sides) private _sides;
-
-    /// @notice Enregistre un quote afin qu'il puisse être réglé ensuite.
-    function prepare(address tokenIn, address tokenOut, uint256 amountIn)
-        external
-        returns (uint256 amountOut, uint64 quoteExpiry, bytes32 quoteId)
-    {
-        (amountOut, quoteExpiry, quoteId) = quote(tokenIn, tokenOut, amountIn);
-        _sides[quoteId] = [tokenIn, tokenOut];
-    }
-
-    function _decodeSides(bytes32 quoteId) private view returns (address, address) {
-        address[2] storage s = _sides[quoteId];
-        return (s[0], s[1]);
-    }
 
     /// @dev eta · √(taille / profondeur), en points de base.
     function _impactBps(uint256 amountIn, uint256 depth, uint16 etaBps)

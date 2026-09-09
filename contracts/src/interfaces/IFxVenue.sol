@@ -36,7 +36,12 @@ interface IFxVenue {
      *      Arc au jalon 0 : si son PvP n'offre pas cette garantie, la machine à états du
      *      coffre doit gagner un état de compensation.
      */
-    function settlePvP(bytes32 quoteId, uint256 amountIn, uint256 minAmountOut, address to)
-        external
-        returns (uint256 amountOut);
+    function settlePvP(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        bytes32 quoteId
+    ) external returns (uint256 amountOut);
 }

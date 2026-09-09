@@ -102,7 +102,12 @@ contract TreasuryPolicyTest is Test {
     }
 
     function testFuzz_separationOfDuties_holdsForAnyAddress(address account) public {
+        // Le fuzzer a tiré l'adresse du trésorier du décor, qui détient déjà TREASURER :
+        // c'était alors la *première* attribution qui révoquait, et le test échouait sur
+        // une précondition qu'il n'avait jamais énoncée. On la rend explicite.
         vm.assume(account != address(0));
+        vm.assume(!policy.hasRole(ROLE_TREASURER, account));
+        vm.assume(!policy.hasRole(ROLE_RISK_OFFICER, account));
         vm.startPrank(admin);
         policy.grantRole(ROLE_RISK_OFFICER, account);
         vm.expectRevert(

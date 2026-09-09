@@ -22,6 +22,10 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 | D15 | **Séquence croissante sur le couple (epoch, nonce)**, pas sur l'epoch seul | le parcours de crise (§2.3) exige un rapport hors cycle entre deux epochs ; la stricte croissance de l'epoch l'interdirait |
 | D16 | **Le contrôle d'idempotence passe avant le contrôle de séquence** | un rejeu doit échouer pour la bonne raison ; un rejet incident par le contrôle de séquence masquerait la vraie garantie |
 
+| D17 | **Fenêtre réellement glissante** (24 seaux horaires) plutôt qu'à remise périodique | une fenêtre à remise laisse passer deux fois la limite de part et d'autre d'une frontière — un trou de trop pour une contrainte censée borner un opérateur compromis |
+| D18 | **`grossNotional` publié en clair dans le rapport**, par exception au principe des grandeurs relatives | le seuil d'approbation porte sur la taille du plan, or les ordres sont scellés jusqu'à l'exécution ; sans ce champ le trésorier approuverait à l'aveugle, ce qui ne serait pas une approbation. La décomposition, elle, reste protégée |
+| D19 | **Un plan est atomique** : un ordre qui échoue fait échouer tout le plan | exécuter partiellement — vendre l'euro sans acheter la livre prévue — laisserait une position que personne n'a décidée, pire que l'inaction |
+
 ## Décisions encore ouvertes
 
 - Existence de l'état `COMPENSATED` → dépend de l'atomicité du PvP Arc (jalon 0)

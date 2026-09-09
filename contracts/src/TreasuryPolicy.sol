@@ -299,6 +299,18 @@ contract TreasuryPolicy {
         return riskParams.maxExecDeviationBps;
     }
 
+    function maxSingleOrderOf(address token) external view returns (uint128) {
+        return currencyPolicy[token].maxSingleOrder;
+    }
+
+    function maxPerEpochOf(address token) external view returns (uint128) {
+        return currencyPolicy[token].maxPerEpoch;
+    }
+
+    function maxRolling24hOf(address token) external view returns (uint128) {
+        return currencyPolicy[token].maxRolling24h;
+    }
+
     function isAdmin(address account) external view returns (bool) {
         return _roles[ADMIN][account];
     }
