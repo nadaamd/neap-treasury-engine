@@ -68,8 +68,7 @@ export function buildReport(input: HandlerInput): HandlerOutput {
     residuals: market.residuals,
     marketTimestamp: market.timestamp,
     now,
-    maxStalenessSec: treasury.risk.maxStalenessSec ?? 600,
-  } as DecisionInput;
+  };
 
   const decision = decide(decisionInput);
   const salt = deriveSalt(saltSeed, treasury.epoch, treasury.nonce);

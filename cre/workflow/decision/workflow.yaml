@@ -1,0 +1,18 @@
+# ==========================================================================
+# WORKFLOW — FLOAT, décision de rééquilibrage confidentielle
+# ==========================================================================
+staging-settings:
+  user-workflow:
+    workflow-name: "float-decision-staging"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.staging.json"
+    secrets-path: "../secrets.yaml"
+
+production-settings:
+  user-workflow:
+    workflow-name: "float-decision-production"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.production.json"
+    secrets-path: "../secrets.yaml"

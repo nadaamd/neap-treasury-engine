@@ -55,12 +55,12 @@ function input(over: Partial<DecisionInput> = {}): DecisionInput {
       autoApproveThreshold: 1_000_000,
       maxPerEpoch: 5_000_000,
       fundingFloor: 1_000_000,
+      maxStalenessSec: 60,
     },
     currentVol,
     residuals,
     marketTimestamp: NOW - 5_000,
     now: NOW,
-    maxStalenessSec: 60,
     ...over,
   };
 }

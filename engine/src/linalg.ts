@@ -6,7 +6,8 @@
  */
 
 export type Matrix = number[][];
-export type Vector = number[];
+/** Les fonctions n'écrivent jamais dans un vecteur : le type l'énonce. */
+export type Vector = readonly number[];
 
 export function zeros(n: number, m: number = n): Matrix {
   return Array.from({ length: n }, () => new Array<number>(m).fill(0));

@@ -6,13 +6,27 @@
 |---|---|
 | `handler/types.ts` — contrat de données, frontière de confidentialité | ✅ |
 | `handler/buildReport.ts` — état de trésorerie → rapport signable | ✅ 14 tests |
-| Enveloppe SDK (`handlerInTee`, secrets, HTTP) | ⏳ attend l'installation de la CLI |
-| `cre workflow simulate` | ⏳ |
+| `workflow/` — enveloppe SDK (`handlerInTee`, deux secrets, deux appels HTTP) | ✅ |
+| `cre workflow simulate` | ✅ **exécuté, décision produite** |
 
 Le cœur ne connaît pas le SDK : il prend un état, rend un rapport, donc il se teste sans
 enclave, sans réseau et sans chaîne. C'est la conséquence de D9 — le moteur est une
 fonction pure, et cet adaptateur l'est aussi. L'enveloppe CRE se réduira à trois gestes :
 récupérer un secret, faire deux appels HTTP, appeler `buildReport`.
+
+## Preuve de simulation
+
+```
+2026-09-10T12:48:20Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+  Trigger requested TEE Execution: AWS Nitro in us-west-2
+2026-09-10T12:48:20Z [USER LOG] décision : PROPOSE — écart aux bandes
+
+✓ Workflow Simulation Result:
+"PROPOSE — 1 ordre(s), engagement 0x28fd83e0…"
+```
+
+À reproduire : `npm run cre:simulate`, le tableau de bord devant tourner (`npm run dev`)
+puisque l'enclave appelle ses deux points d'entrée.
 
 ## Prérequis d'installation
 
@@ -25,7 +39,11 @@ Le SDK `@chainlink/cre-sdk` sera installé dans ce dossier uniquement. C'est la 
 dépendance JavaScript du dépôt, et elle est confinée ici : `data/`, `engine/` et `app/`
 restent sans dépendance.
 
-## Forme visée
+## Forme retenue
+
+L'API réelle est **synchrone** — `.result()` partout, aucun `await`. C'est cohérent avec
+l'exigence de déterminisme : le résultat de l'enclave est attesté puis vérifié par
+consensus du DON, donc à entrées identiques il doit produire une sortie identique.
 
 ```ts
 cre.handlerInTee(

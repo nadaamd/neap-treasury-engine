@@ -9,7 +9,12 @@
     "noEmit": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "types": []
   },
-  "include": ["data/**/*.ts", "engine/**/*.ts", "cre/**/*.ts"]
+  // Le code source uniquement. Les tests et les scripts s'appuient sur les modules
+  // intégrés de Node (`node:test`, `process`, `import.meta`), dont les déclarations
+  // exigeraient @types/node — une dépendance que ce dépôt n'a pas. Le workflow CRE a son
+  // propre tsconfig, aligné sur le SDK.
+  "include": ["data/src/**/*.ts", "data/calibration/**/*.ts", "engine/src/**/*.ts", "app/src/**/*.ts", "cre/handler/**/*.ts"]
 }

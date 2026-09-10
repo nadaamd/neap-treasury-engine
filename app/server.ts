@@ -10,6 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, extname } from 'node:path';
 import { buildEpisode, DEFAULT_PARAMS } from './src/episode.ts';
+import { marketPayload, treasuryPayload } from './src/creEndpoints.ts';
 import type { EpisodeParams } from './src/episode.ts';
 import type { Currency } from '../data/src/types.ts';
 
@@ -59,6 +60,26 @@ const server = createServer(async (req, res) => {
       const episode = buildEpisode(paramsFrom(url));
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ...episode, computeMs: Date.now() - started }));
+      return;
+    }
+
+    // Points d'entrée consommés par le handler confidentiel pendant la simulation.
+    if (url.pathname === '/api/cre/treasury') {
+      const expected = process.env.SECRET_TREASURY_API_TOKEN ?? 'jeton-de-simulation';
+      const body = treasuryPayload(req.headers.authorization, expected);
+      if (body === null) {
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end('{"error":"jeton absent ou invalide"}');
+        return;
+      }
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(body);
+      return;
+    }
+
+    if (url.pathname === '/api/cre/market') {
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(marketPayload());
       return;
     }
 

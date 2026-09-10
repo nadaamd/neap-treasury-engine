@@ -1,0 +1,18 @@
+{
+  "schedule": "0 */1 * * * *",
+  "treasuryUrl": "http://localhost:5173/api/cre/treasury",
+  "marketUrl": "http://localhost:5173/api/cre/market",
+  "treasuryTokenSecretId": "TREASURY_API_TOKEN",
+  "saltSeedSecretId": "COMMITMENT_SALT_SEED",
+  "numeraire": "USD",
+  "currencies": ["EUR", "GBP", "BRL"],
+  "tokens": {
+    "USD": "0x1111111111111111111111111111111111111111",
+    "EUR": "0x2222222222222222222222222222222222222222",
+    "GBP": "0x3333333333333333333333333333333333333333",
+    "BRL": "0x4444444444444444444444444444444444444444"
+  },
+  "decimals": 6,
+  "slippageBps": 30,
+  "validitySec": 3600
+}

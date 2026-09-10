@@ -73,6 +73,8 @@ export interface RiskParams {
   readonly maxPerEpoch: number;
   /** Solde minimal à préserver dans la devise de financement. */
   readonly fundingFloor: number;
+  /** Âge maximal toléré pour les données de marché, en secondes. */
+  readonly maxStalenessSec: number;
 }
 
 export interface DecisionInput {
@@ -99,7 +101,6 @@ export interface DecisionInput {
   readonly residuals: readonly (readonly number[])[];
   readonly marketTimestamp: number;
   readonly now: number;
-  readonly maxStalenessSec: number;
 }
 
 export interface DecisionMetrics {
@@ -170,10 +171,10 @@ export function decide(input: DecisionInput): Decision {
   // 1. Fraîcheur des données de marché. Le contrat refera ce contrôle, mais décider sur
   //    des prix périmés puis se faire rejeter gaspille un epoch.
   const ageSec = (input.now - input.marketTimestamp) / 1000;
-  if (ageSec > input.maxStalenessSec || ageSec < 0) {
+  if (ageSec > risk.maxStalenessSec || ageSec < 0) {
     return {
       status: 'REJECTED',
-      reason: `données de marché périmées : ${ageSec.toFixed(0)} s > ${input.maxStalenessSec} s`,
+      reason: `données de marché périmées : ${ageSec.toFixed(0)} s > ${risk.maxStalenessSec} s`,
       orders: [],
       requiresApproval: false,
       metrics: EMPTY_METRICS,
