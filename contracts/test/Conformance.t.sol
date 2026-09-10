@@ -113,6 +113,40 @@ contract ConformanceTest is Test {
         assertEq(verifier.reportId(_report()), vm.parseJsonBytes32(json, ".reportId"));
     }
 
+    /**
+     * @dev Les politiques Privy n'autorisent qu'une liste de sélecteurs de fonctions.
+     *      Une signature mal recopiée côté hors chaîne produirait une politique qui
+     *      bloque exactement ce qu'elle devait permettre — et l'erreur ne se verrait
+     *      qu'au moment d'une approbation refusée en pleine démonstration.
+     */
+    function test_privySelectorsMatchTheContracts() public view {
+        _assertSelector(
+            "submit((uint64,uint64,uint64,uint64,uint32,bytes32,bytes32,bytes32,int32,int32,uint128,uint128),bytes,bytes[])",
+            RebalanceVault.submit.selector
+        );
+        _assertSelector(
+            "execute(bytes32,(address,address,uint128,uint128)[],bytes32)",
+            RebalanceVault.execute.selector
+        );
+        _assertSelector("approve(bytes32)", RebalanceVault.approve.selector);
+        _assertSelector(
+            "queueCurrencyPolicy(address,(uint128,uint128,uint128,uint128,uint128,uint128))",
+            TreasuryPolicy.queueCurrencyPolicy.selector
+        );
+        _assertSelector(
+            "queueRiskParams((uint32,uint32,uint32,uint32,uint32,uint128))",
+            TreasuryPolicy.queueRiskParams.selector
+        );
+        _assertSelector("commitBandParams(bytes32)", TreasuryPolicy.commitBandParams.selector);
+    }
+
+    function _assertSelector(string memory signature, bytes4 expected) internal view {
+        string memory path = string.concat(".selectors.", '["', signature, '"].selector');
+        // `parseJson` convertit d'office une chaîne hexadécimale en `bytes` : la lire
+        // comme une `string` la rendait illisible. On demande directement des octets.
+        assertEq(bytes4(vm.parseJsonBytes(json, path)), expected, signature);
+    }
+
     /// @dev Le séparateur de domaine dépend de l'adresse déployée et ne peut donc pas
     ///      figurer dans un jeu statique. On vérifie ici sa construction ; la valeur
     ///      elle-même est confrontée au moteur par le scénario de bout en bout.

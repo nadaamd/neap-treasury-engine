@@ -19,6 +19,7 @@ import {
   typeHash,
 } from '../src/onchain/abi.ts';
 import type { OnchainOrder, OnchainReport } from '../src/onchain/abi.ts';
+import { ALLOWED_CALLS, selector } from '../../privy/src/policies.ts';
 
 const salt = `0x${'ab'.repeat(32)}`;
 
@@ -85,6 +86,17 @@ const fixture = {
   reportStructHash: reportStructHash(report),
   reportId: reportId(report),
 };
+
+// Sélecteurs des fonctions que les politiques Privy autorisent. Une signature mal
+// recopiée produirait une politique qui bloque exactement ce qu'elle devait permettre,
+// et l'erreur ne se verrait qu'au moment d'une approbation refusée en pleine
+// démonstration. La suite Solidity les confronte aux contrats compilés.
+const selectors = Object.fromEntries(
+  Object.entries(ALLOWED_CALLS).flatMap(([role, signatures]) =>
+    signatures.map((sig) => [sig, { role, selector: selector(sig) }]),
+  ),
+);
+Object.assign(fixture as Record<string, unknown>, { selectors });
 
 const target = new URL('../../contracts/test/fixtures/conformance.json', import.meta.url);
 writeFileSync(target, `${JSON.stringify(fixture, null, 2)}\n`);

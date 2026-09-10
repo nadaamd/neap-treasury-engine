@@ -7,12 +7,13 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test 'data/test/*.test.ts' 'engine/test/*.test.ts' 'app/test/*.test.ts' 'cre/test/*.test.ts'",
+    "test": "node --test 'data/test/*.test.ts' 'engine/test/*.test.ts' 'app/test/*.test.ts' 'cre/test/*.test.ts' 'privy/test/*.test.ts'",
     "test:data": "node --test 'data/test/*.test.ts'",
     "dev": "node app/server.ts",
     "backtest": "node engine/scripts/backtest.ts --json results/backtest.json",
     "fixtures": "node engine/scripts/fixtures.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json",
-    "cre:simulate": "cd cre/workflow && cre workflow simulate decision --target staging-settings --non-interactive --trigger-index 0"
+    "cre:simulate": "cd cre/workflow && cre workflow simulate decision --target staging-settings --non-interactive --trigger-index 0",
+    "privy:provision": "node privy/scripts/provision.ts"
   }
 }
