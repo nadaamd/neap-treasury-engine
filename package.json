@@ -14,6 +14,7 @@
     "fixtures": "node engine/scripts/fixtures.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json",
     "cre:simulate": "cd cre/workflow && cre workflow simulate decision --target staging-settings --non-interactive --trigger-index 0",
-    "privy:provision": "node privy/scripts/provision.ts"
+    "privy:provision": "node privy/scripts/provision.ts",
+    "e2e": "node scripts/e2e.ts"
   }
 }

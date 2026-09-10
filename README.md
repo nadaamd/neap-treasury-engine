@@ -27,6 +27,7 @@ walk-forward avec intervalles de confiance.
 ## Lancer
 
 ```bash
+npm run e2e        # scénario complet sur un nœud éphémère (~40 s)
 npm run dev        # tableau de bord sur http://localhost:5173
 npm test           # 109 tests TypeScript, aucune dépendance
 npm run backtest   # régénère results/backtest.json (~9 min)
@@ -59,6 +60,7 @@ d'un rééquilibrage s'est effondré sur le rail stablecoin.
 
 ## Documentation
 
+- [`docs/E2E.md`](./docs/E2E.md) — trace du scénario de bout en bout
 - [`docs/BACKTEST.md`](./docs/BACKTEST.md) — résultats du backtest, avec leurs limites
 - [`docs/DECISIONS.md`](./docs/DECISIONS.md) — journal des décisions d'architecture
 - [`SPEC.md`](./SPEC.md) — spécification technique complète : périmètre, modèle quantitatif,
