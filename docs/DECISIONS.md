@@ -31,6 +31,8 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 | D22 | **La cible de L4 est `cre workflow simulate`**, un déploiement testnet restant un bonus | le simulateur local ne demande aucune inscription, et le track ETHGlobal accepte explicitement « successful simulation ». L'inscription en bêta ouvre 90 jours de testnet — utile mais pas sur le chemin critique à trois jours |
 | D23 | **L'attestation est vérifiée par le consensus du DON**, pas par le contrat | « DON consensus verifies attestations from the enclave ». `IAttestationVerifier` reste un point d'extension honnête, mais le modèle de confiance réel doit être énoncé tel qu'il est |
 
+| D24 | **Les mocks ne partent jamais sur mainnet ; le profil mainnet déploie `PausedFxVenue` et met le système en pause** | sur mainnet USDC et EURC sont réels : un lieu factice y serait incapable de sourcer la moindre liquidité et prendrait l'apparence d'un piège si quelqu'un l'alimentait. Un refus explicite dit la vérité — déployé, vérifiable, prouvablement inopérant. Et ces contrats ne sont pas audités : les déployer est acceptable, y placer des fonds ne l'est pas |
+
 ## Décisions encore ouvertes
 
 - Chaînes de destination supportées par CRE, et support d'Arc en particulier
