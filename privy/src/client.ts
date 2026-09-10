@@ -28,8 +28,17 @@ export function credentialsFromEnv(env: Record<string, string | undefined>): Cre
   return { appId, appSecret };
 }
 
+/**
+ * Encodage base64 sans `Buffer` : `btoa` est une fonction standard du langage, tandis
+ * que `Buffer` appartient à Node et exigerait @types/node — une dépendance que ce dépôt
+ * n'a pas hors du workflow CRE.
+ */
+function toBase64(value: string): string {
+  return btoa(value);
+}
+
 function headers(creds: Credentials): Record<string, string> {
-  const basic = Buffer.from(`${creds.appId}:${creds.appSecret}`).toString('base64');
+  const basic = toBase64(`${creds.appId}:${creds.appSecret}`);
   return {
     Authorization: `Basic ${basic}`,
     'privy-app-id': creds.appId,
