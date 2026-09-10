@@ -14,9 +14,16 @@
 **Le simulateur local ne demande aucune inscription.** ✅ *Le point le plus important.*
 La documentation est explicite : « After submitting your request, you don't need to wait
 for early access. Your CRE organization can run Confidential Workflows using the local
-simulator. » L'inscription en bêta privée ne conditionne que le **déploiement en
-production**. Or le track ETHGlobal exige « successful simulation **or** deployment
+simulator. » Or le track ETHGlobal exige « successful simulation **or** deployment
 proof ». Le prix est donc atteignable sans passer par une équipe commerciale.
+
+**Ce que l'inscription ouvre exactement.** ⚠️ Précision obtenue en lisant le formulaire
+lui-même, que la documentation ne donnait pas : l'approbation accorde **90 jours d'accès
+testnet** avec capacités de lecture, d'écriture et de déclenchement. Ce n'est donc pas
+seulement la production qui est fermée sans inscription, c'est le déploiement testnet.
+Le simulateur reste ouvert. Prérequis : un **CRE organization ID** créé sur
+cre.chain.link. Formulaire, champs et brouillons de réponse dans
+[`CRE-ACCESS-FORM.md`](./CRE-ACCESS-FORM.md).
 
 **API des handlers confidentiels.** ✅ `cre.HandlerInTee` en Go, `handlerInTee` en
 TypeScript, avec un `TeeRuntime` passé au callback. On enregistre le handler destiné à

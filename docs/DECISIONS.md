@@ -28,7 +28,7 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 
 | D20 | **L'état `COMPENSATED` est supprimé** de la machine à états du coffre | le PvP de StableFX est documenté atomique : « both sides complete or neither does ». La question du jalon 0 avait une réponse publique |
 | D21 | **`ArcFxVenue` n'est pas un contrat on-chain** mais un adaptateur hors chaîne (RFQ par API → intention en données typées → règlement Permit2) | StableFX est une intégration API/SDK : « you don't need to interact with smart contracts directly ». L'interface `IFxVenue` reste juste pour le mock et pour tout lieu réellement on-chain, mais elle ne décrit pas StableFX |
-| D22 | **La cible de L4 est `cre workflow simulate`**, pas un déploiement | le simulateur local ne demande aucune inscription ; la bêta privée ne conditionne que la production. Et le track ETHGlobal accepte explicitement « successful simulation » |
+| D22 | **La cible de L4 est `cre workflow simulate`**, un déploiement testnet restant un bonus | le simulateur local ne demande aucune inscription, et le track ETHGlobal accepte explicitement « successful simulation ». L'inscription en bêta ouvre 90 jours de testnet — utile mais pas sur le chemin critique à trois jours |
 | D23 | **L'attestation est vérifiée par le consensus du DON**, pas par le contrat | « DON consensus verifies attestations from the enclave ». `IAttestationVerifier` reste un point d'extension honnête, mais le modèle de confiance réel doit être énoncé tel qu'il est |
 
 ## Décisions encore ouvertes
