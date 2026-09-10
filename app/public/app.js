@@ -20,6 +20,36 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 /* ------------------------------------------------------------------ */
+/*                               Icônes                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Glyphes dessinés, d'un seul traitement — silhouettes pleines sur une grille de 16.
+ *
+ * Les caractères Unicode qui servaient d'icônes (▶, ❚❚, ⚡, ■) prenaient la police du
+ * système : chaque plateforme en rendait une variante différente, avec sa propre chasse
+ * et son propre alignement optique. Un jeu dessiné ne dépend de rien.
+ */
+const ICON = {
+  play: 'M5 3.4v9.2L13 8z',
+  pause: 'M5 3.4h2.2v9.2H5zM8.8 3.4H11v9.2H8.8z',
+  step: 'M4.6 3.4v9.2L11 8zM11.9 3.4h1.5v9.2h-1.5z',
+  bolt: 'M9.1 1.4 4 8.9h3.1l-.8 5.7L12.2 7H8.4z',
+};
+
+function icon(name) {
+  return `<svg class="icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="${ICON[name]}"/></svg>`;
+}
+
+function label(id, name, text) {
+  $(id).innerHTML = `${icon(name)}<span>${text}</span>`;
+}
+
+function swatch(color) {
+  return `<svg class="swatch" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><rect width="10" height="10" rx="2" fill="${color}"/></svg>`;
+}
+
+/* ------------------------------------------------------------------ */
 /*                              Formatage                             */
 /* ------------------------------------------------------------------ */
 
@@ -169,7 +199,7 @@ function renderChart(episode, upto) {
       <line x1="${cursorX}" y1="0" x2="${cursorX}" y2="${H}" stroke="var(--accent)" stroke-width="1" opacity=".7"/>
     </svg>
     <div class="ticks">
-      ${CURRENCIES.map((c) => `<span style="color:${COLOR[c]}">■ ${c}</span>`).join('')}
+      ${CURRENCIES.map((c) => `<span style="color:${COLOR[c]}">${swatch(COLOR[c])}${c}</span>`).join('')}
       <span>maximum ${money(max)}</span>
     </div>`;
 }
@@ -233,10 +263,10 @@ async function loadBacktest() {
   const e = s.estimationCost;
 
   $('backtest').innerHTML = `
-    <table>
+    <div class="scroll-x"><table>
       <thead><tr><th>Politique</th><th>Capital</th><th>Capital immobilisé</th><th>ES 97,5 %</th><th>Coût total</th><th>Ordres</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>
+    </table></div>
     <div class="kpi" style="margin-top:16px">
       <div><span>Capital immobilisé</span><b class="num" style="color:var(--ok)">${drop(f.capital.mean, st.capital.mean)}</b></div>
       <div><span>ES 97,5 %</span><b class="num" style="color:var(--ok)">${drop(f.es.mean, st.es.mean)}</b></div>
@@ -272,9 +302,16 @@ function currentParams(extra = {}) {
   };
 }
 
+/** Les commandes sont inertes pendant qu'un épisode se calcule : un clic sans effet
+ *  laisse croire à une panne, un bouton grisé dit ce qui se passe. */
+function setBusy(busy) {
+  for (const id of ['play', 'step', 'shock']) $(id).disabled = busy;
+}
+
 async function loadEpisode(extra = {}) {
   if (state.loading) return;
   state.loading = true;
+  setBusy(true);
   $('status').innerHTML = '<span class="spin">résolution des bandes…</span>';
   const q = new URLSearchParams(currentParams(extra));
   try {
@@ -287,18 +324,28 @@ async function loadEpisode(extra = {}) {
     $('status').textContent = `échec : ${err.message}`;
   } finally {
     state.loading = false;
+    setBusy(false);
   }
 }
+
+/**
+ * Déclarer `prefers-reduced-motion` en CSS ne suffit pas : ce qui gêne ici n'est pas une
+ * transition, c'est une lecture automatique qui redessine la page quatre fois par
+ * seconde. On la refuse et on avance d'un pas, ce qui donne accès au même contenu.
+ */
+const prefersReducedMotion = () =>
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 function stop() {
   if (state.timer) clearInterval(state.timer);
   state.timer = null;
-  $('play').textContent = '▶ Lancer';
+  label('play', 'play', 'Lancer');
 }
 
 function play() {
   if (state.timer) return stop();
-  $('play').textContent = '❚❚ Pause';
+  if (prefersReducedMotion()) return advance();
+  label('play', 'pause', 'Pause');
   const period = Math.max(1000 / Number($('speed').value), 16);
   state.timer = setInterval(() => {
     if (!state.episode || state.index >= state.episode.steps.length - 1) return stop();
@@ -307,22 +354,24 @@ function play() {
   }, period);
 }
 
+function advance() {
+  if (!state.episode || state.index >= state.episode.steps.length - 1) return;
+  state.index++;
+  renderStep();
+}
+
 $('play').addEventListener('click', play);
-$('step').addEventListener('click', () => {
-  if (state.episode && state.index < state.episode.steps.length - 1) {
-    state.index++;
-    renderStep();
-  }
-});
+$('step').addEventListener('click', advance);
 $('shock').addEventListener('click', () => {
   stop();
   // Le choc est injecté juste devant le curseur : la démonstration doit montrer la
   // réaction, pas la faire chercher.
   const at = Math.min((state.index ?? 0) + 2, (state.episode?.steps.length ?? 10) - 2);
   loadEpisode({ shockAt: at, shockCurrency: 'BRL', shockAmount: 2_500_000 }).then(() => {
+    // On se place juste avant le choc pour qu'il soit visible, et non déjà corrigé.
     state.index = Math.max(at - 2, 0);
     renderStep();
-    play();
+    if (!prefersReducedMotion()) play();
   });
 });
 $('speed').addEventListener('input', () => {
@@ -343,6 +392,10 @@ for (const id of ['kappa', 'eta', 'breach']) {
     loadEpisode();
   });
 }
+
+label('play', 'play', 'Lancer');
+label('step', 'step', 'Pas à pas');
+label('shock', 'bolt', 'Choc de liquidité');
 
 loadEpisode();
 loadBacktest();

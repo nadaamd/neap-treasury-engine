@@ -6,13 +6,21 @@
 <title>FLOAT — Intraday Treasury Engine</title>
 <style>
   :root {
+    /* Le navigateur dessine des surfaces que la page ne dessine pas — ascenseurs,
+       contrôles de formulaire, menus. Sans cette déclaration, il les rend en clair au
+       milieu d'une interface sombre. */
+    color-scheme: dark;
+
     --bg: #0c0f14;
     --panel: #141922;
     --panel-2: #1b2230;
     --line: #263042;
     --ink: #e8edf5;
-    --dim: #8494ad;
-    --faint: #56637a;
+    /* Trois niveaux de texte, tous conformes AA sur les trois fonds : 7,8:1 / 5,2:1 /
+       15,0:1. La valeur précédente de --faint tombait à 2,9:1 — lisible pour qui la
+       cherchait, invisible pour les autres. */
+    --dim: #9fadc4;
+    --faint: #7b8ca8;
     --ok: #4ade80;
     --warn: #fbbf24;
     --bad: #f87171;
@@ -22,9 +30,25 @@
     --brl: #fbbf24;
   }
   * { box-sizing: border-box; }
+
+  /* Surfaces que le navigateur dessine par défaut et qui n'appartiennent à aucun
+     système de design tant qu'on ne les réclame pas. */
+  ::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); color: var(--ink); }
+  html { scrollbar-color: var(--line) var(--bg); }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--faint); }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    caret-color: var(--accent);
   }
   .num { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   header {
@@ -63,10 +87,14 @@
   button {
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     border-radius: 7px; padding: 8px 14px; cursor: pointer; font: inherit;
+    display: inline-flex; align-items: center; gap: 7px;
   }
-  button:hover { border-color: var(--accent); }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
   button.primary { background: var(--accent); color: #06101f; border-color: var(--accent); font-weight: 600; }
   button.danger { border-color: var(--bad); color: var(--bad); }
+  .icon { width: 14px; height: 14px; flex: none; }
+  .swatch { width: 9px; height: 9px; vertical-align: -1px; margin-right: 5px; }
   .plan { min-height: 92px; }
   .order { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
   .order:last-child { border-bottom: 0; }
@@ -74,12 +102,22 @@
   .kpi { display: flex; gap: 26px; flex-wrap: wrap; }
   .kpi div span { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
   .kpi div b { font-size: 19px; font-weight: 600; }
-  .note { color: var(--faint); font-size: 12px; margin-top: 10px; }
+  /* Mesure de lecture bornée : sans plafond, ces paragraphes s'étirent sur toute la
+     largeur d'un écran large et deviennent pénibles à suivre. */
+  .note { color: var(--faint); font-size: 12px; margin-top: 10px; max-width: 74ch; }
+  .scroll-x { overflow-x: auto; }
   .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid; }
   .badge.ok { color: var(--ok); border-color: var(--ok); }
   .badge.bad { color: var(--bad); border-color: var(--bad); }
   .badge.warn { color: var(--warn); border-color: var(--warn); }
   .spin { color: var(--warn); }
+
+  /* L'épisode s'anime tout seul au premier clic. Pour qui a demandé moins de mouvement,
+     la lecture automatique ne démarre pas — le pas à pas reste disponible et donne accès
+     au même contenu. */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
 </style>
 </head>
 <body>
@@ -118,9 +156,9 @@
   <section class="card">
     <h2>Contrôles</h2>
     <div class="controls">
-      <button class="primary" id="play">▶ Lancer</button>
-      <button id="step">Pas à pas</button>
-      <button class="danger" id="shock">⚡ Choc de liquidité</button>
+      <button class="primary" id="play"></button>
+      <button id="step"></button>
+      <button class="danger" id="shock"></button>
       <div class="ctl">
         <label>Vitesse</label>
         <input type="range" id="speed" min="1" max="60" value="20">
