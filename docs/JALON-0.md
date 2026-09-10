@@ -1,43 +1,125 @@
-# Jalon 0 — Questions bloquantes aux sponsors
+# Jalon 0 — réponses
 
-> À poser dès l'ouverture des canaux Discord. Aucune réponse négative ne tue le projet
-> (cf. décisions D8 et D9), mais chacune change le chemin d'implémentation.
+> Mis à jour le 10 septembre 2026, après lecture des documentations officielles.
+>
+> Ces questions avaient été rédigées comme « bloquantes, à poser aux sponsors ». C'était
+> une erreur de méthode : la quasi-totalité des réponses est publique. Ce document
+> conserve les questions et leurs réponses sourcées ; les rares points réellement ouverts
+> sont isolés à la fin.
 
-## Chainlink CRE
+---
 
-- [ ] Les **TEE handlers** sont-ils accessibles en testnet public sans allowlist ? Quotas ?
-- [ ] Quel runtime pour le handler (Go / TypeScript / WASM) ? Quelles bibliothèques disponibles ?
-- [ ] **Arc est-il une chaîne de destination supportée par CRE ?** → si non, pont ou relais nécessaire
-- [ ] Format de l'attestation : un contrat peut-il la vérifier on-chain à coût raisonnable ?
-- [ ] Comment les secrets (clé de déchiffrement) sont-ils fournis au handler ? Qui les détient ?
-- [ ] Temps d'exécution max, taille max des inputs ?
+## Chainlink — Confidential Workflows
 
-**Réponses :**
-_(à remplir)_
+**Le simulateur local ne demande aucune inscription.** ✅ *Le point le plus important.*
+La documentation est explicite : « After submitting your request, you don't need to wait
+for early access. Your CRE organization can run Confidential Workflows using the local
+simulator. » L'inscription en bêta privée ne conditionne que le **déploiement en
+production**. Or le track ETHGlobal exige « successful simulation **or** deployment
+proof ». Le prix est donc atteignable sans passer par une équipe commerciale.
 
-## Arc (Circle)
+**API des handlers confidentiels.** ✅ `cre.HandlerInTee` en Go, `handlerInTee` en
+TypeScript, avec un `TeeRuntime` passé au callback. On enregistre le handler destiné à
+l'enclave en précisant les types et régions de TEE acceptés.
 
-- [ ] Le **moteur FX RFQ** est-il appelable par un contrat de développeur en testnet, ou réservé
-      à des market makers whitelistés ?
-- [ ] Le règlement **PvP est-il atomique** du point de vue du contrat appelant ?
-      → détermine si l'état `COMPENSATED` de la machine à états existe (§16.5)
-- [ ] Liquidité EURC/USDC réelle en testnet ? Faucet ?
-- [ ] **Transferts confidentiels** : primitives exactes, appelables depuis un contrat, surcoût gas,
-      compatibles avec le RFQ ?
-- [ ] Y a-t-il un **mempool public** ? Un rééquilibrage annoncé est-il front-runnable ?
-- [ ] Estimation de gas fiable **avant** exécution (le coût est un terme de la fonction objectif) ?
+**Runtime.** ✅ Go et TypeScript. Le SDK TypeScript est `@chainlink/cre-sdk`, compilé
+vers **WASM**, et `cre workflow simulate` exécute le workflow dans le même environnement
+WASM qu'en production. La décision D11 — moteur en TypeScript, fonction pure sans E/S —
+se révèle compatible sans retouche.
 
-**Réponses :**
-_(à remplir)_
+**Acheminement des secrets.** ✅ Par le **Vault DON**, qui libère les secrets dans
+l'enclave. Ils sont « requested and decrypted inside the enclave at the moment your code
+needs them » — déchiffrement au dernier moment plutôt que préchargement.
 
-## Privy
+**Attestation.** ⚠️ Réponse différente de ce que l'architecture supposait : « DON
+consensus verifies attestations from the enclave ». **C'est le DON qui vérifie
+l'attestation, pas le contrat consommateur.** Le format n'est pas documenté et rien
+n'indique qu'un contrat puisse la vérifier lui-même à coût raisonnable. Conséquence en
+D23 ci-dessous.
 
-- [ ] Les org wallets supportent-ils une **chaîne EVM arbitraire par chain ID** (donc Arc) ?
-- [ ] Le **quorum m-sur-n** est-il natif, ou seulement des policies mono-signataire ?
-      → sans impact bloquant : l'autorité est portée par le contrat (D7), Privy est défense
-        en profondeur
-- [ ] Les policies permettent-elles des **limites de vélocité** sur fenêtre glissante ?
-- [ ] Export du journal d'approbations (pour la piste d'audit) ?
+**Limite à connaître.** ⚠️ « Workflow logic is not confidential » — seules les données
+et les valeurs intermédiaires sont protégées. C'est exactement ce que FLOAT demande : on
+protège les positions, pas le modèle. Mais il faut le dire avant qu'un juge ne le
+demande.
 
-**Réponses :**
-_(à remplir)_
+**Point encore ouvert.** ❓ Les chaînes de destination supportées par CRE ne sont pas
+documentées, et donc le support d'Arc reste inconnu.
+
+Sources : [Confidential Workflows](https://docs.chain.link/cre/concepts/confidential-workflows) ·
+[Accès](https://docs.chain.link/cre/account/confidential-workflows-access) ·
+[Runtime TypeScript/WASM](https://docs.chain.link/cre/concepts/typescript-wasm-runtime) ·
+[@chainlink/cre-sdk](https://www.npmjs.com/package/@chainlink/cre-sdk)
+
+---
+
+## Circle / Arc — StableFX
+
+Le moteur FX d'Arc porte un nom : **StableFX**. Le désigner correctement est le premier
+signe qu'on a lu la documentation.
+
+**Le règlement PvP est atomique.** ✅ « Smart contract escrow ensures atomic settlement
+where both sides complete or neither does. » L'état `COMPENSATED` de la machine à états
+du coffre n'a donc pas lieu d'être — voir D20.
+
+**Ce n'est pas un appel de contrat.** ❌ Réponse la plus structurante, et contraire à ce
+que l'interface `IFxVenue` supposait : « The StableFX API handles both offchain and
+onchain steps, so you don't need to interact with smart contracts directly. » Le flux est
+en trois temps — demande de cotation à plusieurs teneurs, acceptation **hors chaîne** pour
+la vitesse, puis règlement par escrow sur Arc avec **Permit2** et confirmation d'intention
+en données typées. Voir D21.
+
+**Accès.** ❌ Clé d'API obtenue auprès d'un représentant Circle (sales@circle.com) ;
+plateforme « permissioned for vetted financial institutions ». Inaccessible à l'échelle
+d'un hackathon.
+
+**Testnet Arc.** ✅ Testnet public depuis novembre 2025, avec RPC, faucet, explorateur et
+documentation. Paires USDC/EURC. La décision D8 — construire contre `MockFxVenue` — était
+donc la bonne, pour une raison plus forte que prévu.
+
+Sources : [StableFX — docs développeurs](https://developers.circle.com/stablefx) ·
+[Circle — StableFX](https://www.circle.com/blog/how-to-build-real-time-stablecoin-fx-in-your-app-with-stablefx) ·
+[Arc — FX 24/7](https://www.arc.io/blog/how-arc-can-support-247-onchain-fx)
+
+---
+
+## Privy — org wallets
+
+**Quorum m-sur-n natif.** ✅ « Signatures from m-of-n authorization keys are required to
+take action using the wallet », les quorums étant définis par une liste de clés
+d'autorisation et un seuil. La décision D7 — l'autorité portée par le contrat — reste
+justifiée pour la vérifiabilité, et Privy fournit la défense en profondeur exactement
+comme l'architecture l'avait prévu.
+
+**Limites de vélocité.** ✅ Le moteur de politiques couvre les plafonds de montant, les
+listes blanches de contrats et de destinataires, et des **fenêtres temporelles**.
+
+**Chaînes.** ✅ Toutes les chaînes EVM, chaînes personnalisées incluses. Aucun obstacle
+prévisible pour Arc.
+
+Sources : [Wallet policies and controls](https://docs.privy.io/security/wallet-infrastructure/policy-and-controls) ·
+[Policy engine](https://privy.io/blog/turning-wallets-programmable-with-privy-policy-engine)
+
+---
+
+## Ce qui reste réellement à demander
+
+Deux questions seulement, et aucune n'est bloquante.
+
+1. **Chainlink** — CRE supporte-t-il **Arc** comme chaîne de destination pour l'écriture
+   d'un rapport ? Sinon, quel est le motif recommandé ?
+2. **Circle** — le testnet StableFX est-il ouvert à un participant de hackathon, ou la
+   clé d'API est-elle réservée aux institutions vérifiées y compris en environnement de
+   test ?
+
+Le message correspondant est dans [`JALON-0-MESSAGES.md`](./JALON-0-MESSAGES.md).
+
+---
+
+## Leçon de méthode
+
+Six des huit questions posées comme « bloquantes » avaient une réponse publique, et deux
+de ces réponses invalidaient une partie de l'architecture. Le coût de la vérification
+était de dix minutes ; le coût de ne pas vérifier aurait été de construire un adaptateur
+de contrat pour un produit qui n'expose pas de contrat.
+
+**Lire la documentation avant de rédiger des questions.**

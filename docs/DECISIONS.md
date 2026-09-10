@@ -26,6 +26,11 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 | D18 | **`grossNotional` publié en clair dans le rapport**, par exception au principe des grandeurs relatives | le seuil d'approbation porte sur la taille du plan, or les ordres sont scellés jusqu'à l'exécution ; sans ce champ le trésorier approuverait à l'aveugle, ce qui ne serait pas une approbation. La décomposition, elle, reste protégée |
 | D19 | **Un plan est atomique** : un ordre qui échoue fait échouer tout le plan | exécuter partiellement — vendre l'euro sans acheter la livre prévue — laisserait une position que personne n'a décidée, pire que l'inaction |
 
+| D20 | **L'état `COMPENSATED` est supprimé** de la machine à états du coffre | le PvP de StableFX est documenté atomique : « both sides complete or neither does ». La question du jalon 0 avait une réponse publique |
+| D21 | **`ArcFxVenue` n'est pas un contrat on-chain** mais un adaptateur hors chaîne (RFQ par API → intention en données typées → règlement Permit2) | StableFX est une intégration API/SDK : « you don't need to interact with smart contracts directly ». L'interface `IFxVenue` reste juste pour le mock et pour tout lieu réellement on-chain, mais elle ne décrit pas StableFX |
+| D22 | **La cible de L4 est `cre workflow simulate`**, pas un déploiement | le simulateur local ne demande aucune inscription ; la bêta privée ne conditionne que la production. Et le track ETHGlobal accepte explicitement « successful simulation » |
+| D23 | **L'attestation est vérifiée par le consensus du DON**, pas par le contrat | « DON consensus verifies attestations from the enclave ». `IAttestationVerifier` reste un point d'extension honnête, mais le modèle de confiance réel doit être énoncé tel qu'il est |
+
 ## Décisions encore ouvertes
 
-- Existence de l'état `COMPENSATED` → dépend de l'atomicité du PvP Arc (jalon 0)
+- Chaînes de destination supportées par CRE, et support d'Arc en particulier
