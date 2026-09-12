@@ -84,6 +84,21 @@
   .badge.warn { color: var(--warn); border-color: var(--warn); }
   .spin { color: var(--warn); }
 
+  /* La page est longue et se termine sur un tableau. Sans sortie en bas, le seul
+     retour est la barre collante, ce qui oblige à remonter du regard pour repartir. */
+  footer {
+    border-top: 1px solid var(--line);
+    margin: 40px 24px 0; padding: 26px 0 56px;
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  footer .home {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 11px 18px; border-radius: 8px; text-decoration: none;
+    background: var(--indigo); color: #fff; font-weight: 600; font-size: 14px;
+  }
+  footer .home:hover { background: #2a2c56; }
+  footer .said { color: var(--faint); font-size: 12.5px; max-width: 62ch; }
+
 </style>
 </head>
 <body>
@@ -157,6 +172,17 @@
     <div id="backtest"><span class="sub">loading…</span></div>
   </section>
 </main>
+
+<footer>
+  <a class="home" href="/">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.2 13.4 2 8l5.2-5.4 1.1 1.1L4.9 7.2H14v1.6H4.9l3.4 3.5z"/></svg>
+    Back to the overview
+  </a>
+  <span class="said">
+    The numbers above come from the engine on every load, not from this page. Re-run
+    <code>npm run backtest</code> and they change with it.
+  </span>
+</footer>
 
 <script type="module" src="/app.js"></script>
 </body>
