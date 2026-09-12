@@ -169,8 +169,11 @@
 
   /* Trois devises, chacune avec son solde et sa bande : c'est ce que montre le vrai
      pupitre, et c'est ce qui remplit l'écran de contenu plutôt que de vide. */
-  .phone-ccy { display: grid; gap: 5px; padding: 8px 2px; border-top: 1px solid var(--line); }
-  .phone-ccy:first-of-type { border-top: 0; padding-top: 2px; }
+  /* Le filet de séparation porte sur l'élément qui le suit, avec sa propre gouttière :
+     posé sur chaque élément, le premier se retrouvait avec une bordure à effacer et le
+     contenu collé dessus. */
+  .phone-ccy { display: grid; gap: 5px; padding: 2px 2px 9px; }
+  .phone-ccy + .phone-ccy { border-top: 1px solid var(--line); padding-top: 10px; }
   .phone-ccy-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .phone-ccy-head b { font-size: 11px; letter-spacing: .06em; }
   .phone-ccy-head .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
