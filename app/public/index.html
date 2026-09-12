@@ -48,9 +48,23 @@
     content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 1px;
     background: linear-gradient(to right, var(--pollen), var(--cyan) 62%, transparent);
   }
-  .topbar .wrap { display: flex; align-items: center; gap: 14px; padding: 15px 24px; }
+  /* Haut au repos, compact une fois qu'on lit. Une barre collante généreuse donne au
+     nom la place d'exister au premier écran ; la même hauteur maintenue pendant la
+     lecture mangerait un huitième du viewport pour ne plus rien dire. Le passage d'un
+     état à l'autre est un changement d'état, pas un effet. */
+  .topbar .wrap {
+    display: flex; align-items: center; gap: 18px;
+    padding: 34px 24px;
+    transition: padding .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .topbar.compact .wrap { padding: 13px 24px; }
 
-  .mark { font-family: var(--display); font-size: 1.45rem; letter-spacing: .01em; line-height: 1; }
+  .mark {
+    font-family: var(--display); letter-spacing: .01em; line-height: 1;
+    font-size: clamp(1.9rem, 3vw, 2.5rem);
+    transition: font-size .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .topbar.compact .mark { font-size: 1.4rem; }
   .mark b { font-weight: 400; }
   /* Le point de la marque prend le pollen dans le bandeau indigo, où il atteint
      10,2:1, et l'ardoise sur fond clair, où le pollen tomberait à 1,2:1. Une même
@@ -62,14 +76,16 @@
   /* Un mot sur l'objet, juste après la marque : un visiteur qui arrive par un lien
      direct doit savoir de quoi il s'agit sans descendre. */
   .whatis {
-    color: #b9b6cd; font-size: 0.82rem; padding-left: 14px; margin-left: 2px;
+    color: #b9b6cd; font-size: 0.95rem; padding-left: 18px; margin-left: 2px;
     border-left: 1px solid rgba(255,255,255,.18);
+    transition: font-size .22s cubic-bezier(.2,.8,.2,1);
   }
+  .topbar.compact .whatis { font-size: 0.82rem; padding-left: 14px; }
 
   .topbar nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
   .topbar nav a {
-    color: #b9b6cd; text-decoration: none; font-size: 0.88rem;
-    padding: 7px 11px; border-radius: 6px; position: relative;
+    color: #b9b6cd; text-decoration: none; font-size: 0.94rem;
+    padding: 9px 13px; border-radius: 6px; position: relative;
     transition: color .15s ease, background-color .15s ease;
   }
   .topbar nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
@@ -77,17 +93,18 @@
      texte : le repère reste lisible sans changer le poids de la ligne. */
   .topbar nav a[aria-current='true'] { color: #fff; }
   .topbar nav a[aria-current='true']::after {
-    content: ''; position: absolute; left: 11px; right: 11px; bottom: 2px;
+    content: ''; position: absolute; left: 13px; right: 13px; bottom: 3px;
     height: 2px; background: var(--pollen); border-radius: 2px;
   }
   .topbar .go {
-    margin-left: 10px; background: var(--pollen); color: var(--indigo);
-    font-weight: 600; padding: 9px 15px; border-radius: 7px; text-decoration: none;
-    font-size: 0.88rem; display: inline-flex; align-items: center; gap: 7px;
+    margin-left: 12px; background: var(--pollen); color: var(--indigo);
+    font-weight: 600; padding: 11px 18px; border-radius: 8px; text-decoration: none;
+    font-size: 0.94rem; display: inline-flex; align-items: center; gap: 8px;
     transition: filter .15s ease, transform .15s ease;
   }
   .topbar .go:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
+  #top-sentinel { position: absolute; top: 0; height: 1px; width: 1px; }
   .skip {
     position: absolute; left: 24px; top: 8px; z-index: 30;
     transform: translateY(-160%);
@@ -100,6 +117,8 @@
   @media (max-width: 760px) {
     .whatis { display: none; }
     .topbar nav a:not(.go) { display: none; }
+    .topbar .wrap, .topbar.compact .wrap { padding: 16px 24px; }
+    .mark, .topbar.compact .mark { font-size: 1.6rem; }
   }
 
   a.cta, a.ghost {
@@ -174,6 +193,7 @@
 <body>
 
 <a class="skip" href="#main">Skip to content</a>
+<div id="top-sentinel" aria-hidden="true"></div>
 
 <div class="topbar">
   <div class="wrap">

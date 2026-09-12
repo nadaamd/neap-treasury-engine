@@ -125,8 +125,25 @@ function trackSections() {
   }
 }
 
+/**
+ * Bascule la barre en mode compact dès que la page quitte le haut.
+ *
+ * Une sentinelle d'un pixel plutôt qu'une lecture de `scrollY` : le navigateur observe,
+ * on ne calcule rien à chaque image, et le seuil ne peut pas osciller autour d'une
+ * valeur limite quand l'utilisateur s'arrête pile dessus.
+ */
+function trackScrollState() {
+  const bar = document.querySelector('.topbar');
+  const sentinel = document.getElementById('top-sentinel');
+  if (!bar || !sentinel) return;
+  new IntersectionObserver(
+    ([entry]) => bar.classList.toggle('compact', !entry.isIntersecting),
+  ).observe(sentinel);
+}
+
 async function main() {
   trackSections();
+  trackScrollState();
 
   let summary;
   try {
