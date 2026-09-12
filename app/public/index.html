@@ -73,12 +73,6 @@
   .topbar .mark { color: #fff; }
   .topbar .mark i { color: var(--pollen); }
 
-  /* Un mot sur l'objet, juste après la marque : un visiteur qui arrive par un lien
-     direct doit savoir de quoi il s'agit sans descendre. */
-  .whatis {
-    color: #b9b6cd; font-size: 0.92rem; padding-left: 18px; margin-left: 2px;
-    border-left: 1px solid rgba(255,255,255,.18);
-  }
   .topbar.compact .whatis { font-size: 0.82rem; padding-left: 14px; }
 
   .topbar nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
@@ -116,7 +110,6 @@
   .skip:focus-visible { transform: translateY(0); }
 
   @media (max-width: 760px) {
-    .whatis { display: none; }
     .topbar nav a:not(.go) { display: none; }
     .topbar .wrap, .topbar.compact .wrap { padding: 16px 24px; }
     .mark, .topbar.compact .mark { font-size: 1.4rem; }
@@ -199,7 +192,6 @@
 <div class="topbar">
   <div class="wrap">
     <a href="#main" class="mark" style="text-decoration:none"><b>NEAP</b><i>.</i></a>
-    <span class="whatis">Intraday multi-currency treasury engine</span>
     <nav aria-label="Sections">
       <a href="#mechanism">Mechanism</a>
       <a href="#proof">Proof</a>
