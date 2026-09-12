@@ -2,17 +2,29 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "app/public",
   "rewrites": [
-    { "source": "/app", "destination": "/app.html" },
-    { "source": "/api/backtest", "destination": "/api/backtest.json" }
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/api/backtest",
+      "destination": "/api/backtest.json"
+    }
   ],
   "functions": {
-    "api/episode.ts": { "maxDuration": 30 }
+    "api/episode.ts": {
+      "maxDuration": 30,
+      "includeFiles": "{app/src,engine/src,data/src,data/calibration,cre/handler}/**/*.ts"
+    }
   },
   "headers": [
     {
       "source": "/fonts/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ]

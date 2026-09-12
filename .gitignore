@@ -41,3 +41,5 @@ results/runs/
 .vscode/
 results/*.json
 results/*.txt
+.vercel
+.env*
