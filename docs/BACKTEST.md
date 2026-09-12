@@ -1,7 +1,6 @@
-# Backtest walk-forward — résultats de référence
+# Walk-forward backtest — reference run
 
-> Généré par `node engine/scripts/backtest.ts`, 20 germes × 6 fenêtres, 523 s.
-> Reproductible : les germes sont fixés, aucune source d'aléa non amorcée dans le dépôt.
+> `npm run backtest` · 20 seeds × 6 windows. Reproducible: seeds are fixed.
 
 ```
 
@@ -15,7 +14,7 @@
   ───────────────────────────────────────────────┼──────────────────────┼──────────────────────┼──────────────────────┼─────────────┼────────────┼──────────
   STATIC      (pré-financement conservateur)     │  1.74 M$ ± 109.7 k$  │  77.8 k$ ± 8.0 k$    │  356.2 k$ ± 10.8 k$  │  330.4 k$   │  0.03      │  90      
   CALENDAR    (rééquilibrage de fin de journée)  │  2.27 M$ ± 66.9 k$   │  114.6 k$ ± 12.9 k$  │  419.8 k$ ± 2.7 k$   │  386.2 k$   │  3.24      │  90      
-  NEAP       (bandes optimisées, par signal)    │  269.3 k$ ± 3.6 k$   │  8.2 k$ ± 876.8 $    │  269.3 k$ ± 1.5 k$   │  265.3 k$   │  1.36      │  2879    
+  NEAP       (bandes optimisées, par signal)     │  269.3 k$ ± 3.6 k$   │  8.2 k$ ± 876.8 $    │  269.3 k$ ± 1.5 k$   │  265.3 k$   │  1.36      │  2879    
   CLAIRVOYANT (calibré sur la période réalisée)  │  270.0 k$ ± 3.8 k$   │  8.2 k$ ± 852.8 $    │  269.1 k$ ± 1.6 k$   │  265.1 k$   │  1.38      │  2875    
 
   Écarts de NEAP par rapport au pré-financement conservateur :
@@ -68,11 +67,10 @@
     eta × 1.0   capital  -84.6 %   coût total  -24.4 %
     eta × 2.0   capital  -84.2 %   coût total  -38.0 %
 
-  Durée : 523.7 s
+  Durée : 526.4 s
 
   Résultats écrits dans results/backtest.json
 ```
-
 ## Ce que ces chiffres disent, et ce qu'ils ne disent pas
 
 ### Le résultat robuste : le capital
