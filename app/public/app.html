@@ -1,20 +1,36 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FLOAT — tableau de bord</title>
+<title>FLOAT — Dashboard</title>
 <link rel="stylesheet" href="/tokens.css">
 <style>
   body { font-size: 14px; line-height: 1.5; }
+  /* Même bandeau que la page d'accueil, en plus serré : ici on travaille, la barre ne
+     doit pas prendre la place des données. */
   header {
-    padding: 18px 24px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 20;
+    background: var(--indigo); color: #fff;
+    padding: 11px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
-  h1 { margin: 0; font-size: 19px; letter-spacing: .16em; font-weight: 600; }
-  h1 span { color: var(--accent); }
-  .thesis { color: var(--dim); font-size: 13px; max-width: 62ch; }
-  .clock { margin-left: auto; color: var(--dim); }
+  header::after {
+    content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 1px;
+    background: linear-gradient(to right, var(--pollen), var(--cyan) 62%, transparent);
+  }
+  h1 { margin: 0; font-family: var(--display); font-size: 21px; font-weight: 400; line-height: 1; }
+  h1 a { color: #fff; text-decoration: none; }
+  h1 span { color: var(--pollen); }
+  .thesis { color: #b9b6cd; font-size: 12.5px; max-width: 58ch; }
+  .back {
+    color: #b9b6cd; text-decoration: none; font-size: 12.5px;
+    padding: 6px 10px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .back:hover { color: #fff; background: rgba(255,255,255,.08); }
+  .clock { margin-left: auto; color: #fff; font-size: 13px; }
+  @media (max-width: 720px) { .thesis { display: none; } }
   main { padding: 20px 24px 60px; max-width: 1280px; margin: 0 auto; }
   section { margin-bottom: 22px; }
   h2 {
@@ -72,49 +88,52 @@
 </head>
 <body>
 <header>
-  <h1>FLOAT<span>.</span></h1>
+  <h1><a href="/">FLOAT<span>.</span></a></h1>
+  <a class="back" href="/">
+    <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.2 13.4 2 8l5.2-5.4 1.1 1.1L4.9 7.2H14v1.6H4.9l3.4 3.5z"/></svg>
+    Overview
+  </a>
   <div class="thesis">
-    Moteur de trésorerie intraday. Le coût fixe d'un rééquilibrage s'effondre sur un rail
-    stablecoin&nbsp;; le buffer optimal s'effondre avec lui.
+    Bands solved against a cost function, not tuned by hand.
   </div>
   <div class="clock num" id="clock">—</div>
 </header>
 
 <main>
   <section>
-    <h2>Soldes et bandes de rééquilibrage</h2>
+    <h2>Balances and rebalancing bands</h2>
     <div class="grid3" id="cards"></div>
   </section>
 
   <section class="grid2">
     <div class="card">
-      <h2>Décision de l'epoch</h2>
+      <h2>Decision this epoch</h2>
       <div class="plan" id="plan"></div>
     </div>
     <div class="card">
-      <h2>Risque et coûts cumulés</h2>
+      <h2>Risk and cumulative cost</h2>
       <div class="kpi" id="kpi"></div>
       <div class="note" id="kpinote"></div>
     </div>
   </section>
 
   <section class="card">
-    <h2>Soldes au fil de l'épisode</h2>
+    <h2>Balances across the episode</h2>
     <div id="chart"></div>
   </section>
 
   <section class="card">
-    <h2>Contrôles</h2>
+    <h2>Controls</h2>
     <div class="controls">
       <button class="primary" id="play"></button>
       <button id="step"></button>
       <button class="danger" id="shock"></button>
       <div class="ctl">
-        <label>Vitesse</label>
+        <label>Speed</label>
         <input type="range" id="speed" min="1" max="60" value="20">
       </div>
       <div class="ctl">
-        <label>Aversion au risque κ <output id="kappaOut">0.10</output></label>
+        <label>Risk aversion κ <output id="kappaOut">0.10</output></label>
         <input type="range" id="kappa" min="0" max="200" value="10">
       </div>
       <div class="ctl">
@@ -122,20 +141,20 @@
         <input type="range" id="eta" min="1" max="40" value="10">
       </div>
       <div class="ctl">
-        <label>Coût de rupture <output id="breachOut">50 k$</output></label>
+        <label>Breach cost <output id="breachOut">50 k$</output></label>
         <input type="range" id="breach" min="0" max="6" value="2">
       </div>
       <span id="status" class="sub"></span>
     </div>
     <div class="note">
-      Bouger un curseur relance la résolution des bandes côté serveur : ce ne sont pas
-      des seuils réglés à la main, ce sont les minima d'une fonction de coût.
+      Moving a slider re-solves the bands on the server. These are not hand-tuned
+      thresholds; they are the minima of a cost function.
     </div>
   </section>
 
   <section class="card">
-    <h2>Backtest walk-forward — 20 germes × 6 fenêtres</h2>
-    <div id="backtest"><span class="sub">chargement…</span></div>
+    <h2>Walk-forward backtest · 20 seeds × 6 windows</h2>
+    <div id="backtest"><span class="sub">loading…</span></div>
   </section>
 </main>
 

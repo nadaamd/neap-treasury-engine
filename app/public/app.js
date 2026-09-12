@@ -110,12 +110,12 @@ function renderCards(step, bands) {
     const outside = bal < b.lower || bal > b.upper;
     const acted = step.actions.some((a) => a.currency === c);
     const badge = bal < 0
-      ? '<span class="badge bad">rupture</span>'
+      ? '<span class="badge bad">breach</span>'
       : acted
-        ? '<span class="badge warn">rééquilibré</span>'
+        ? '<span class="badge warn">rebalanced</span>'
         : outside
-          ? '<span class="badge warn">hors bande</span>'
-          : '<span class="badge ok">dans la bande</span>';
+          ? '<span class="badge warn">outside band</span>'
+          : '<span class="badge ok">in band</span>';
 
     return `
       <div class="card ${bal < 0 ? 'hot' : ''}">
@@ -124,14 +124,14 @@ function renderCards(step, bands) {
           ${badge}
         </div>
         <div class="bal num">${money(bal)}</div>
-        <div class="sub num">flux de l'epoch ${signed(step.flows[c])}${
-          acted ? ` · ramené à ${money(settled)}` : ''
+        <div class="sub num">epoch flow ${signed(step.flows[c])}${
+          acted ? ` · pulled back to ${money(settled)}` : ''
         }</div>
         ${gauge(b, bal)}
         <div class="ticks num">
-          <span>bas ${money(b.lower)}</span>
-          <span>cible ${money(b.target)}</span>
-          <span>haut ${money(b.upper)}</span>
+          <span>lower ${money(b.lower)}</span>
+          <span>target ${money(b.target)}</span>
+          <span>upper ${money(b.upper)}</span>
         </div>
       </div>`;
   }).join('');
@@ -140,28 +140,28 @@ function renderCards(step, bands) {
 function renderPlan(step) {
   if (step.actions.length === 0) {
     $('plan').innerHTML =
-      '<div class="idle">Tous les soldes sont à l’intérieur de leurs bandes — aucune action.</div>';
+      '<div class="idle">Every balance sits inside its band. Nothing to do.</div>';
     return;
   }
   $('plan').innerHTML = step.actions.map((a) => `
     <div class="order">
       <span>
         <b style="color:${COLOR[a.currency]}">${a.currency}</b>
-        ${a.amount > 0 ? 'acheter' : 'dégager'}
+        ${a.amount > 0 ? 'buy' : 'release'}
       </span>
-      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· coût ${a.cost.toFixed(0)} $</span></span>
+      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· cost $${a.cost.toFixed(0)}</span></span>
     </div>`).join('');
 }
 
 function renderKpi(step, episode) {
   const gross = CURRENCIES.reduce((a, c) => a + Math.max(step.observed[c], 0), 0);
   $('kpi').innerHTML = `
-    <div><span>ES 97,5 % · 15 min</span><b class="num">${money(step.es)}</b></div>
-    <div><span>Capital immobilisé</span><b class="num">${money(gross)}</b></div>
-    <div><span>Coût cumulé</span><b class="num">${money(step.cumulativeCost)}</b></div>
-    <div><span>Ruptures</span><b class="num" style="color:${episode.summary.breaches ? 'var(--bad)' : 'var(--ok)'}">${episode.summary.breaches}</b></div>`;
+    <div><span>ES 97.5% · 15 min</span><b class="num">${money(step.es)}</b></div>
+    <div><span>Idle capital</span><b class="num">${money(gross)}</b></div>
+    <div><span>Cumulative cost</span><b class="num">${money(step.cumulativeCost)}</b></div>
+    <div><span>Breaches</span><b class="num" style="color:${episode.summary.breaches ? 'var(--bad)' : 'var(--ok)'}">${episode.summary.breaches}</b></div>`;
   $('kpinote').textContent =
-    `${episode.summary.rebalances} rééquilibrages sur l’épisode · bandes résolues en ${episode.computeMs} ms`;
+    `${episode.summary.rebalances} rebalances this episode · bands solved in ${episode.computeMs} ms`;
 }
 
 function renderChart(episode, upto) {
@@ -200,7 +200,7 @@ function renderChart(episode, upto) {
     </svg>
     <div class="ticks">
       ${CURRENCIES.map((c) => `<span style="color:${COLOR[c]}">${swatch(COLOR[c])}${c}</span>`).join('')}
-      <span>maximum ${money(max)}</span>
+      <span>peak ${money(max)}</span>
     </div>`;
 }
 
@@ -220,17 +220,17 @@ function renderStep() {
 /* ------------------------------------------------------------------ */
 
 const POLICY_LABEL = {
-  STATIC: 'Pré-financement conservateur',
-  CALENDAR: 'Rééquilibrage de fin de journée',
-  FLOAT: 'FLOAT — bandes optimisées',
-  CLAIRVOYANT: 'Calibré sur la période réalisée',
+  STATIC: 'Conservative pre-funding',
+  CALENDAR: 'End-of-day rebalancing',
+  FLOAT: 'FLOAT — optimised bands',
+  CLAIRVOYANT: 'Calibrated on the realised window',
 };
 
 async function loadBacktest() {
   const res = await fetch('/api/backtest');
   if (!res.ok) {
     $('backtest').innerHTML =
-      '<span class="sub">Aucun résultat. Lancer <code>npm run backtest</code>.</span>';
+      '<span class="sub">No results yet. Run <code>npm run backtest</code>.</span>';
     return;
   }
   const s = await res.json();
@@ -264,26 +264,26 @@ async function loadBacktest() {
 
   $('backtest').innerHTML = `
     <div class="scroll-x"><table>
-      <thead><tr><th>Politique</th><th>Capital</th><th>Capital immobilisé</th><th>ES 97,5 %</th><th>Coût total</th><th>Ordres</th></tr></thead>
+      <thead><tr><th>Policy</th><th></th><th>Idle capital</th><th>ES 97.5%</th><th>Total cost</th><th>Orders</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
     <div class="kpi" style="margin-top:16px">
-      <div><span>Capital immobilisé</span><b class="num" style="color:var(--ok)">${drop(f.capital.mean, st.capital.mean)}</b></div>
-      <div><span>ES 97,5 %</span><b class="num" style="color:var(--ok)">${drop(f.es.mean, st.es.mean)}</b></div>
-      <div><span>Coût total</span><b class="num">${drop(f.totalCost.mean, st.totalCost.mean)}</b></div>
-      <div><span>Nombre d'ordres</span><b class="num" style="color:var(--warn)">+${Math.round(((f.rebalances.mean - st.rebalances.mean) / st.rebalances.mean) * 100)} %</b></div>
+      <div><span>Idle capital</span><b class="num" style="color:var(--ok)">${drop(f.capital.mean, st.capital.mean)}</b></div>
+      <div><span>ES 97.5%</span><b class="num" style="color:var(--ok)">${drop(f.es.mean, st.es.mean)}</b></div>
+      <div><span>Total cost</span><b class="num">${drop(f.totalCost.mean, st.totalCost.mean)}</b></div>
+      <div><span>Order count</span><b class="num" style="color:var(--warn)">+${Math.round(((f.rebalances.mean - st.rebalances.mean) / st.rebalances.mean) * 100)} %</b></div>
     </div>
     <div class="note">
-      Le coût d'exécution baisse <em>malgré</em> trente fois plus d'ordres : sous impact en
-      racine carrée, beaucoup de petits ordres coûtent moins que quelques gros. Ce régime
-      n'est accessible que parce que le coût fixe s'est effondré sur le rail stablecoin.
+      Execution cost falls <em>despite</em> thirty times more orders: under square-root
+      market impact, many small orders cost less than a few large ones. That regime is only
+      reachable because the fixed cost collapsed on the stablecoin rail.
       <br>
-      Erreur d'estimation ${(e.mean * 100).toFixed(2)} % ± ${(e.halfWidth * 100).toFixed(2)} % —
+      Estimation error ${(e.mean * 100).toFixed(2)}% ± ${(e.halfWidth * 100).toFixed(2)}% —
       ${Math.abs(e.mean) < e.halfWidth
-        ? 'l’intervalle contient zéro : calibrer sur le passé ne coûte rien de mesurable.'
-        : 'l’intervalle exclut zéro.'}
-      Réduction de capital stable de −84,9 % à −84,2 % sur toute la plage de sensibilité à
-      l'impact ; la réduction de coût, elle, en dépend et va de −13 % à −38 %.
+        ? 'the interval contains zero, so calibrating on the past costs nothing measurable.'
+        : 'the interval excludes zero.'}
+      The capital reduction holds from −84.9% to −84.2% across the full impact-sensitivity
+      range; the cost reduction does not, and moves between −13% and −38%.
     </div>`;
 }
 
@@ -312,7 +312,7 @@ async function loadEpisode(extra = {}) {
   if (state.loading) return;
   state.loading = true;
   setBusy(true);
-  $('status').innerHTML = '<span class="spin">résolution des bandes…</span>';
+  $('status').innerHTML = '<span class="spin">solving bands…</span>';
   const q = new URLSearchParams(currentParams(extra));
   try {
     const res = await fetch(`/api/episode?${q}`);
@@ -321,7 +321,7 @@ async function loadEpisode(extra = {}) {
     renderStep();
     $('status').textContent = `${state.episode.steps.length} epochs · ${state.episode.computeMs} ms`;
   } catch (err) {
-    $('status').textContent = `échec : ${err.message}`;
+    $('status').textContent = `failed: ${err.message}`;
   } finally {
     state.loading = false;
     setBusy(false);
@@ -339,7 +339,7 @@ const prefersReducedMotion = () =>
 function stop() {
   if (state.timer) clearInterval(state.timer);
   state.timer = null;
-  label('play', 'play', 'Lancer');
+  label('play', 'play', 'Play');
 }
 
 function play() {
@@ -393,9 +393,9 @@ for (const id of ['kappa', 'eta', 'breach']) {
   });
 }
 
-label('play', 'play', 'Lancer');
-label('step', 'step', 'Pas à pas');
-label('shock', 'bolt', 'Choc de liquidité');
+label('play', 'play', 'Play');
+label('step', 'step', 'Step');
+label('shock', 'bolt', 'Liquidity shock');
 
 loadEpisode();
 loadBacktest();
