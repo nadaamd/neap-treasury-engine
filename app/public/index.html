@@ -15,7 +15,6 @@
   .wrap { max-width: 1128px; margin-inline: auto; padding-inline: 24px; }
   .prose { max-width: 68ch; }
   section { padding: 96px 24px; padding-block: clamp(64px, 9vw, 128px); border-top: 1px solid var(--line); }
-  section.hero { border-top: 0; }
   /* La gouttière appartient à l'élément qui porte le fond et la bordure, pas à son
      enfant : sinon le contenu vient buter contre la teinte. */
   section > .wrap { padding-inline: 0; }
@@ -121,94 +120,82 @@
     font-weight: 600; font-size: 0.97rem;
     transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, background-color .18s ease;
   }
-  a.cta { background: var(--accent); color: #fff; box-shadow: 0 2px 6px -1px rgba(0,0,0,.2); }
-  a.cta:hover { transform: translateY(-1px); box-shadow: 0 5px 12px -3px rgba(0,0,0,.26); }
+  a.cta { background: var(--accent); color: #fff; box-shadow: 0 2px 6px -1px rgba(31,32,65,.26); }
+  a.cta:hover { transform: translateY(-1px); box-shadow: 0 5px 12px -3px rgba(31,32,65,.32); }
   a.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
   a.ghost:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: var(--accent); }
   .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
 
 
-  /* ── Hero ──────────────────────────────────────────────────────────────
-     Une affiche, pas une section. Fond plein cadre, titre en capitales très
-     grandes, deux boutons pleine largeur en pied. Le reste de la page reste
-     clair : le sombre est un moment, pas un thème.
+  /* ── Le téléphone ──────────────────────────────────────────────────────
+     Une maquette dessinée, pas une photo : elle reste nette à toute densité
+     d'écran, pèse zéro octet de plus, et surtout elle affiche l'interface réelle
+     plutôt qu'un appareil emprunté à une banque d'images.
 
-     Le champ coloré est fait de trois voiles radiaux et d'un grain. Les arrêts
-     restent dans la famille indigo–raisin, où le pollen tient 6,1:1 au pire.
-     Le cyan n'y apparaît qu'en lueur lointaine et très diluée : à pleine
-     saturation, du pollen dessus tomberait à 2,1:1. */
-  /* Deux signalements de contraste subsistent sur cette section et sont des faux
-     positifs assumés. Le détecteur apparie la couleur du texte au fond de *page* et
-     non à celui du hero, qu'il ne remonte pas. Les valeurs réelles, calculées sur
-     #1F2041 : pollen 10,2:1 et blanc 15,7:1, très au-dessus du seuil. Leur donner un
-     fond opaque pour lever l'ambiguïté masquerait le champ coloré, et les neutraliser
-     par fichier masquerait aussi les vrais défauts de la page. */
-  .hero {
-    position: relative; isolation: isolate; overflow: hidden;
-    background-color: #1F2041;
-    color: #fff;
-    border-top: 0;
-    /* La gouttière appartient à la section qui porte le fond. La bande de boutons la
-       reprend en négatif pour toucher les bords, ce qui est une sortie délibérée et non
-       un contenu collé au bord. */
-    padding: 80px 24px 48px;
-    padding-block: clamp(56px, 11vh, 104px) clamp(36px, 6vh, 64px);
+     Le mouvement est une dérive lente, pas une entrée. L'objet doit sembler
+     tenu en main, ce qui veut dire ne jamais s'immobiliser tout à fait. */
+  .hero-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 5vw, 72px); align-items: center; }
+  @media (min-width: 980px) { .hero-split { grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr); } }
+
+  .phone-stage { perspective: 1400px; display: flex; justify-content: center; }
+  .phone {
+    --tilt-x: 0deg; --tilt-y: 0deg;
+    width: min(300px, 78vw); aspect-ratio: 9 / 18.6;
+    border-radius: 40px; padding: 11px;
+    background: linear-gradient(155deg, #2b2c55, #16172e 62%);
+    box-shadow: 0 32px 60px -28px rgba(31,32,65,.55), 0 3px 10px -3px rgba(31,32,65,.3);
+    transform-style: preserve-3d;
+    animation: drift 11s ease-in-out infinite alternate;
+    will-change: transform;
   }
-  /* Le champ coloré est un SVG de formes floutées plutôt qu'un empilement de dégradés
-     radiaux. Des taches de lumière ont des contours irréguliers ; un dégradé radial
-     produit toujours un cercle parfait, et cela se voit. */
-  .hero-field { position: absolute; inset: 0; z-index: -2; }
-  .hero-field svg { width: 100%; height: 100%; display: block; }
-
-  .hero-inner { padding-inline: 0; }
-  .hero-actions {
-    margin-inline: -24px;
-    margin-bottom: calc(-1 * clamp(36px, 6vh, 64px));
-    margin-top: clamp(36px, 6vh, 64px);
+  @keyframes drift {
+    from { transform: rotateY(calc(-13deg + var(--tilt-y))) rotateX(calc(3deg + var(--tilt-x))) rotateZ(-1.5deg) translateY(-8px); }
+    to   { transform: rotateY(calc(-8deg  + var(--tilt-y))) rotateX(calc(1deg + var(--tilt-x))) rotateZ(0.8deg)  translateY(8px); }
   }
-
-  .hero h1 {
-    font-family: var(--sans); font-weight: 700; text-transform: uppercase;
-    font-size: clamp(3rem, 11.2vw, 9rem); line-height: .86;
-    letter-spacing: -0.042em; color: var(--pollen);
-    margin: 0 0 clamp(18px, 2.4vw, 30px); text-wrap: balance;
+  .phone-screen {
+    height: 100%; border-radius: 30px; background: var(--panel);
+    padding: 16px 15px 14px; display: flex; flex-direction: column; gap: 11px;
+    overflow: hidden;
   }
-  .hero-sub {
-    font-size: clamp(1.05rem, 1.9vw, 1.5rem); line-height: 1.4;
-    color: #d6d2e6; max-width: 46ch; margin: 0;
+  .phone-notch {
+    width: 78px; height: 5px; border-radius: 3px; background: #2b2c55;
+    margin: 1px auto 4px; opacity: .85;
   }
-
-  /* Deux boutons pleine largeur, collés au bas du hero : l'action ne se cherche
-     pas, elle occupe le bord de l'écran. */
-  .hero-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-  .hero-actions a {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    padding: clamp(20px, 2.6vw, 30px) 24px; text-decoration: none;
-    font-family: var(--sans); font-weight: 700; text-transform: uppercase;
-    font-size: clamp(.95rem, 1.35vw, 1.2rem); letter-spacing: .01em;
-    transition: filter .16s ease;
+  .phone-top { display: flex; align-items: center; justify-content: space-between; }
+  .phone-mark { font-family: var(--display); font-size: 15px; color: var(--ink); }
+  .phone-mark i { font-style: normal; color: var(--accent); }
+  .phone-chip {
+    font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
+    color: var(--indigo); background: var(--pollen); padding: 3px 8px; border-radius: 20px;
   }
-  .hero-actions .go-live { background: var(--pollen); color: var(--indigo); }
-  .hero-actions .go-proof { background: #171833; color: #fff; }
-  .hero-actions a:hover { filter: brightness(1.08); }
-  @media (max-width: 640px) { .hero-actions { grid-template-columns: 1fr; } }
+  .phone-label { font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+  .phone-bal { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 27px; letter-spacing: -0.02em; }
+  .phone-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .phone-band { display: grid; gap: 5px; }
+  .phone-ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--faint); }
+  .phone-log { margin-top: auto; display: grid; gap: 6px; }
+  .phone-order {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    font-size: 11px; padding: 7px 9px; border-radius: 8px; background: var(--panel-2);
+  }
+  .phone-order b { font-weight: 600; }
+  .phone-order .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .phone-foot {
+    display: flex; gap: 6px; margin-top: 2px;
+  }
+  .phone-foot span {
+    flex: 1; text-align: center; font-size: 9.5px; letter-spacing: .06em;
+    text-transform: uppercase; padding: 8px 0; border-radius: 8px;
+    color: var(--faint); background: var(--panel-2);
+  }
+  .phone-foot span.on { background: var(--indigo); color: #fff; }
 
-  /* Barres de l'effondrement, sur fond sombre. */
-  .hero .bar-track { background: rgba(255,255,255,.10); border: 0; }
-  .hero .bar-fill.ref { background: rgba(214,210,230,.34); }
-  .hero .bar-fill.now { background: var(--pollen); }
-  .hero .bar-name { color: #d6d2e6; }
-  .hero .bar-value { color: #fff; }
-  .hero .bar-ci { color: #a9a5c2; }
-  .hero .fine { color: #a9a5c2; }
-
-  /* La barre de navigation flotte sur l'affiche et ne reprend son fond qu'une
-     fois qu'on lit. */
-  .topbar:not(.compact) { background: transparent; }
-  .topbar:not(.compact)::after { opacity: .35; }
+  @media (prefers-reduced-motion: reduce) {
+    .phone { animation: none; transform: rotateY(-11deg) rotateX(2deg) rotateZ(-1deg); }
+  }
 
   /* ── Le point de bascule ──────────────────────────────────────────────── */
-  .collapse { margin-top: clamp(40px, 5vw, 64px); max-width: 900px; }
+  .collapse { margin-top: clamp(48px, 6vw, 72px); }
   .bar-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 26px; }
   .bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
   .bar-name { font-size: 0.92rem; color: var(--dim); }
@@ -285,35 +272,67 @@
 </div>
 
 <main id="main">
-  <section id="top" class="hero">
-    <div class="hero-field" aria-hidden="true">
-      <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <filter id="soften" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="72"/>
-          </filter>
-          <filter id="grain">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3"/>
-            <feColorMatrix type="saturate" values="0"/>
-          </filter>
-        </defs>
-        <rect width="1200" height="800" fill="#1F2041"/>
-        <g filter="url(#soften)">
-          <ellipse cx="300" cy="250" rx="430" ry="330" fill="#4B3F72" opacity=".92"/>
-          <ellipse cx="930" cy="150" rx="360" ry="300" fill="#3a2f5e" opacity=".9"/>
-          <ellipse cx="760" cy="760" rx="520" ry="300" fill="#119DA4" opacity=".26"/>
-          <ellipse cx="120" cy="720" rx="300" ry="220" fill="#FFC857" opacity=".10"/>
-          <ellipse cx="560" cy="430" rx="300" ry="190" fill="#2a2550" opacity=".55"/>
-        </g>
-        <rect width="1200" height="800" filter="url(#grain)" opacity=".26" style="mix-blend-mode:overlay"/>
-      </svg>
-    </div>
-    <div class="wrap hero-inner">
-      <h1>Hold 85% less</h1>
-      <p class="hero-sub">
-        NEAP sizes intraday pre-funding by stochastic control instead of by habit,
-        and rebalances on a rail where that costs cents.
-      </p>
+  <section id="top">
+    <div class="wrap">
+      <div class="hero-split">
+        <div class="prose">
+          <h1>A bank that settles in seconds still funds like it settles in <em>days</em>.</h1>
+          <p class="lead">
+            Promise an instant cross-border payment and you must hold the destination currency
+            before the money arrives. Every corridor, every currency, all day. That buffer earns
+            nothing and carries a currency position nobody chose.
+          </p>
+          <p class="lead">
+            NEAP sizes it by stochastic control instead of by habit. On a rail where a rebalance
+            costs cents, the buffer does not shrink. It <span class="hl">collapses</span>.
+          </p>
+          <div class="actions">
+            <a class="cta" href="/app">
+              See it live
+              <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.8 2.6 14 8l-5.2 5.4-1.1-1.1 3.4-3.5H2V7.2h9.1L7.7 3.7z"/></svg>
+            </a>
+            <a class="ghost" href="#proof">How it was measured</a>
+          </div>
+        </div>
+
+        <div class="phone-stage" aria-hidden="true">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-notch"></div>
+              <div class="phone-top">
+                <span class="phone-mark">NEAP<i>.</i></span>
+                <span class="phone-chip">EUR</span>
+              </div>
+
+              <div>
+                <div class="phone-label">Observed balance</div>
+                <div class="phone-bal">$212k</div>
+              </div>
+
+              <div class="phone-band">
+                <svg viewBox="0 0 100 12" width="100%" height="20" preserveAspectRatio="none">
+                  <rect x="0" y="3" width="100" height="6" rx="2" fill="var(--panel-2)"/>
+                  <rect x="0" y="3" width="26" height="6" fill="var(--zone-low)"/>
+                  <rect x="26" y="3" width="46" height="6" fill="var(--zone-ok)"/>
+                  <rect x="72" y="3" width="28" height="6" fill="var(--zone-high)"/>
+                  <line x1="44" y1="1" x2="44" y2="11" stroke="var(--dim)" stroke-width=".7" stroke-dasharray="1.4 1.4"/>
+                  <rect x="17" y="0.5" width="1.6" height="11" fill="var(--bad)"/>
+                </svg>
+                <div class="phone-ticks"><span>400k</span><span>600k</span><span>900k</span></div>
+              </div>
+
+              <div class="phone-log">
+                <div class="phone-order"><span><b>EUR</b> buy</span><span class="amt">$390k</span></div>
+                <div class="phone-order"><span><b>GBP</b> release</span><span class="amt">$120k</span></div>
+              </div>
+
+              <div class="phone-foot">
+                <span class="on">Bands</span><span>Risk</span><span>Log</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="collapse" id="collapse">
         <div class="bar-row">
@@ -333,35 +352,6 @@
         <p class="fine">
           Idle capital per corridor, averaged over 30-day evaluation windows.
           20 seeds × 6 walk-forward windows, calibrated only on the past.
-        </p>
-      </div>
-    </div>
-
-    <div class="hero-actions">
-      <a class="go-live" href="/app">
-        See it live
-        <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.8 2.6 14 8l-5.2 5.4-1.1-1.1 3.4-3.5H2V7.2h9.1L7.7 3.7z"/></svg>
-      </a>
-      <a class="go-proof" href="#proof">
-        How it was measured
-        <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 13.4 2.6 8.2l1.1-1.1L7.2 10.5V2h1.6v8.5l3.5-3.4 1.1 1.1z"/></svg>
-      </a>
-    </div>
-  </section>
-
-  <section id="premise">
-    <div class="wrap">
-      <div class="prose">
-        <h2>A bank that settles in seconds still funds like it settles in <em>days</em>.</h2>
-        <p class="lead">
-          Promise an instant cross-border payment and you must hold the destination currency
-          before the money arrives. Every corridor, every currency, all day. That buffer earns
-          nothing and carries a currency position nobody chose.
-        </p>
-        <p class="lead">
-          A neap tide is the tide of smallest range. That is what this engine does to the
-          buffer: on a rail where a rebalance costs cents, it does not shrink. It
-          <span class="hl">collapses</span>.
         </p>
       </div>
     </div>

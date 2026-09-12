@@ -141,9 +141,48 @@ function trackScrollState() {
   ).observe(sentinel);
 }
 
+/**
+ * Parallaxe légère du téléphone.
+ *
+ * La dérive animée suffit à le faire vivre ; ce suivi ajoute la sensation qu'il occupe
+ * un espace devant la page plutôt que dessus. On n'écrit qu'une variable CSS et on la
+ * lit dans une rotation : la dérive continue de tourner sans être interrompue, et rien
+ * d'autre que le compositeur ne travaille.
+ *
+ * Ignoré sur pointeur grossier — un doigt n'a pas de position de survol — et sous
+ * préférence de mouvement réduit.
+ */
+function trackPointer() {
+  const phone = document.querySelector('.phone');
+  if (!phone) return;
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  if (reduced || coarse) return;
+
+  let queued = false;
+  let x = 0;
+  let y = 0;
+
+  const apply = () => {
+    queued = false;
+    phone.style.setProperty('--tilt-y', `${x.toFixed(2)}deg`);
+    phone.style.setProperty('--tilt-x', `${y.toFixed(2)}deg`);
+  };
+
+  addEventListener('pointermove', (event) => {
+    x = (event.clientX / innerWidth - 0.5) * 7;
+    y = (0.5 - event.clientY / innerHeight) * 5;
+    if (!queued) {
+      queued = true;
+      requestAnimationFrame(apply);
+    }
+  }, { passive: true });
+}
+
 async function main() {
   trackSections();
   trackScrollState();
+  trackPointer();
 
   let summary;
   try {
