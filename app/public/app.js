@@ -339,14 +339,31 @@ const prefersReducedMotion = () =>
 function stop() {
   if (state.timer) clearInterval(state.timer);
   state.timer = null;
-  label('play', 'play', 'Play');
+  $('speedOut').textContent = speedLabel(Number($('speed').value));
+label('play', 'play', 'Play');
+}
+
+/**
+ * Un pas vaut quinze minutes simulées. Le curseur se lit donc en temps simulé par
+ * seconde réelle, pas en pas par seconde : « deux heures par seconde » dit quelque chose,
+ * « huit pas par seconde » ne dit rien.
+ *
+ * La valeur par défaut passe de vingt pas par seconde à quatre. À vingt, chaque carte
+ * était redessinée toutes les cinquante millisecondes : l'œil ne suivait plus, et la
+ * démonstration donnait à voir un scintillement plutôt qu'un mécanisme.
+ */
+const SIM_MINUTES_PER_STEP = 15;
+
+function speedLabel(stepsPerSecond) {
+  const minutes = stepsPerSecond * SIM_MINUTES_PER_STEP;
+  return minutes < 60 ? `${minutes} min / s` : `${(minutes / 60).toFixed(minutes % 60 ? 1 : 0)} h / s`;
 }
 
 function play() {
   if (state.timer) return stop();
   if (prefersReducedMotion()) return advance();
   label('play', 'pause', 'Pause');
-  const period = Math.max(1000 / Number($('speed').value), 16);
+  const period = Math.max(1000 / Number($('speed').value), 60);
   state.timer = setInterval(() => {
     if (!state.episode || state.index >= state.episode.steps.length - 1) return stop();
     state.index++;
@@ -375,6 +392,7 @@ $('shock').addEventListener('click', () => {
   });
 });
 $('speed').addEventListener('input', () => {
+  $('speedOut').textContent = speedLabel(Number($('speed').value));
   if (state.timer) {
     stop();
     play();
@@ -393,6 +411,7 @@ for (const id of ['kappa', 'eta', 'breach']) {
   });
 }
 
+$('speedOut').textContent = speedLabel(Number($('speed').value));
 label('play', 'play', 'Play');
 label('step', 'step', 'Step');
 label('shock', 'bolt', 'Liquidity shock');
