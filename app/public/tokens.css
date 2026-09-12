@@ -20,27 +20,44 @@
 :root {
   color-scheme: light;
 
-  --bg: #f5f6f9;
+  /* ── Palette ──────────────────────────────────────────────────────────
+     Space Indigo, Vintage Grape, Golden Pollen, Dark Cyan, Blue Slate.
+
+     Deux des cinq ne peuvent pas porter de texte sur fond clair : Golden Pollen
+     tombe à 1,5:1 et Dark Cyan à 3,3:1. Plutôt que de les écarter ou de les
+     dénaturer, on leur donne le rôle où ils sont les meilleurs — la surface.
+     Golden Pollen portant du Space Indigo donne 10,2:1, ce qui en fait le
+     surligneur le plus lisible de la page. Les rôles de texte sont tenus par des
+     valeurs dérivées de la même famille, toutes conformes AA. */
+  --indigo: #1F2041;
+  --grape: #4B3F72;
+  --pollen: #FFC857;
+  --cyan: #119DA4;
+  --slate: #19647E;
+
+  --bg: #f6f6fb;
   --panel: #ffffff;
-  --panel-2: #eef1f6;
-  --line: #dbe1ea;
-  --ink: #12161d;
+  --panel-2: #ecebf4;
+  --line: #dedcea;
+  --ink: var(--indigo);
 
-  /* Trois paliers de texte, conformes AA sur les trois fonds : 18,1 / 7,3 / 5,5. */
-  --dim: #4d5766;
-  --faint: #606a79;
+  /* Trois paliers de texte : 15,7 / 8,9 / 6,7 sur panneau. */
+  --dim: #4a4668;
+  --faint: #5d5878;
 
-  --ok: #116634;
-  --warn: #8a5304;
-  --bad: #b02020;
-  --accent: #1d4ed8;
-  --eur: #1d4ed8;
-  --gbp: #6d28d9;
-  --brl: #8a5304;
+  --ok: #0d7078;
+  --warn: #7a5410;
+  --bad: #9c2b45;
+  --accent: var(--slate);
+  --eur: var(--slate);
+  --gbp: var(--grape);
+  --brl: #7a5410;
 
-  --zone-low: #fadcdc;
-  --zone-ok: #d8f0e0;
-  --zone-high: #fbe9c8;
+  /* Fonds de zone dérivés des mêmes teintes, assez pâles pour que le curseur et
+     les chiffres restent ce qu'on lit en premier. */
+  --zone-low: #f7dfe4;
+  --zone-ok: #d6eef0;
+  --zone-high: #fdeecb;
 
   --display: 'Gloock', ui-serif, Georgia, serif;
   --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -51,7 +68,7 @@
 
 /* Surfaces que le navigateur dessine et qui n'appartiennent à aucun système de design
    tant qu'on ne les réclame pas. */
-::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--ink); }
+::selection { background: var(--pollen); color: var(--indigo); }
 html { scrollbar-color: var(--line) var(--bg); }
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: var(--bg); }

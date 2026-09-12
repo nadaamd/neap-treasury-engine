@@ -22,6 +22,10 @@
   h2 { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.08; margin: 0 0 20px; text-wrap: balance; }
   h3 { font-size: 1.25rem; line-height: 1.25; margin: 0 0 8px; }
   h1 em, h2 em { font-style: italic; }
+  .hl {
+    background: linear-gradient(to top, var(--pollen) 0.42em, transparent 0.42em);
+    padding: 0 0.06em;
+  }
   p { margin: 0 0 18px; }
   .lead { font-size: clamp(1.05rem, 1.7vw, 1.3rem); color: var(--dim); }
   .fine { font-size: 0.86rem; color: var(--faint); }
@@ -47,10 +51,10 @@
     font-weight: 600; font-size: 0.97rem;
     transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, background-color .18s ease;
   }
-  a.cta { background: var(--accent); color: #fff; box-shadow: 0 2px 6px -1px rgba(18,22,29,.22); }
-  a.cta:hover { transform: translateY(-1px); box-shadow: 0 5px 12px -3px rgba(18,22,29,.28); }
+  a.cta { background: var(--accent); color: #fff; box-shadow: 0 2px 6px -1px rgba(31,32,65,.26); }
+  a.cta:hover { transform: translateY(-1px); box-shadow: 0 5px 12px -3px rgba(31,32,65,.32); }
   a.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
-  a.ghost:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  a.ghost:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: var(--accent); }
   .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
 
   /* ── Le point de bascule ──────────────────────────────────────────────── */
@@ -61,7 +65,7 @@
   .bar-value { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 1.05rem; }
   .bar-track { height: 34px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 5px; transform-origin: left center; }
-  .bar-fill.ref { background: color-mix(in srgb, var(--dim) 34%, var(--panel-2)); }
+  .bar-fill.ref { background: color-mix(in srgb, var(--grape) 28%, var(--panel-2)); }
   .bar-fill.now { background: var(--accent); }
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
@@ -69,7 +73,7 @@
   .beats { margin: 40px 0 0; padding: 0; list-style: none; counter-reset: none; }
   .beat { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 18px; padding: 24px 4px; border-top: 1px solid var(--line); }
   .beat:first-child { border-top: 0; padding-top: 4px; }
-  .beat svg { margin-top: 3px; color: var(--accent); }
+  .beat svg { margin-top: 3px; color: var(--cyan); }
   .beat p { margin: 0; color: var(--dim); }
 
   /* ── Tableau de preuve ────────────────────────────────────────────────── */
@@ -78,8 +82,8 @@
   th, td { text-align: right; padding: 13px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; white-space: normal; }
   thead th { color: var(--faint); font-weight: 500; font-size: 0.76rem; text-transform: uppercase; letter-spacing: .09em; }
-  tbody tr.hero td { background: color-mix(in srgb, var(--accent) 6%, transparent); font-weight: 600; }
-  tbody tr.hero td:first-child { border-left: 2px solid var(--accent); padding-left: 12px; }
+  tbody tr.hero td { background: color-mix(in srgb, var(--pollen) 26%, transparent); font-weight: 600; }
+  tbody tr.hero td:first-child { box-shadow: inset 3px 0 0 var(--pollen); padding-left: 17px; }
 
   /* ── Architecture ─────────────────────────────────────────────────────── */
   .flow { margin-top: 40px; display: grid; gap: 2px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
@@ -88,7 +92,7 @@
   .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
   .stage p { margin: 0; font-size: 0.87rem; color: var(--dim); }
-  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); margin-bottom: 12px; }
+  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); margin-bottom: 12px; font-weight: 600; }
   @media (max-width: 700px) {
     .stage, .stage:first-child, .stage:last-child { border-radius: 10px; }
     .flow { gap: 10px; }
@@ -96,7 +100,7 @@
 
   /* ── Chiffres de livraison ────────────────────────────────────────────── */
   .ships { margin: 36px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-  .ships li { border-top: 2px solid var(--line); padding-top: 14px; }
+  .ships li { border-top: 2px solid var(--pollen); padding-top: 14px; }
   .ships b { display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 500; }
   .ships span { font-size: 0.87rem; color: var(--dim); }
 
@@ -136,7 +140,7 @@
         </p>
         <p class="lead">
           FLOAT sizes it by stochastic control instead of by habit. On a rail where a rebalance
-          costs cents, the buffer does not shrink. It collapses.
+          costs cents, the buffer does not shrink. It <span class="hl">collapses</span>.
         </p>
         <div class="actions">
           <a class="cta" href="/app">
@@ -173,7 +177,7 @@
   <section id="mechanism">
     <div class="wrap">
       <div class="prose">
-        <h2>The saving does not come from where you would guess.</h2>
+        <h2>The saving does not come from <span class="hl">where you would guess</span>.</h2>
         <p class="lead">
           At a 6% cost of capital, carrying a million dollars for a month is noise next to
           execution costs. The buffer collapsing is the visible result; it is not the mechanism.
