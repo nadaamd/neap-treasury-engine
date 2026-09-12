@@ -4,7 +4,7 @@ Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §
 
 | # | Décision | Raison en une ligne |
 |---|---|---|
-| D1 | Nom : **FLOAT** | « le float » est le terme métier exact du capital immobilisé en transit |
+| D1 | Nom : **NEAP** | « le float » est le terme métier exact du capital immobilisé en transit |
 | D2 | Périmètre **hybride** : 3 devises stablecoin + 1 corridor « rail lent » | crée l'arbitrage entre deux régimes de coût fixe — sans lui l'optimiseur n'optimise rien |
 | D3 | Bandes par **résolution numérique warm-startée** par Miller-Orr analytique | rapide, général, et Miller-Orr sert de test de non-régression |
 | D4 | **ES 97.5 % (FRTB) par Filtered Historical Simulation** | la VaR normale sous-estime la queue ; FRTB a fait ce choix pour la même raison |

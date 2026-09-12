@@ -1,5 +1,5 @@
 /**
- * FLOAT — décision de rééquilibrage exécutée dans une enclave.
+ * NEAP — décision de rééquilibrage exécutée dans une enclave.
  *
  * Ce fichier ne contient aucune logique métier. Elle vit dans `buildReport`, une
  * fonction pure testée sans enclave, sans réseau et sans chaîne. Ici on ne fait que
@@ -11,7 +11,7 @@
  * charges utiles des requêtes et réponses HTTP émises depuis l'enclave, et les valeurs
  * intermédiaires.
  *
- * C'est exactement ce dont FLOAT a besoin. Le modèle n'a aucune raison d'être secret —
+ * C'est exactement ce dont NEAP a besoin. Le modèle n'a aucune raison d'être secret —
  * il est même publié dans la spec. Ce qui doit le rester, ce sont les soldes vivants par
  * devise, les engagements connus à venir et les limites internes. Pris séparément, chacun
  * est anodin ; publiés ensemble, ils dressent une carte de la position de liquidité

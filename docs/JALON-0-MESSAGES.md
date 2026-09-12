@@ -12,7 +12,7 @@ elle indique au sponsor qu'on ne l'a pas lue. Ces deux messages montrent l'inver
 
 ## 1 · Chainlink — canal CRE
 
-> Hi! Building **FLOAT** for the Confidential Workflow track — an intraday multi-currency
+> Hi! Building **NEAP** for the Confidential Workflow track — an intraday multi-currency
 > treasury engine. The risk computation runs on a bank's live FX positions, so it has to
 > stay inside the enclave; that confidentiality is what makes the product possible at all.
 >
@@ -33,7 +33,7 @@ elle indique au sponsor qu'on ne l'a pas lue. Ces deux messages montrent l'inver
 
 ## 2 · Circle — canal développeurs
 
-> Hi! Building **FLOAT** for the Arc DeFi track — an intraday treasury engine that sizes
+> Hi! Building **NEAP** for the Arc DeFi track — an intraday treasury engine that sizes
 > multi-currency pre-funding buffers and rebalances through FX. Backtest says the optimal
 > buffer drops ~85 % on Arc economics, because a near-zero fixed cost per rebalance makes
 > many small orders cheaper than a few large ones under square-root market impact.

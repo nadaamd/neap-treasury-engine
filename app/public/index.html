@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FLOAT — Intraday Treasury Engine</title>
-<meta name="description" content="Instant cross-border payments force you to pre-fund every currency in every corridor. FLOAT sizes that buffer by stochastic control and cuts it by 85%.">
+<title>NEAP — Intraday Treasury Engine</title>
+<meta name="description" content="Instant cross-border payments force you to pre-fund every currency in every corridor. NEAP sizes that buffer by stochastic control and cuts it by 85%.">
 <link rel="stylesheet" href="/tokens.css">
 <style>
   body { font-size: 16px; line-height: 1.6; }
@@ -198,8 +198,8 @@
 
 <div class="topbar">
   <div class="wrap">
-    <a href="#main" class="mark" style="text-decoration:none"><b>FLOAT</b><i>.</i></a>
-    <span class="whatis">Intraday treasury engine</span>
+    <a href="#main" class="mark" style="text-decoration:none"><b>NEAP</b><i>.</i></a>
+    <span class="whatis">Intraday multi-currency treasury engine</span>
     <nav aria-label="Sections">
       <a href="#mechanism">Mechanism</a>
       <a href="#proof">Proof</a>
@@ -223,7 +223,7 @@
           nothing and carries a currency position nobody chose.
         </p>
         <p class="lead">
-          FLOAT sizes it by stochastic control instead of by habit. On a rail where a rebalance
+          NEAP sizes it by stochastic control instead of by habit. On a rail where a rebalance
           costs cents, the buffer does not shrink. It <span class="hl">collapses</span>.
         </p>
         <div class="actions">
@@ -245,10 +245,10 @@
         </div>
         <div class="bar-row">
           <div class="bar-head">
-            <span class="bar-name">FLOAT, bands solved against a cost function</span>
-            <span class="bar-value"><span id="v-float">—</span><span class="bar-ci" id="ci-float"></span></span>
+            <span class="bar-name">NEAP, bands solved against a cost function</span>
+            <span class="bar-value"><span id="v-neap">—</span><span class="bar-ci" id="ci-neap"></span></span>
           </div>
-          <div class="bar-track"><div class="bar-fill now" id="b-float"></div></div>
+          <div class="bar-track"><div class="bar-fill now" id="b-neap"></div></div>
         </div>
         <p class="fine">
           Idle capital per corridor, averaged over 30-day evaluation windows.
@@ -323,7 +323,7 @@
           <b>What is robust:</b> the capital reduction holds from −84.9% to −84.2% across the full
           sensitivity range of the one uncalibrated parameter. <b>What is conditional:</b> the cost
           reduction moves between −13% and −38% over that same range, and should never be quoted
-          without it. <b>What is worse:</b> FLOAT tolerates more threshold breaches than
+          without it. <b>What is worse:</b> NEAP tolerates more threshold breaches than
           conservative pre-funding. That is the optimiser applying the breach cost it was given,
           priced at $50 000. <b>What is synthetic:</b> payment flows, because no institution publishes theirs
           by corridor.
@@ -394,8 +394,8 @@
 
 <footer>
   <div class="wrap">
-    <span class="mark"><b>FLOAT</b><i>.</i></span>
-    <span class="fine">Intraday multi-currency treasury engine · ETHOnline 2026</span>
+    <span class="mark"><b>NEAP</b><i>.</i></span>
+    <span class="fine">A neap tide is the smallest swing between high and low water · ETHOnline 2026</span>
     <span class="fine" style="margin-left:auto"><a href="/app">Dashboard</a></span>
   </div>
 </footer>

@@ -45,7 +45,7 @@ n'indique qu'un contrat puisse la vérifier lui-même à coût raisonnable. Cons
 D23 ci-dessous.
 
 **Limite à connaître.** ⚠️ « Workflow logic is not confidential » — seules les données
-et les valeurs intermédiaires sont protégées. C'est exactement ce que FLOAT demande : on
+et les valeurs intermédiaires sont protégées. C'est exactement ce que NEAP demande : on
 protège les positions, pas le modèle. Mais il faut le dire avant qu'un juge ne le
 demande.
 

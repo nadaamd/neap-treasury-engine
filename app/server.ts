@@ -131,5 +131,5 @@ server.on('error', (err: NodeJS.ErrnoException) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`FLOAT — tableau de bord sur http://localhost:${PORT}`);
+  console.log(`NEAP — tableau de bord sur http://localhost:${PORT}`);
 });

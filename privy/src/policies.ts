@@ -1,5 +1,5 @@
 /**
- * Politiques Privy dérivées du modèle de rôles de FLOAT.
+ * Politiques Privy dérivées du modèle de rôles de NEAP.
  *
  * ─── Pourquoi deux couches de contrôle ───────────────────────────────────────
  * La séparation des devoirs est déjà imposée on-chain (D7) : `TreasuryPolicy` refuse
@@ -113,7 +113,7 @@ export function buildPolicy(role: Role, targets: PolicyTargets): PolicyDocument 
 
   return {
     version: '1.0',
-    name: `FLOAT — ${role}`,
+    name: `NEAP — ${role}`,
     chain_type: 'ethereum',
     rules: [
       {

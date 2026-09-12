@@ -14,12 +14,12 @@ import type { BacktestConfig } from '../src/backtest/config.ts';
 import { runBacktest } from '../src/backtest/walkforward.ts';
 import type { BacktestSummary, Interval, PolicyKind } from '../src/backtest/types.ts';
 
-const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'FLOAT', 'CLAIRVOYANT'];
+const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
 
 const LABEL: Record<PolicyKind, string> = {
   STATIC: 'STATIC      (pré-financement conservateur)',
   CALENDAR: 'CALENDAR    (rééquilibrage de fin de journée)',
-  FLOAT: 'FLOAT       (bandes optimisées, par signal)',
+  NEAP: 'NEAP       (bandes optimisées, par signal)',
   CLAIRVOYANT: 'CLAIRVOYANT (calibré sur la période réalisée)',
 };
 
@@ -46,7 +46,7 @@ function render(summary: BacktestSummary): void {
 
   console.log('');
   console.log('═'.repeat(96));
-  console.log(`  FLOAT — backtest walk-forward · ${summary.seeds} germes × ${summary.windows} fenêtres`);
+  console.log(`  NEAP — backtest walk-forward · ${summary.seeds} germes × ${summary.windows} fenêtres`);
   console.log('═'.repeat(96));
   console.log('');
   console.log('  Moyennes par fenêtre d\'évaluation, avec intervalle de confiance à 95 %.');
@@ -73,19 +73,19 @@ function render(summary: BacktestSummary): void {
   });
 
   console.log('');
-  console.log('  Écarts de FLOAT par rapport au pré-financement conservateur :');
+  console.log('  Écarts de NEAP par rapport au pré-financement conservateur :');
   console.log('');
-  console.log(`    capital immobilisé   ${pct(m.FLOAT.capital.mean, ref.capital.mean)}`);
-  console.log(`    ES 97,5 %            ${pct(m.FLOAT.es.mean, ref.es.mean)}`);
-  console.log(`    coût total           ${pct(m.FLOAT.totalCost.mean, ref.totalCost.mean)}`);
-  console.log(`    coût d'exécution     ${pct(m.FLOAT.executionCost.mean, ref.executionCost.mean)}`);
-  console.log(`    nombre d'ordres      ${pct(m.FLOAT.rebalances.mean, ref.rebalances.mean)}`);
+  console.log(`    capital immobilisé   ${pct(m.NEAP.capital.mean, ref.capital.mean)}`);
+  console.log(`    ES 97,5 %            ${pct(m.NEAP.es.mean, ref.es.mean)}`);
+  console.log(`    coût total           ${pct(m.NEAP.totalCost.mean, ref.totalCost.mean)}`);
+  console.log(`    coût d'exécution     ${pct(m.NEAP.executionCost.mean, ref.executionCost.mean)}`);
+  console.log(`    nombre d'ordres      ${pct(m.NEAP.rebalances.mean, ref.rebalances.mean)}`);
 
   const e = summary.estimationCost;
   console.log('');
   console.log("  Coût de l'incertitude d'estimation");
   console.log('  ' + '─'.repeat(92));
-  console.log(`    FLOAT contre calibration sur la période réalisée : ${(e.mean * 100).toFixed(2)} % ± ${(e.halfWidth * 100).toFixed(2)} %`);
+  console.log(`    NEAP contre calibration sur la période réalisée : ${(e.mean * 100).toFixed(2)} % ± ${(e.halfWidth * 100).toFixed(2)} %`);
   if (Math.abs(e.mean) < e.halfWidth) {
     console.log("    L'intervalle contient zéro : calibrer sur le passé ne coûte rien de mesurable ici.");
   } else if (e.mean < 0) {
@@ -114,9 +114,9 @@ function render(summary: BacktestSummary): void {
   console.log('    correspondant bancaire, mille trois cents ordres coûteraient à eux seuls plus que');
   console.log('    tout le reste.');
   console.log('');
-  const breachFloat = m.FLOAT.breaches.mean;
+  const breachFloat = m.NEAP.breaches.mean;
   if (breachFloat > m.STATIC.breaches.mean) {
-    console.log('    FLOAT tolère davantage de ruptures que le pré-financement conservateur, et c\'est');
+    console.log('    NEAP tolère davantage de ruptures que le pré-financement conservateur, et c\'est');
     console.log('    l\'optimiseur qui fait son travail : le coût de rupture retenu est de 50 000 $, et à');
     console.log('    l\'optimum la probabilité de rupture varie en 1/c_b. Une institution qui valorise');
     console.log('    davantage une rupture de paiement obtient mécaniquement un buffer plus épais.');
@@ -150,8 +150,8 @@ function renderSensitivity(cfg: BacktestConfig): void {
     mutable.EUR!.costs.etaImpact = baseEur * factor;
     mutable.GBP!.costs.etaImpact = baseGbp * factor;
     const s = runBacktest(cfg);
-    const capital = pct(s.metrics.FLOAT.capital.mean, s.metrics.STATIC.capital.mean);
-    const cost = pct(s.metrics.FLOAT.totalCost.mean, s.metrics.STATIC.totalCost.mean);
+    const capital = pct(s.metrics.NEAP.capital.mean, s.metrics.STATIC.capital.mean);
+    const cost = pct(s.metrics.NEAP.totalCost.mean, s.metrics.STATIC.totalCost.mean);
     console.log(
       `    eta × ${factor.toFixed(1).padStart(3)}   capital ${capital.padStart(8)}   coût total ${cost.padStart(8)}`,
     );

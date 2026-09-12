@@ -1,4 +1,7 @@
-# FLOAT — Intraday Multi-Currency Treasury Engine
+# NEAP — Intraday Multi-Currency Treasury Engine
+
+> A *neap tide* is the tide of smallest range: the moment when the swing between high
+> and low water is at its least. That is what this engine does to a treasury buffer.
 
 > ETHOnline 2026 · Arc (Circle) · Chainlink CRE · Privy
 
@@ -6,7 +9,7 @@ Une institution qui promet des paiements transfrontaliers instantanés doit pré
 devise de chaque corridor. Ce capital est immobilisé, non rémunéré, et porte une exposition de
 change subie.
 
-**FLOAT** remplace ce pré-financement statique par un moteur de contrôle stochastique : il prévoit
+**NEAP** remplace ce pré-financement statique par un moteur de contrôle stochastique : il prévoit
 les flux nets par corridor, résout les bandes de rééquilibrage optimales par devise, et ne
 déclenche une exécution PvP sur le moteur FX d'Arc que lorsque le gain marginal (capital libéré +
 réduction d'Expected Shortfall) dépasse le coût marginal d'exécution.
@@ -42,7 +45,7 @@ dépendance JavaScript. Les contrats utilisent Foundry et `forge-std` en sous-mo
 Backtest walk-forward, 20 germes × 6 fenêtres, calibration sur le passé strict
 ([`docs/BACKTEST.md`](./docs/BACKTEST.md)) :
 
-| | Pré-financement conservateur | FLOAT | Écart |
+| | Pré-financement conservateur | NEAP | Écart |
 |---|---|---|---|
 | Capital immobilisé | 1,74 M$ | **269 k$** | **−84,6 %** |
 | ES 97,5 % | 77,8 k$ | **8,2 k$** | **−89,4 %** |

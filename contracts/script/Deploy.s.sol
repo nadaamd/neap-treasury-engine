@@ -15,7 +15,7 @@ import {MockPriceOracle} from "../src/mocks/MockPriceOracle.sol";
 import {MockAttestationVerifier} from "../src/mocks/MockAttestationVerifier.sol";
 
 /**
- * @title Déploiement de FLOAT
+ * @title Déploiement de NEAP
  *
  * @dev Trois profils depuis la même source — `anvil`, `arc-testnet`, `arc-mainnet`.
  *
@@ -51,8 +51,8 @@ contract Deploy is Script {
     function run(string calldata profile) external returns (Deployment memory d) {
         bool isMainnet = keccak256(bytes(profile)) == keccak256("arc-mainnet");
 
-        address admin = vm.envOr("FLOAT_ADMIN", msg.sender);
-        bytes32 measurement = vm.envOr("FLOAT_ENCLAVE_MEASUREMENT", keccak256("enclave-dev"));
+        address admin = vm.envOr("NEAP_ADMIN", msg.sender);
+        bytes32 measurement = vm.envOr("NEAP_ENCLAVE_MEASUREMENT", keccak256("enclave-dev"));
 
         vm.startBroadcast();
 
@@ -62,7 +62,7 @@ contract Deploy is Script {
             // Sur mainnet, la vérification d'attestation est celle du consensus du DON
             // (D23) ; l'adaptateur local n'a rien à y faire.
             isMainnet
-                ? MockAttestationVerifier(vm.envAddress("FLOAT_ATTESTATION_VERIFIER"))
+                ? MockAttestationVerifier(vm.envAddress("NEAP_ATTESTATION_VERIFIER"))
                 : new MockAttestationVerifier(),
             measurement
         );
@@ -71,7 +71,7 @@ contract Deploy is Script {
             d.usdc = vm.envAddress("ARC_USDC");
             d.eurc = vm.envAddress("ARC_EURC");
             d.venue = address(new PausedFxVenue());
-            d.oracle = vm.envAddress("FLOAT_PRICE_ORACLE");
+            d.oracle = vm.envAddress("NEAP_PRICE_ORACLE");
         } else {
             MockERC20 usdc = new MockERC20("USD Coin", "USDC");
             MockERC20 eurc = new MockERC20("Euro Coin", "EURC");

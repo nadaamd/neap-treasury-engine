@@ -6,7 +6,7 @@
 ```
 
 ════════════════════════════════════════════════════════════════════════════════════════════════
-  FLOAT — backtest walk-forward · 20 germes × 6 fenêtres
+  NEAP — backtest walk-forward · 20 germes × 6 fenêtres
 ════════════════════════════════════════════════════════════════════════════════════════════════
 
   Moyennes par fenêtre d'évaluation, avec intervalle de confiance à 95 %.
@@ -15,10 +15,10 @@
   ───────────────────────────────────────────────┼──────────────────────┼──────────────────────┼──────────────────────┼─────────────┼────────────┼──────────
   STATIC      (pré-financement conservateur)     │  1.74 M$ ± 109.7 k$  │  77.8 k$ ± 8.0 k$    │  356.2 k$ ± 10.8 k$  │  330.4 k$   │  0.03      │  90      
   CALENDAR    (rééquilibrage de fin de journée)  │  2.27 M$ ± 66.9 k$   │  114.6 k$ ± 12.9 k$  │  419.8 k$ ± 2.7 k$   │  386.2 k$   │  3.24      │  90      
-  FLOAT       (bandes optimisées, par signal)    │  269.3 k$ ± 3.6 k$   │  8.2 k$ ± 876.8 $    │  269.3 k$ ± 1.5 k$   │  265.3 k$   │  1.36      │  2879    
+  NEAP       (bandes optimisées, par signal)    │  269.3 k$ ± 3.6 k$   │  8.2 k$ ± 876.8 $    │  269.3 k$ ± 1.5 k$   │  265.3 k$   │  1.36      │  2879    
   CLAIRVOYANT (calibré sur la période réalisée)  │  270.0 k$ ± 3.8 k$   │  8.2 k$ ± 852.8 $    │  269.1 k$ ± 1.6 k$   │  265.1 k$   │  1.38      │  2875    
 
-  Écarts de FLOAT par rapport au pré-financement conservateur :
+  Écarts de NEAP par rapport au pré-financement conservateur :
 
     capital immobilisé   -84.6 %
     ES 97,5 %            -89.4 %
@@ -28,7 +28,7 @@
 
   Coût de l'incertitude d'estimation
   ────────────────────────────────────────────────────────────────────────────────────────────
-    FLOAT contre calibration sur la période réalisée : 0.05 % ± 0.19 %
+    NEAP contre calibration sur la période réalisée : 0.05 % ± 0.19 %
     L'intervalle contient zéro : calibrer sur le passé ne coûte rien de mesurable ici.
 
   Lecture
@@ -46,7 +46,7 @@
     correspondant bancaire, mille trois cents ordres coûteraient à eux seuls plus que
     tout le reste.
 
-    FLOAT tolère davantage de ruptures que le pré-financement conservateur, et c'est
+    NEAP tolère davantage de ruptures que le pré-financement conservateur, et c'est
     l'optimiseur qui fait son travail : le coût de rupture retenu est de 50 000 $, et à
     l'optimum la probabilité de rupture varie en 1/c_b. Une institution qui valorise
     davantage une rupture de paiement obtient mécaniquement un buffer plus épais.
@@ -124,7 +124,7 @@ l'apparence de la précision.
 
 ### Ce qui est moins bon, et qu'il faut dire
 
-**FLOAT tolère plus de ruptures que le pré-financement conservateur** : 1,36 contre 0,03
+**NEAP tolère plus de ruptures que le pré-financement conservateur** : 1,36 contre 0,03
 par fenêtre. Ce n'est pas un défaut d'implémentation, c'est l'optimiseur qui applique le
 coût de rupture qu'on lui a donné (50 000 $). À l'optimum, la probabilité de rupture
 varie en `1/c_b` — une institution qui valorise davantage un incident de paiement obtient

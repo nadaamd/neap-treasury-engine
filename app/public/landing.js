@@ -7,12 +7,12 @@
  * qu'on cesse de vérifier.
  */
 
-const ORDER = ['STATIC', 'CALENDAR', 'FLOAT', 'CLAIRVOYANT'];
+const ORDER = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
 
 const LABEL = {
   STATIC: 'Conservative pre-funding',
   CALENDAR: 'End-of-day rebalancing',
-  FLOAT: 'FLOAT — optimised bands',
+  NEAP: 'NEAP — optimised bands',
   CLAIRVOYANT: 'Calibrated on the realised window',
 };
 
@@ -26,20 +26,20 @@ const money = (x) => {
 const pct = (a, b) => `${(((a - b) / b) * 100).toFixed(1)}%`;
 
 /**
- * L'unique intention de mouvement de la page : la barre de FLOAT part de la longueur du
+ * L'unique intention de mouvement de la page : la barre de NEAP part de la longueur du
  * pré-financement conservateur et tombe à la sienne. C'est la thèse, montrée plutôt
  * qu'affirmée — et jouée une seule fois, à l'arrivée en vue.
  */
-function drawCollapse(staticCapital, floatCapital, halfWidth) {
+function drawCollapse(staticCapital, neapCapital, halfWidth) {
   const max = staticCapital;
-  const ratio = floatCapital / max;
+  const ratio = neapCapital / max;
 
   document.getElementById('v-static').textContent = money(staticCapital);
-  document.getElementById('v-float').textContent = money(floatCapital);
-  document.getElementById('ci-float').textContent = `± ${money(halfWidth)}`;
+  document.getElementById('v-neap').textContent = money(neapCapital);
+  document.getElementById('ci-neap').textContent = `± ${money(halfWidth)}`;
 
   const ref = document.getElementById('b-static');
-  const now = document.getElementById('b-float');
+  const now = document.getElementById('b-neap');
   ref.style.transform = 'scaleX(1)';
 
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -69,7 +69,7 @@ function drawTable(metrics) {
   const body = document.getElementById('results-body');
   body.innerHTML = ORDER.map((key) => {
     const m = metrics[key];
-    const hero = key === 'FLOAT' ? ' class="hero"' : '';
+    const hero = key === 'NEAP' ? ' class="hero"' : '';
     return `
       <tr${hero}>
         <td>${LABEL[key]}</td>
@@ -155,15 +155,15 @@ async function main() {
     document.getElementById('results-body').innerHTML =
       '<tr><td colspan="6" class="fine">No backtest on this host. Run <code>npm run backtest</code> to regenerate it.</td></tr>';
     document.getElementById('v-static').textContent = '—';
-    document.getElementById('v-float').textContent = '—';
+    document.getElementById('v-neap').textContent = '—';
     return;
   }
 
   const m = summary.metrics;
-  drawCollapse(m.STATIC.capital.mean, m.FLOAT.capital.mean, m.FLOAT.capital.halfWidth);
+  drawCollapse(m.STATIC.capital.mean, m.NEAP.capital.mean, m.NEAP.capital.halfWidth);
   drawTable(m);
 
-  document.title = `FLOAT — idle capital ${pct(m.FLOAT.capital.mean, m.STATIC.capital.mean)}`;
+  document.title = `NEAP — idle capital ${pct(m.NEAP.capital.mean, m.STATIC.capital.mean)}`;
 }
 
 main();

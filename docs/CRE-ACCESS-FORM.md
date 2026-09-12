@@ -32,9 +32,9 @@ formulaire. C'est le seul champ qu'on ne peut pas préparer à l'avance.
 
 ## Use case description — brouillon à coller
 
-> FLOAT is an intraday multi-currency treasury engine for institutions that promise
+> NEAP is an intraday multi-currency treasury engine for institutions that promise
 > instant cross-border payments. Such an institution must pre-fund every currency in
-> every corridor; that capital sits idle and carries unhedged FX exposure. FLOAT replaces
+> every corridor; that capital sits idle and carries unhedged FX exposure. NEAP replaces
 > static pre-funding with a stochastic control policy: it forecasts net flows per
 > corridor, solves optimal rebalancing bands per currency, and triggers a PvP FX
 > rebalance only when the marginal benefit exceeds the marginal execution cost.

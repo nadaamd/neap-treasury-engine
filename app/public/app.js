@@ -1,5 +1,5 @@
 /**
- * Tableau de bord FLOAT — animation d'un épisode calculé par le serveur.
+ * Tableau de bord NEAP — animation d'un épisode calculé par le serveur.
  *
  * Aucun calcul métier ici : les bandes, les décisions, le risque et les coûts viennent
  * du moteur. Le client anime, il ne décide pas — sans quoi la démonstration montrerait
@@ -222,7 +222,7 @@ function renderStep() {
 const POLICY_LABEL = {
   STATIC: 'Conservative pre-funding',
   CALENDAR: 'End-of-day rebalancing',
-  FLOAT: 'FLOAT — optimised bands',
+  NEAP: 'NEAP — optimised bands',
   CLAIRVOYANT: 'Calibrated on the realised window',
 };
 
@@ -234,13 +234,13 @@ async function loadBacktest() {
     return;
   }
   const s = await res.json();
-  const order = ['STATIC', 'CALENDAR', 'FLOAT', 'CLAIRVOYANT'];
+  const order = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
   const maxCapital = Math.max(...order.map((k) => s.metrics[k].capital.mean));
 
   const rows = order.map((k) => {
     const m = s.metrics[k];
     const pctWidth = (m.capital.mean / maxCapital) * 100;
-    const isFloat = k === 'FLOAT';
+    const isFloat = k === 'NEAP';
     return `
       <tr>
         <td>${POLICY_LABEL[k]}</td>
@@ -257,7 +257,7 @@ async function loadBacktest() {
       </tr>`;
   }).join('');
 
-  const f = s.metrics.FLOAT;
+  const f = s.metrics.NEAP;
   const st = s.metrics.STATIC;
   const drop = (a, b) => `${(((a - b) / b) * 100).toFixed(1)} %`;
   const e = s.estimationCost;

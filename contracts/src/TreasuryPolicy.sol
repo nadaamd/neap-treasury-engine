@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 /**
  * @title TreasuryPolicy
- * @notice Autorité du système FLOAT : rôles, séparation des devoirs, limites, paramètres
+ * @notice Autorité du système NEAP : rôles, séparation des devoirs, limites, paramètres
  *         de risque, versionnement et délai d'application.
  *
  * @dev Décision D7 — l'autorité est portée par le contrat, pas par le fournisseur de

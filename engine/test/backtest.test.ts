@@ -16,7 +16,7 @@ import type { Currency } from '../../data/src/types.ts';
 import type { PolicyKind } from '../src/backtest/types.ts';
 
 const CFG = FAST_CONFIG;
-const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'FLOAT', 'CLAIRVOYANT'];
+const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
 
 function flowsFor(seed: number, days: number): Record<Currency, number[]> {
   const events = generateFlows({
@@ -73,7 +73,7 @@ describe('protocole walk-forward', () => {
     };
 
     const build = (f: Record<Currency, number[]>) =>
-      buildPolicy('FLOAT', {
+      buildPolicy('NEAP', {
         calibration: slice(f, 0, calibEpochs),
         evaluation: slice(f, calibEpochs, f.EUR.length),
         dailyVol,
@@ -150,7 +150,7 @@ describe('exécution d’une politique', () => {
   const { residuals, currentVol } = standardizedResiduals(market.returns, CURRENCIES);
   const dailyVol = {} as Record<Currency, number>;
   for (const c of CURRENCIES) dailyVol[c] = 0.005;
-  const policy = buildPolicy('FLOAT', {
+  const policy = buildPolicy('NEAP', {
     calibration: flows,
     evaluation: flows,
     dailyVol,
@@ -208,20 +208,20 @@ describe('agrégation', () => {
    * d'hypothèses assumées comme non calibrées.
    */
   test('les bandes optimisées libèrent la majorité du capital immobilisé', () => {
-    const ratio = summary.metrics.FLOAT.capital.mean / summary.metrics.STATIC.capital.mean;
-    assert.ok(ratio < 0.5, `capital FLOAT / STATIC = ${ratio.toFixed(3)}, attendu < 0,5`);
+    const ratio = summary.metrics.NEAP.capital.mean / summary.metrics.STATIC.capital.mean;
+    assert.ok(ratio < 0.5, `capital NEAP / STATIC = ${ratio.toFixed(3)}, attendu < 0,5`);
   });
 
   test('le risque de change baisse dans la même proportion', () => {
-    assert.ok(summary.metrics.FLOAT.es.mean < summary.metrics.STATIC.es.mean);
+    assert.ok(summary.metrics.NEAP.es.mean < summary.metrics.STATIC.es.mean);
   });
 
   /**
-   * Contrôle d'honnêteté. FLOAT rééquilibre bien plus souvent que le pré-financement
+   * Contrôle d'honnêteté. NEAP rééquilibre bien plus souvent que le pré-financement
    * conservateur : si le rapport prétendait le contraire, c'est que la simulation
    * compterait mal.
    */
-  test('FLOAT passe bien plus d’ordres que le pré-financement conservateur', () => {
-    assert.ok(summary.metrics.FLOAT.rebalances.mean > summary.metrics.STATIC.rebalances.mean * 5);
+  test('NEAP passe bien plus d’ordres que le pré-financement conservateur', () => {
+    assert.ok(summary.metrics.NEAP.rebalances.mean > summary.metrics.STATIC.rebalances.mean * 5);
   });
 });

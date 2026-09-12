@@ -4,7 +4,7 @@ import type { Currency } from '../../../data/src/types.ts';
 import type { Bands } from '../bands/millerOrr.ts';
 import type { CostParams } from '../bands/simulate.ts';
 
-export type PolicyKind = 'STATIC' | 'CALENDAR' | 'FLOAT' | 'CLAIRVOYANT';
+export type PolicyKind = 'STATIC' | 'CALENDAR' | 'NEAP' | 'CLAIRVOYANT';
 
 export interface PolicyBands {
   readonly bands: Record<Currency, Bands>;
@@ -17,7 +17,7 @@ export interface WindowMetrics {
   readonly capital: number;
   /** ES 97,5 % moyenne du portefeuille, mesurée en fin de journée. */
   readonly es: number;
-  /** Coûts d'exécution cumulés — attendus **en hausse** pour FLOAT. */
+  /** Coûts d'exécution cumulés — attendus **en hausse** pour NEAP. */
   readonly executionCost: number;
   /** Coût de portage cumulé. */
   readonly carryCost: number;
@@ -52,11 +52,11 @@ export interface BacktestSummary {
   /**
    * Coût de l'incertitude d'estimation, en fraction du coût de CLAIRVOYANT.
    *
-   *   (coût FLOAT − coût CLAIRVOYANT) / coût CLAIRVOYANT
+   *   (coût NEAP − coût CLAIRVOYANT) / coût CLAIRVOYANT
    *
    * CLAIRVOYANT était initialement conçu comme borne supérieure — la politique optimale
    * si l'on connaissait la période à venir. Le backtest a montré que ce n'en était pas
-   * une : FLOAT le bat quatre fois sur cinq, d'un ou deux pour cent. La raison est que
+   * une : NEAP le bat quatre fois sur cinq, d'un ou deux pour cent. La raison est que
    * le solveur est heuristique et que le critère mesuré — le coût *réalisé* hors
    * échantillon — n'est pas celui qu'il minimise.
    *

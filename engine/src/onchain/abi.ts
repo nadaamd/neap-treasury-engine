@@ -138,7 +138,7 @@ export function domainSeparator(chainId: bigint, verifyingContract: string): str
     keccak256(
       concat([
         bytes32Word(typeHash(EIP712_DOMAIN_TYPE_STRING)),
-        bytes32Word(typeHash('FLOAT')),
+        bytes32Word(typeHash('NEAP')),
         bytes32Word(typeHash('1')),
         word(chainId),
         addressWord(verifyingContract),

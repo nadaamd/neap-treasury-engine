@@ -26,7 +26,7 @@ import { buildPolicy } from './policies.ts';
 import { runPolicy } from './simulate.ts';
 import type { BacktestSummary, Interval, PolicyKind, SeedResult, WindowMetrics } from './types.ts';
 
-const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'FLOAT', 'CLAIRVOYANT'];
+const POLICIES: readonly PolicyKind[] = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
 
 const EMPTY: WindowMetrics = {
   capital: 0,
@@ -168,7 +168,7 @@ export function runBacktest(cfg: BacktestConfig): BacktestSummary {
   // Calculé par germe puis agrégé : agréger d'abord les coûts puis diviser masquerait la
   // dispersion, qui est précisément ce qu'on veut rapporter.
   const estimation = results
-    .map((r) => (r.byPolicy.FLOAT.totalCost - r.byPolicy.CLAIRVOYANT.totalCost)
+    .map((r) => (r.byPolicy.NEAP.totalCost - r.byPolicy.CLAIRVOYANT.totalCost)
       / r.byPolicy.CLAIRVOYANT.totalCost)
     .filter((x) => Number.isFinite(x));
 

@@ -1,7 +1,7 @@
 /**
  * Scénario de bout en bout.
  *
- * Chaque pièce de FLOAT est testée isolément. Ce script vérifie la seule chose que les
+ * Chaque pièce de NEAP est testée isolément. Ce script vérifie la seule chose que les
  * tests unitaires ne peuvent pas vérifier : qu'elles s'emboîtent. Déployer, configurer,
  * faire décider le moteur, signer, soumettre, approuver, exécuter, constater le
  * mouvement des soldes.

@@ -2,3 +2,4 @@
 node_modules/
 dist/
 bun.lock*
+.cre_build_tmp.js

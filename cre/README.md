@@ -65,10 +65,10 @@ cre.handlerInTee(
 
 ## Contraintes de la plateforme
 
-- **11 secrets et 5 appels HTTP** au maximum par invocation. FLOAT en utilise deux et
+- **11 secrets et 5 appels HTTP** au maximum par invocation. NEAP en utilise deux et
   deux — large marge.
 - **La logique du workflow n'est pas confidentielle**, seules les données le sont. C'est
-  exactement ce que FLOAT demande : on protège les positions, pas le modèle. À dire avant
+  exactement ce que NEAP demande : on protège les positions, pas le modèle. À dire avant
   qu'un juge ne le demande.
 - L'attestation est vérifiée par le **consensus du DON**, pas par le contrat consommateur
   (D23).

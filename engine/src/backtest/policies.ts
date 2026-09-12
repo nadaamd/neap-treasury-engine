@@ -140,7 +140,7 @@ export function buildPolicy(kind: PolicyKind, input: PolicyInput): PolicyBands {
         bands[c] = { lower: 0, target: z, upper: Number.POSITIVE_INFINITY };
         break;
       }
-      case 'FLOAT':
+      case 'NEAP':
         bands[c] = solveFor(calib, c, input.dailyVol[c]!, input.cfg, input.seed, input.costs?.[c]);
         break;
       case 'CLAIRVOYANT':

@@ -124,7 +124,7 @@ export function buildEpisode(params: EpisodeParams): Episode {
     evaluation[c] = flows[c]!.slice(calibEpochs);
   }
 
-  const { bands } = buildPolicy('FLOAT', {
+  const { bands } = buildPolicy('NEAP', {
     calibration,
     evaluation,
     dailyVol,

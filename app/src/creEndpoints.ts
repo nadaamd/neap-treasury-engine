@@ -37,7 +37,7 @@ function build(): { treasury: TreasurySnapshot; market: MarketSnapshot } {
     dailyVol[c] = currentVol[i]!;
   });
 
-  const { bands } = buildPolicy('FLOAT', {
+  const { bands } = buildPolicy('NEAP', {
     calibration: flows,
     evaluation: flows,
     dailyVol,

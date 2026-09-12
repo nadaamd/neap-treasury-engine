@@ -154,7 +154,7 @@ contract ConformanceTest is Test {
         bytes32 expected = keccak256(
             abi.encode(
                 vm.parseJsonBytes32(json, ".domainTypeHash"),
-                keccak256("FLOAT"),
+                keccak256("NEAP"),
                 keccak256("1"),
                 block.chainid,
                 address(verifier)

@@ -2,7 +2,7 @@
  * Client REST Privy minimal.
  *
  * `fetch` est intégré à Node 24 : ce client n'ajoute aucune dépendance, comme le reste
- * du dépôt hors du workflow CRE. Il ne couvre que les trois appels dont FLOAT a besoin —
+ * du dépôt hors du workflow CRE. Il ne couvre que les trois appels dont NEAP a besoin —
  * créer une politique, créer un portefeuille, lire un portefeuille — plutôt que
  * d'envelopper une API entière dont on n'utiliserait qu'un dixième.
  */
@@ -114,7 +114,7 @@ export interface CreatedKeyQuorum {
 /**
  * Quorum de clés — m signatures sur n.
  *
- * FLOAT n'en met qu'un seul endroit : l'approbation du trésorier. C'est le geste le plus
+ * NEAP n'en met qu'un seul endroit : l'approbation du trésorier. C'est le geste le plus
  * lourd de conséquences du système, et le seul dont le ralentissement soit justifié. Un
  * quorum sur l'opérateur alourdirait chaque epoch de quinze minutes sans rien protéger
  * que le contrat ne protège déjà.

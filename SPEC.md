@@ -1,4 +1,4 @@
-# FLOAT — Intraday Multi-Currency Treasury Engine
+# NEAP — Intraday Multi-Currency Treasury Engine
 ### Spécification technique — ETHOnline 2026
 > Nom de code provisoire (ex-NOSTRO). Voir §0.2 pour les alternatives.
 > Statut : **brouillon v0.1 — cadrage**. Les sections marquées ⚠️ contiennent des décisions non tranchées.
@@ -11,7 +11,7 @@
 
 Une institution qui promet des paiements transfrontaliers instantanés doit pré-financer chaque
 devise de chaque corridor. Ce capital est immobilisé, non rémunéré, et porte une exposition de
-change non couverte. FLOAT remplace ce pré-financement statique par un moteur de contrôle
+change non couverte. NEAP remplace ce pré-financement statique par un moteur de contrôle
 stochastique : il prévoit les flux nets par corridor, calcule les bandes de rééquilibrage optimales
 par devise, et ne déclenche une exécution PvP sur le moteur FX d'Arc que lorsque le gain marginal
 (capital libéré + réduction de VaR) dépasse le coût marginal d'exécution.
@@ -20,18 +20,22 @@ Le calcul de risque tourne dans un handler confidentiel Chainlink CRE (TEE), par
 institution ne publiera ses positions de trésorerie en clair sur une chaîne publique. La
 gouvernance opérationnelle (rôles, limites, séparation des devoirs) repose sur les org wallets Privy.
 
-### 0.2 Naming ⚠️
+### 0.2 Nom
 
-| Candidat | Pour | Contre |
-|---|---|---|
-| **FLOAT** | « le float » désigne précisément le capital immobilisé en transit — le mot exact du métier | générique en anglais, SEO faible |
-| NOSTRO | vocabulaire bancaire immédiat, crédible en entretien | opaque pour un juge crypto-natif |
-| TIDE | métaphore juste (marées de liquidité), mémorable | déjà utilisé par une néobanque UK |
-| BAND | renvoie à la bande de non-négociation, cœur technique | collision avec Band Protocol (oracle) |
-| KEEL | quille = stabilité, court, libre | métaphore trop indirecte |
+**NEAP.** La marée de morte-eau est celle de plus faible amplitude : le moment où
+l'écart entre pleine et basse mer est le plus petit. C'est exactement ce que le moteur
+fait d'un buffer de trésorerie.
 
-Recommandation : **FLOAT**, sous-titré « Intraday Treasury Engine ». Le nom dit le problème
-(le float à réduire), pas la solution. Décision à confirmer.
+Le nom précédent, FLOAT, désignait bien le capital immobilisé en transit — le terme exact
+du métier. Il a été abandonné pour deux raisons. D'abord une collision : Float Financial
+est une fintech canadienne financée à 70 M$ qui fait cartes corporate, notes de frais et
+change, c'est-à-dire le même voisinage. Ensuite parce qu'un mot du dictionnaire anglais
+n'est ni cherchable ni possédable, et qu'il porte en plus un sens parasite pour un public
+de développeurs.
+
+NEAP demande un pas de métaphore que la plupart des lecteurs ne franchiront pas seuls.
+Le sous-titre doit donc rester strictement littéral — *intraday multi-currency treasury
+engine* — et ne jamais essayer d'être poétique à son tour.
 
 ### 0.3 Sponsors et mapping des tracks
 
@@ -485,7 +489,7 @@ complet ferait probablement perdre le prix Chainlink. **Décider tôt.**
 
 ### 7.1 Ce qu'on utilise
 
-| Capacité Arc | Usage dans FLOAT | Criticité |
+| Capacité Arc | Usage dans NEAP | Criticité |
 |---|---|---|
 | Gas en USDC | rend le coût fixe γ déterministe en dollars — terme direct de la fonction objectif | **essentielle** |
 | Finalité ~350 ms | réduit l'horizon de risque h, donc la VaR, donc le buffer | **essentielle à la thèse** |
@@ -642,8 +646,8 @@ chacune, pas un développement.
 Le résultat du projet est statistique, la démo est temporelle. Résolution en trois temps :
 
 1. **Le backtest, pré-calculé** (20 s) — une courbe : capital immobilisé sous politique statique
-   vs FLOAT, sur 90 jours simulés, avec ΔVaR et coûts d'exécution cumulés. Trois politiques
-   comparées : statique, calendaire (fin de journée), FLOAT.
+   vs NEAP, sur 90 jours simulés, avec ΔVaR et coûts d'exécution cumulés. Trois politiques
+   comparées : statique, calendaire (fin de journée), NEAP.
 2. **La sensibilité** (20 s) — le même graphe recalculé en direct quand on bouge κ ou η dans l'UI.
    Ça prouve que le modèle est vivant et non un chiffre en dur.
 3. **Une exécution live** (60 s) — le parcours de crise §2.3 : choc de flux, franchissement de
@@ -719,7 +723,7 @@ que d'en créer une.
 
 | # | Décision arrêtée | Justification |
 |---|---|---|
-| **D1** | **FLOAT** — *Intraday Treasury Engine* | « le float » est le terme exact du métier pour le capital immobilisé en transit ; lisible par un trésorier comme par un juge crypto. Le nom énonce le problème, pas la solution. |
+| **D1** | **NEAP** — *Intraday Treasury Engine* | « le float » est le terme exact du métier pour le capital immobilisé en transit ; lisible par un trésorier comme par un juge crypto. Le nom énonce le problème, pas la solution. |
 | **D2** | **Posture hybride** : 3 devises stablecoin (USD/EUR/GBP) + 1 corridor « rail lent » sans stablecoin (EUR→BRL), modélisé avec coût fixe élevé et latence J+2 | c'est le seul cadrage qui crée un **arbitrage entre deux régimes de coût**. Sans lui, le modèle n'a qu'un seul rail et l'optimiseur n'optimise rien d'intéressant. C'est aussi la situation réelle d'une trésorerie en transition — donc l'angle portfolio. |
 | **D3** | **Résolution numérique** des bandes (Monte-Carlo + recherche directe), **warm-startée par la solution analytique de Miller-Orr**, qui sert aussi de test de non-régression sur le cas drift nul | le warm start rend la recherche rapide *et* démontre qu'on sait où le modèle fermé est valide. Deux signaux de compétence pour un seul composant. |
 | **D4** | **ES 97.5 % (aligné FRTB) estimée par Filtered Historical Simulation**, avec ES normale en benchmark et VaR 99 % en affichage | FRTB a remplacé la VaR par l'ES 97.5 % précisément pour les raisons de §4.4. Citer la norme et l'implémenter coûte ~30 lignes (standardisation des résidus par la vol EWMA, rééchantillonnage, remise à l'échelle). **Le tableau comparatif des trois estimateurs est le meilleur artefact portfolio du projet.** |
@@ -975,11 +979,11 @@ avoir aucun effet sur les décisions antérieures.
 |---|---|---|
 | `STATIC` | buffer fixe dimensionné au pire flux observé | témoin haut — l'état de l'art actuel |
 | `CALENDAR` | rééquilibrage en fin de journée, cible fixe | témoin réaliste — ce que fait une trésorerie |
-| `FLOAT` | bandes optimisées, déclenchement par signal | le sujet |
+| `NEAP` | bandes optimisées, déclenchement par signal | le sujet |
 | `ORACLE` | politique optimale avec connaissance parfaite du futur | **borne supérieure** |
 
 ⚡ La politique `ORACLE` est le raffinement qui coûte le moins cher et impressionne le plus :
-elle donne la performance maximale atteignable, et permet de dire « FLOAT capture 78 % du gain
+elle donne la performance maximale atteignable, et permet de dire « NEAP capture 78 % du gain
 théoriquement disponible » plutôt qu'un pourcentage sans référentiel. **C'est une phrase qu'aucun
 autre projet du hackathon ne pourra prononcer.**
 
