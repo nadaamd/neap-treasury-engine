@@ -1,88 +1,114 @@
-# NEAP — Intraday Multi-Currency Treasury Engine
+# NEAP
 
-> A *neap tide* is the tide of smallest range: the moment when the swing between high
-> and low water is at its least. That is what this engine does to a treasury buffer.
+**Intraday multi-currency treasury engine.**
+Live → **https://neap-git-main-nadas-projects-0f34418c.vercel.app**
 
-> ETHOnline 2026 · Arc (Circle) · Chainlink CRE · Privy
+> A *neap tide* is the tide of smallest range: the moment when the swing between high and
+> low water is at its least. That is what this engine does to a treasury buffer.
 
-Une institution qui promet des paiements transfrontaliers instantanés doit pré-financer chaque
-devise de chaque corridor. Ce capital est immobilisé, non rémunéré, et porte une exposition de
-change subie.
+Built for ETHOnline 2026 · Arc (Circle) · Chainlink CRE · Privy
 
-**NEAP** remplace ce pré-financement statique par un moteur de contrôle stochastique : il prévoit
-les flux nets par corridor, résout les bandes de rééquilibrage optimales par devise, et ne
-déclenche une exécution PvP sur le moteur FX d'Arc que lorsque le gain marginal (capital libéré +
-réduction d'Expected Shortfall) dépasse le coût marginal d'exécution.
+---
 
-Le calcul de risque tourne dans un handler confidentiel **Chainlink CRE (TEE)** — aucune
-institution ne publiera ses positions de trésorerie en clair sur une chaîne publique. La
-gouvernance opérationnelle repose sur les org wallets **Privy**, avec séparation des devoirs
-imposée on-chain.
+## The problem
 
-## La thèse, en un paragraphe
+Promise an instant cross-border payment and you must hold the destination currency
+*before* the money arrives. Every corridor, every currency, all day. That buffer earns
+nothing and carries a currency position nobody chose.
 
-Le coût fixe d'un rééquilibrage sur Arc est de l'ordre de quelques cents en USDC, avec une
-finalité de ~350 ms. Dans le modèle de Miller-Orr, la largeur de bande optimale croît en
-`γ^(1/3)` où `γ` est ce coût fixe. Diviser `γ` par 10 000 réduit la bande d'un facteur ~21.
-**Le buffer de trésorerie optimal s'effondre.** Ce projet quantifie cet effondrement, par backtest
-walk-forward avec intervalles de confiance.
+Treasuries size it the way they always have: look at the worst day of the last quarter,
+provision that much, move on. It works, and it is expensive.
 
-## Lancer
+## What NEAP does
+
+It replaces that heuristic with stochastic control. It forecasts net flow per corridor,
+solves the rebalancing bands that minimise one cost function — carry, fixed cost,
+execution, FX risk, breach risk — and rebalances only when the state leaves the band.
+
+The band is not a setting. It is the minimum of the objective.
+
+## Measured
+
+20 seeds × 6 walk-forward windows, every parameter estimated only from data before the
+decision it informs ([`docs/BACKTEST.md`](./docs/BACKTEST.md)):
+
+| | Conservative pre-funding | NEAP | Δ |
+|---|---|---|---|
+| Idle capital | $1.74M | **$269k** | **−84.6%** |
+| ES 97.5% | $77.8k | **$8.2k** | **−89.4%** |
+| Total cost | $356k | **$269k** | −24.4% |
+| Orders | 90 | 2 879 | +3 113% |
+
+**What is robust** — the capital reduction holds from −84.9% to −84.2% across the full
+sensitivity range of the one uncalibrated parameter.
+**What is conditional** — the cost reduction moves between −13% and −38% over that same
+range, and should never be quoted without it.
+**What is worse** — NEAP tolerates more threshold breaches than conservative pre-funding.
+That is the optimiser applying the breach cost it was given, priced at $50 000.
+
+### The mechanism is not the obvious one
+
+At a 6% cost of capital, carrying a million dollars for a month is noise next to
+execution costs. The buffer collapsing is the visible result, not the cause.
+
+Execution cost falls **19.7% despite thirty times more orders**. Under square-root market
+impact, many small orders cost less than a few large ones — and that regime is only
+reachable once the fixed cost per rebalance collapses. On correspondent-bank rails at tens
+of dollars per transfer, 2 879 orders would cost seven times the entire budget.
+
+Band width follows the cube root of the fixed cost. Divide that cost by 10 000 and the
+band divides by 21.5.
+
+## Architecture
+
+| Layer | Role |
+|---|---|
+| **Chainlink CRE** | The decision runs inside a TEE. Live balances, upcoming commitments and internal limits map an institution's liquidity position precisely enough for a counterparty to trade against it — they never leave the enclave. What leaves is a signed report carrying an order commitment and metrics in basis points, never amounts. |
+| **Privy** | Role wallets whose policies allow three function selectors and nothing else. A stolen key passes authentication; it does not pass the policy. Separation of duties is enforced on-chain *and* at the wallet. |
+| **Arc** | PvP settlement: both legs complete or neither does. Sub-second finality, gas denominated in USDC — which is what makes the fixed cost a *known number* inside the objective rather than an estimate. |
+
+The vault never trusts the report. Per-order cap, per-epoch cap, rolling 24-hour window
+and a price-deviation check are applied independently, because a deranged model produces
+a perfectly signed, perfectly absurd plan.
+
+## Run it
 
 ```bash
-npm run e2e        # scénario complet sur un nœud éphémère (~40 s)
-npm run dev        # page d'accueil sur http://localhost:5173, tableau de bord sur /app
-npm test           # 109 tests TypeScript, aucune dépendance
-npm run backtest   # régénère results/backtest.json (~9 min)
-cd contracts && forge test   # 80 tests Solidity
+npm run e2e          # full chain on a throwaway node: deploy → decide → sign → approve → execute
+npm run dev          # landing on http://localhost:5173, dashboard on /app
+npm test             # 151 TypeScript tests
+npm run typecheck    # 0 errors
+npm run cre:simulate # the confidential handler, in the TEE simulator
+npm run backtest     # regenerates results (~9 min)
+
+cd contracts && forge test   # 90 Solidity tests
 ```
 
-Aucun `npm install` : Node 24 exécute le TypeScript nativement et le dépôt n'a pas de
-dépendance JavaScript. Les contrats utilisent Foundry et `forge-std` en sous-module.
+**No `npm install`.** Node 24 runs the TypeScript directly and the repository has no
+JavaScript dependency outside the CRE workflow, which needs the Chainlink SDK. Contracts
+use Foundry with `forge-std` as a submodule.
 
-## Résultats
+## What is real, what is not
 
-Backtest walk-forward, 20 germes × 6 fenêtres, calibration sur le passé strict
-([`docs/BACKTEST.md`](./docs/BACKTEST.md)) :
+Kept current on purpose. A judge will find these anyway; finding them written changes who
+saw them first.
 
-| | Pré-financement conservateur | NEAP | Écart |
-|---|---|---|---|
-| Capital immobilisé | 1,74 M$ | **269 k$** | **−84,6 %** |
-| ES 97,5 % | 77,8 k$ | **8,2 k$** | **−89,4 %** |
-| Coût total | 356 k$ | **269 k$** | −24,4 % |
-| Nombre d'ordres | 90 | 2 879 | +3 113 % |
-
-La réduction de capital est stable sur toute la plage de sensibilité au seul paramètre
-non calibré du modèle. La réduction de coût, elle, en dépend (−13 % à −38 %) et ne doit
-jamais être citée sans sa plage.
-
-Le mécanisme n'est pas celui qu'on attend : le coût d'exécution baisse **malgré** trente
-fois plus d'ordres, parce que sous impact en racine carrée beaucoup de petits ordres
-coûtent moins que quelques gros. Ce régime n'est accessible que parce que le coût fixe
-d'un rééquilibrage s'est effondré sur le rail stablecoin.
+| | |
+|---|---|
+| Payment flows | **Synthetic.** No institution publishes flows by corridor. Compound-Poisson generator calibrated on public aggregates (ECB, World Bank), with five validity tests and a fixed seed. |
+| Market impact `η` | **Not calibrated.** Arc's real book depth is unknown. Exposed as a parameter, sensitivity published beside every number that depends on it. |
+| Confidential handler | **Simulated, successfully.** `cre workflow simulate` runs it in the TEE simulator. Deployment is waitlisted; the local simulator needs no enrollment. |
+| Execution venue | **`MockFxVenue`**, deterministic, used by the backtest. StableFX is an API/SDK integration reserved to vetted institutions, so its adapter lives off-chain by design, not as a fallback. |
+| Slow-rail settlement | The BRL corridor's T+2 latency is **priced but not simulated** — rebalances are instantaneous in the simulation, which mildly flatters that corridor. |
 
 ## Documentation
 
-- [`docs/E2E.md`](./docs/E2E.md) — trace du scénario de bout en bout
-- [`docs/BACKTEST.md`](./docs/BACKTEST.md) — résultats du backtest, avec leurs limites
-- [`docs/DECISIONS.md`](./docs/DECISIONS.md) — journal des décisions d'architecture
-- [`SPEC.md`](./SPEC.md) — spécification technique complète : périmètre, modèle quantitatif,
-  architecture, contrats, sécurité, problématiques ouvertes et décisions arrêtées.
-
-## Statut
-
-🚧 En cours de construction — ETHOnline 2026.
-
-## Ce qui est réel / ce qui est simulé
-
-Section maintenue à jour par honnêteté envers les juges et les lecteurs :
-
-| Composant | Statut |
-|---|---|
-| Données de flux de paiement | **synthétiques** — générateur Poisson composé calibré sur agrégats publics (BCE, Banque Mondiale) |
-| Coefficient d'impact de marché `η` | **non calibré** — exposé en paramètre, sensibilité affichée |
-| Venue d'exécution | `MockFxVenue` déterministe pour le backtest, `ArcFxVenue` pour l'intégration réelle |
-| Attestation TEE | à confirmer — déploiement CRE réel visé, runner local isolé en repli documenté |
+- [`docs/BACKTEST.md`](./docs/BACKTEST.md) — results with their limits
+- [`docs/E2E.md`](./docs/E2E.md) — trace of the end-to-end run
+- [`docs/DECISIONS.md`](./docs/DECISIONS.md) — 24 architecture decisions, each with its reason
+- [`docs/JALON-0.md`](./docs/JALON-0.md) — sponsor questions, and why six of eight were answerable from the docs
+- [`docs/MAINNET.md`](./docs/MAINNET.md) — the Arc mainnet commitment and what ships under it
+- [`SPEC.md`](./SPEC.md) — full technical specification
 
 ## Licence
 
