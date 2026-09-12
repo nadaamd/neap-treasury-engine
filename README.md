@@ -112,4 +112,7 @@ saw them first.
 
 ## Licence
 
-MIT
+MIT — [`LICENSE`](./LICENSE).
+
+The two webfonts served by the site are redistributed under the SIL Open Font License
+1.1, and the contracts are unaudited: [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md).
