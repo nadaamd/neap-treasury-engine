@@ -28,7 +28,7 @@ walk-forward avec intervalles de confiance.
 
 ```bash
 npm run e2e        # scénario complet sur un nœud éphémère (~40 s)
-npm run dev        # tableau de bord sur http://localhost:5173
+npm run dev        # page d'accueil sur http://localhost:5173, tableau de bord sur /app
 npm test           # 109 tests TypeScript, aucune dépendance
 npm run backtest   # régénère results/backtest.json (~9 min)
 cd contracts && forge test   # 80 tests Solidity

@@ -24,6 +24,7 @@ const MIME: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
 };
 
 function num(value: string | null, fallback: number): number {
@@ -95,7 +96,10 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    const requested = url.pathname === '/' ? '/index.html' : url.pathname;
+    // La page d'accueil convainc, le tableau de bord sert à travailler : deux surfaces,
+    // deux adresses. `/app` sans extension est une adresse qu'on peut dire à voix haute.
+    const requested =
+      url.pathname === '/' ? '/index.html' : url.pathname === '/app' ? '/app.html' : url.pathname;
     // Sécurité élémentaire : on ne sert que ce qui est sous public/.
     const target = join(PUBLIC, requested);
     if (!target.startsWith(PUBLIC)) {
