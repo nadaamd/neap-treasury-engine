@@ -15,6 +15,9 @@ const state = {
   index: 0,
   timer: null,
   loading: false,
+  /** Derniers ordres émis, le plus récent en tête. */
+  log: [],
+  freshKey: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -137,19 +140,40 @@ function renderCards(step, bands) {
   }).join('');
 }
 
+/**
+ * Journal des ordres plutôt qu'affichage de l'instant.
+ *
+ * La version précédente remplaçait le panneau à chaque epoch : un ordre apparaissait
+ * pendant deux cent cinquante millisecondes puis cédait la place à « rien à faire ».
+ * À l'écran, et plus encore dans une vidéo, il n'y avait rien à lire — le moment le
+ * plus intéressant de la démonstration passait avant qu'on l'ait vu.
+ *
+ * Les six derniers ordres restent donc affichés, le plus récent en haut, avec l'heure
+ * simulée à laquelle ils ont été émis. Le nouveau s'éclaire une fois puis s'éteint :
+ * l'œil sait où regarder sans avoir à suivre le rythme.
+ */
+const LOG_LENGTH = 6;
+
 function renderPlan(step) {
-  if (step.actions.length === 0) {
+  for (const action of step.actions) {
+    state.log.unshift({ ...action, at: clockLabel(step.t), key: `${step.t}:${action.currency}` });
+  }
+  state.log.length = Math.min(state.log.length, LOG_LENGTH);
+
+  if (state.log.length === 0) {
     $('plan').innerHTML =
-      '<div class="idle">Every balance sits inside its band. Nothing to do.</div>';
+      '<div class="idle">Every balance sits inside its band. Nothing to do yet.</div>';
     return;
   }
-  $('plan').innerHTML = step.actions.map((a) => `
-    <div class="order">
+
+  $('plan').innerHTML = state.log.map((a, i) => `
+    <div class="order${i === 0 && a.key === state.freshKey ? ' fresh' : ''}">
+      <span class="at">${a.at.split('  ')[1] ?? a.at}</span>
       <span>
         <b style="color:${COLOR[a.currency]}">${a.currency}</b>
         ${a.amount > 0 ? 'buy' : 'release'}
       </span>
-      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· cost $${a.cost.toFixed(0)}</span></span>
+      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· $${a.cost.toFixed(0)}</span></span>
     </div>`).join('');
 }
 
@@ -192,7 +216,7 @@ function renderChart(episode, upto) {
     .join('');
 
   $('chart').innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="200" preserveAspectRatio="none">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none">
       ${dayLines.join('')}
       ${CURRENCIES.map(path).join('')}
       ${breaches}
@@ -208,6 +232,7 @@ function renderStep() {
   const ep = state.episode;
   if (!ep) return;
   const step = ep.steps[state.index];
+  state.freshKey = step.actions.length > 0 ? `${step.t}:${step.actions[0].currency}` : null;
   $('clock').textContent = clockLabel(step.t);
   renderCards(step, ep.bands);
   renderPlan(step);
@@ -318,6 +343,7 @@ async function loadEpisode(extra = {}) {
     const res = await fetch(`/api/episode?${q}`);
     state.episode = await res.json();
     state.index = 0;
+    state.log = [];
     renderStep();
     $('status').textContent = `${state.episode.steps.length} epochs · ${state.episode.computeMs} ms`;
   } catch (err) {
