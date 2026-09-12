@@ -9,25 +9,30 @@
     /* Le navigateur dessine des surfaces que la page ne dessine pas — ascenseurs,
        contrôles de formulaire, menus. Sans cette déclaration, il les rend en clair au
        milieu d'une interface sombre. */
-    color-scheme: dark;
+    color-scheme: light;
 
-    --bg: #0c0f14;
-    --panel: #141922;
-    --panel-2: #1b2230;
-    --line: #263042;
-    --ink: #e8edf5;
-    /* Trois niveaux de texte, tous conformes AA sur les trois fonds : 7,8:1 / 5,2:1 /
-       15,0:1. La valeur précédente de --faint tombait à 2,9:1 — lisible pour qui la
-       cherchait, invisible pour les autres. */
-    --dim: #9fadc4;
-    --faint: #7b8ca8;
-    --ok: #4ade80;
-    --warn: #fbbf24;
-    --bad: #f87171;
-    --accent: #60a5fa;
-    --eur: #60a5fa;
-    --gbp: #a78bfa;
-    --brl: #fbbf24;
+    --bg: #f5f6f9;
+    --panel: #ffffff;
+    --panel-2: #eef1f6;
+    --line: #dbe1ea;
+    --ink: #12161d;
+    /* Trois niveaux de texte, tous conformes AA sur les trois fonds : 7,3:1 / 5,5:1 /
+       18,1:1 sur panneau. */
+    --dim: #4d5766;
+    --faint: #606a79;
+    --ok: #116634;
+    --warn: #8a5304;
+    --bad: #b02020;
+    --accent: #1d4ed8;
+    --eur: #1d4ed8;
+    --gbp: #6d28d9;
+    --brl: #8a5304;
+
+    /* Fonds des zones de jauge : des teintes assez pâles pour que le curseur et les
+       chiffres restent la seule chose qu'on lit en premier. */
+    --zone-low: #fadcdc;
+    --zone-ok: #d8f0e0;
+    --zone-high: #fbe9c8;
   }
   * { box-sizing: border-box; }
 
@@ -38,7 +43,7 @@
   ::-webkit-scrollbar { width: 11px; height: 11px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; border: 2px solid var(--bg); }
-  ::-webkit-scrollbar-thumb:hover { background: var(--faint); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--dim); }
 
   :focus-visible {
     outline: 2px solid var(--accent);
@@ -91,7 +96,7 @@
   }
   button:hover:not(:disabled) { border-color: var(--accent); }
   button:disabled { opacity: .45; cursor: not-allowed; }
-  button.primary { background: var(--accent); color: #06101f; border-color: var(--accent); font-weight: 600; }
+  button.primary { background: var(--accent); color: #ffffff; border-color: var(--accent); font-weight: 600; }
   button.danger { border-color: var(--bad); color: var(--bad); }
   .icon { width: 14px; height: 14px; flex: none; }
   .swatch { width: 9px; height: 9px; vertical-align: -1px; margin-right: 5px; }

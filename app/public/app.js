@@ -87,11 +87,11 @@ function gauge(bands, balance) {
 
   return `
     <svg class="gauge" viewBox="0 0 100 22" width="100%" height="34" preserveAspectRatio="none">
-      <rect x="0" y="7" width="100" height="8" fill="#0a0d12" rx="2"/>
-      <rect x="0" y="7" width="${lo.toFixed(2)}" height="8" fill="#7f1d1d" opacity=".55"/>
-      <rect x="${lo.toFixed(2)}" y="7" width="${Math.max(hi - lo, 0.4).toFixed(2)}" height="8" fill="#14532d" opacity=".8"/>
-      <rect x="${hi.toFixed(2)}" y="7" width="${Math.max(100 - hi, 0).toFixed(2)}" height="8" fill="#78350f" opacity=".55"/>
-      <line x1="${tgt.toFixed(2)}" y1="4" x2="${tgt.toFixed(2)}" y2="18" stroke="var(--dim)" stroke-width=".5" stroke-dasharray="1.5 1.5"/>
+      <rect x="0" y="7" width="100" height="8" fill="var(--panel-2)" rx="2"/>
+      <rect x="0" y="7" width="${lo.toFixed(2)}" height="8" fill="var(--zone-low)"/>
+      <rect x="${lo.toFixed(2)}" y="7" width="${Math.max(hi - lo, 0.4).toFixed(2)}" height="8" fill="var(--zone-ok)"/>
+      <rect x="${hi.toFixed(2)}" y="7" width="${Math.max(100 - hi, 0).toFixed(2)}" height="8" fill="var(--zone-high)"/>
+      <line x1="${tgt.toFixed(2)}" y1="4" x2="${tgt.toFixed(2)}" y2="18" stroke="var(--dim)" stroke-width=".6" stroke-dasharray="1.5 1.5"/>
       <rect x="${Math.max(pos - 0.55, 0).toFixed(2)}" y="2" width="1.1" height="18"
             fill="${outside ? 'var(--bad)' : 'var(--ok)'}"/>
     </svg>`;
