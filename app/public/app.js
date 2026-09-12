@@ -16,8 +16,6 @@ const state = {
   timer: null,
   loading: false,
   /** Derniers ordres émis, le plus récent en tête. */
-  log: [],
-  freshKey: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -104,104 +102,174 @@ function gauge(bands, balance) {
 /*                               Rendu                                */
 /* ------------------------------------------------------------------ */
 
-function renderCards(step, bands) {
-  $('cards').innerHTML = CURRENCIES.map((c) => {
+/* ------------------------------------------------------------------ */
+/*                        Rendu : construire, puis mettre à jour       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Le rendu construit la structure une fois, puis n'écrit que les valeurs.
+ *
+ * La version précédente réécrivait `innerHTML` à chaque epoch. Quatre fois par seconde,
+ * le navigateur jetait et reconstruisait chaque carte, chaque jauge et chaque ligne du
+ * journal : les cartes clignotaient, la mise en page tremblait, et l'animation du dernier
+ * ordre se redéclenchait sur toutes les lignes puisqu'elles étaient toutes neuves.
+ *
+ * Ici les nœuds sont créés une seule fois et seules les valeurs changent. Rien ne
+ * clignote, l'animation ne joue que sur la ligne réellement nouvelle, et le coût par pas
+ * devient négligeable.
+ */
+const nodes = { cards: new Map(), chart: null, log: null };
+
+function buildCards(bands) {
+  const host = $('cards');
+  host.innerHTML = '';
+  nodes.cards.clear();
+
+  for (const c of CURRENCIES) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="ccy">
+        <b style="color:${COLOR[c]}">${c}</b>
+        <span class="badge ok" data-badge>in band</span>
+      </div>
+      <div class="bal num" data-bal>—</div>
+      <div class="sub num" data-flow>&nbsp;</div>
+      <svg class="gauge" viewBox="0 0 100 22" width="100%" height="34" preserveAspectRatio="none">
+        <rect x="0" y="7" width="100" height="8" fill="var(--panel-2)" rx="2"/>
+        <rect y="7" height="8" fill="var(--zone-low)" data-low/>
+        <rect y="7" height="8" fill="var(--zone-ok)" data-ok/>
+        <rect y="7" height="8" fill="var(--zone-high)" data-high/>
+        <line y1="4" y2="18" stroke="var(--dim)" stroke-width=".6" stroke-dasharray="1.5 1.5" data-target/>
+        <rect y="2" width="1.1" height="18" data-marker/>
+      </svg>
+      <div class="ticks num">
+        <span>lower ${money(bands[c].lower)}</span>
+        <span>target ${money(bands[c].target)}</span>
+        <span>upper ${money(bands[c].upper)}</span>
+      </div>`;
+    host.append(card);
+    nodes.cards.set(c, {
+      card,
+      badge: card.querySelector('[data-badge]'),
+      bal: card.querySelector('[data-bal]'),
+      flow: card.querySelector('[data-flow]'),
+      low: card.querySelector('[data-low]'),
+      ok: card.querySelector('[data-ok]'),
+      high: card.querySelector('[data-high]'),
+      target: card.querySelector('[data-target]'),
+      marker: card.querySelector('[data-marker]'),
+    });
+  }
+}
+
+function updateCards(step, bands) {
+  for (const c of CURRENCIES) {
+    const n = nodes.cards.get(c);
     const b = bands[c];
-    // On montre le solde constaté avant décision : c'est celui qui déclenche l'action.
     const bal = step.observed[c];
     const settled = step.balances[c];
     const outside = bal < b.lower || bal > b.upper;
     const acted = step.actions.some((a) => a.currency === c);
-    const badge = bal < 0
-      ? '<span class="badge bad">breach</span>'
-      : acted
-        ? '<span class="badge warn">rebalanced</span>'
-        : outside
-          ? '<span class="badge warn">outside band</span>'
-          : '<span class="badge ok">in band</span>';
 
-    return `
-      <div class="card ${bal < 0 ? 'hot' : ''}">
-        <div class="ccy">
-          <b style="color:${COLOR[c]}">${c}</b>
-          ${badge}
-        </div>
-        <div class="bal num">${money(bal)}</div>
-        <div class="sub num">epoch flow ${signed(step.flows[c])}${
-          acted ? ` · pulled back to ${money(settled)}` : ''
-        }</div>
-        ${gauge(b, bal)}
-        <div class="ticks num">
-          <span>lower ${money(b.lower)}</span>
-          <span>target ${money(b.target)}</span>
-          <span>upper ${money(b.upper)}</span>
-        </div>
-      </div>`;
-  }).join('');
+    n.card.classList.toggle('hot', bal < 0);
+    n.bal.textContent = money(bal);
+    n.flow.textContent = `epoch flow ${signed(step.flows[c])}${acted ? ` · pulled back to ${money(settled)}` : ''}`;
+
+    const [cls, label] = bal < 0
+      ? ['badge bad', 'breach']
+      : acted ? ['badge warn', 'rebalanced']
+      : outside ? ['badge warn', 'outside band']
+      : ['badge ok', 'in band'];
+    if (n.badge.className !== cls) n.badge.className = cls;
+    if (n.badge.textContent !== label) n.badge.textContent = label;
+
+    const span = Math.max(b.upper * 1.35, bal * 1.15, 1);
+    const x = (v) => Math.max(0, Math.min(100, (v / span) * 100));
+    const lo = x(b.lower);
+    const hi = x(b.upper);
+    const pos = x(bal);
+
+    n.low.setAttribute('x', '0');
+    n.low.setAttribute('width', lo.toFixed(2));
+    n.ok.setAttribute('x', lo.toFixed(2));
+    n.ok.setAttribute('width', Math.max(hi - lo, 0.4).toFixed(2));
+    n.high.setAttribute('x', hi.toFixed(2));
+    n.high.setAttribute('width', Math.max(100 - hi, 0).toFixed(2));
+    const tgt = x(b.target).toFixed(2);
+    n.target.setAttribute('x1', tgt);
+    n.target.setAttribute('x2', tgt);
+    n.marker.setAttribute('x', Math.max(pos - 0.55, 0).toFixed(2));
+    n.marker.setAttribute('fill', outside ? 'var(--bad)' : 'var(--ok)');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
+const LOG_LENGTH = 6;
+
+function buildLog() {
+  $('plan').innerHTML = '<div class="idle">Every balance sits inside its band. Nothing to do yet.</div>';
+  nodes.log = null;
 }
 
 /**
- * Journal des ordres plutôt qu'affichage de l'instant.
+ * Le journal n'ajoute que les lignes nouvelles, en tête.
  *
- * La version précédente remplaçait le panneau à chaque epoch : un ordre apparaissait
- * pendant deux cent cinquante millisecondes puis cédait la place à « rien à faire ».
- * À l'écran, et plus encore dans une vidéo, il n'y avait rien à lire — le moment le
- * plus intéressant de la démonstration passait avant qu'on l'ait vu.
- *
- * Les six derniers ordres restent donc affichés, le plus récent en haut, avec l'heure
- * simulée à laquelle ils ont été émis. Le nouveau s'éclaire une fois puis s'éteint :
- * l'œil sait où regarder sans avoir à suivre le rythme.
+ * Le reconstruire entièrement relançait l'animation de mise en évidence sur chacune des
+ * six lignes à chaque epoch : tout le panneau clignotait en jaune, et le repère perdait
+ * exactement ce qu'il devait apporter.
  */
-const LOG_LENGTH = 6;
+function appendToLog(step) {
+  if (step.actions.length === 0) return;
 
-function renderPlan(step) {
-  for (const action of step.actions) {
-    state.log.unshift({ ...action, at: clockLabel(step.t), key: `${step.t}:${action.currency}` });
-  }
-  state.log.length = Math.min(state.log.length, LOG_LENGTH);
-
-  if (state.log.length === 0) {
-    $('plan').innerHTML =
-      '<div class="idle">Every balance sits inside its band. Nothing to do yet.</div>';
-    return;
+  if (!nodes.log) {
+    $('plan').innerHTML = '';
+    nodes.log = document.createElement('div');
+    $('plan').append(nodes.log);
   }
 
-  $('plan').innerHTML = state.log.map((a, i) => `
-    <div class="order${i === 0 && a.key === state.freshKey ? ' fresh' : ''}">
-      <span class="at">${a.at.split('  ')[1] ?? a.at}</span>
-      <span>
-        <b style="color:${COLOR[a.currency]}">${a.currency}</b>
-        ${a.amount > 0 ? 'buy' : 'release'}
-      </span>
-      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· $${a.cost.toFixed(0)}</span></span>
-    </div>`).join('');
+  for (const a of step.actions) {
+    const row = document.createElement('div');
+    row.className = 'order fresh';
+    row.innerHTML = `
+      <span class="at">${clockLabel(step.t).split('  ')[1] ?? ''}</span>
+      <span><b style="color:${COLOR[a.currency]}">${a.currency}</b> ${a.amount > 0 ? 'buy' : 'release'}</span>
+      <span class="num">${money(Math.abs(a.amount))} <span class="sub">· $${a.cost.toFixed(0)}</span></span>`;
+    nodes.log.prepend(row);
+  }
+  while (nodes.log.children.length > LOG_LENGTH) nodes.log.lastElementChild.remove();
 }
 
-function renderKpi(step, episode) {
-  const gross = CURRENCIES.reduce((a, c) => a + Math.max(step.observed[c], 0), 0);
+/* ------------------------------------------------------------------ */
+
+function buildKpi() {
   $('kpi').innerHTML = `
-    <div><span>ES 97.5% · 15 min</span><b class="num">${money(step.es)}</b></div>
-    <div><span>Idle capital</span><b class="num">${money(gross)}</b></div>
-    <div><span>Cumulative cost</span><b class="num">${money(step.cumulativeCost)}</b></div>
-    <div><span>Breaches</span><b class="num" style="color:${episode.summary.breaches ? 'var(--bad)' : 'var(--ok)'}">${episode.summary.breaches}</b></div>`;
+    <div><span>ES 97.5% · 15 min</span><b class="num" data-es>—</b></div>
+    <div><span>Idle capital</span><b class="num" data-cap>—</b></div>
+    <div><span>Cumulative cost</span><b class="num" data-cost>—</b></div>
+    <div><span>Breaches</span><b class="num" data-breach>—</b></div>`;
+}
+
+function updateKpi(step, episode) {
+  const gross = CURRENCIES.reduce((a, c) => a + Math.max(step.observed[c], 0), 0);
+  $('kpi').querySelector('[data-es]').textContent = money(step.es);
+  $('kpi').querySelector('[data-cap]').textContent = money(gross);
+  $('kpi').querySelector('[data-cost]').textContent = money(step.cumulativeCost);
+  const breach = $('kpi').querySelector('[data-breach]');
+  breach.textContent = String(episode.summary.breaches);
+  breach.style.color = episode.summary.breaches ? 'var(--bad)' : 'var(--ok)';
   $('kpinote').textContent =
     `${episode.summary.rebalances} rebalances this episode · bands solved in ${episode.computeMs} ms`;
 }
 
-function renderChart(episode, upto) {
+/* ------------------------------------------------------------------ */
+
+function buildChart(episode) {
   const W = 1000;
   const H = 200;
   const steps = episode.steps;
   const max = Math.max(...steps.flatMap((s) => CURRENCIES.map((c) => s.observed[c])), 1);
-
-  const path = (c) => {
-    const pts = steps.slice(0, upto + 1).map((s, i) => {
-      const x = (i / Math.max(steps.length - 1, 1)) * W;
-      const y = H - (Math.max(s.observed[c], 0) / max) * (H - 12) - 6;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    return pts.length < 2 ? '' : `<polyline fill="none" stroke="${COLOR[c]}" stroke-width="1.6" points="${pts.join(' ')}"/>`;
-  };
 
   const dayLines = [];
   const days = Math.ceil(steps.length / EPOCHS_PER_DAY);
@@ -210,34 +278,69 @@ function renderChart(episode, upto) {
     dayLines.push(`<line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${H}" stroke="var(--line)" stroke-width="1"/>`);
   }
 
-  const cursorX = ((upto / Math.max(steps.length - 1, 1)) * W).toFixed(1);
-  const breaches = steps.slice(0, upto + 1)
-    .map((s, i) => (s.breach ? `<circle cx="${((i / Math.max(steps.length - 1, 1)) * W).toFixed(1)}" cy="${H - 4}" r="3" fill="var(--bad)"/>` : ''))
-    .join('');
-
   $('chart').innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none">
       ${dayLines.join('')}
-      ${CURRENCIES.map(path).join('')}
-      ${breaches}
-      <line x1="${cursorX}" y1="0" x2="${cursorX}" y2="${H}" stroke="var(--accent)" stroke-width="1" opacity=".7"/>
+      ${CURRENCIES.map((c) => `<polyline fill="none" stroke="${COLOR[c]}" stroke-width="1.6" data-line="${c}"/>`).join('')}
+      <g data-breaches></g>
+      <line y1="0" y2="${H}" stroke="var(--accent)" stroke-width="1" opacity=".7" data-cursor/>
     </svg>
     <div class="ticks">
       ${CURRENCIES.map((c) => `<span style="color:${COLOR[c]}">${swatch(COLOR[c])}${c}</span>`).join('')}
       <span>peak ${money(max)}</span>
     </div>`;
+
+  nodes.chart = {
+    W, H, max,
+    lines: Object.fromEntries(CURRENCIES.map((c) => [c, $('chart').querySelector(`[data-line="${c}"]`)])),
+    breaches: $('chart').querySelector('[data-breaches]'),
+    cursor: $('chart').querySelector('[data-cursor]'),
+  };
 }
 
-function renderStep() {
+function updateChart(episode, upto) {
+  const { W, H, max, lines, breaches, cursor } = nodes.chart;
+  const steps = episode.steps;
+  const span = Math.max(steps.length - 1, 1);
+
+  for (const c of CURRENCIES) {
+    const pts = [];
+    for (let i = 0; i <= upto; i++) {
+      const x = (i / span) * W;
+      const y = H - (Math.max(steps[i].observed[c], 0) / max) * (H - 12) - 6;
+      pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    lines[c].setAttribute('points', pts.length < 2 ? '' : pts.join(' '));
+  }
+
+  const marks = [];
+  for (let i = 0; i <= upto; i++) {
+    if (steps[i].breach) marks.push(`<circle cx="${((i / span) * W).toFixed(1)}" cy="${H - 4}" r="3" fill="var(--bad)"/>`);
+  }
+  if (breaches.innerHTML !== marks.join('')) breaches.innerHTML = marks.join('');
+
+  const cx = ((upto / span) * W).toFixed(1);
+  cursor.setAttribute('x1', cx);
+  cursor.setAttribute('x2', cx);
+}
+
+/** Reconstruit la structure : une fois par épisode, jamais pendant la lecture. */
+function buildEpisodeView(episode) {
+  buildCards(episode.bands);
+  buildLog();
+  buildKpi();
+  buildChart(episode);
+}
+
+function renderStep(withLog = true) {
   const ep = state.episode;
   if (!ep) return;
   const step = ep.steps[state.index];
-  state.freshKey = step.actions.length > 0 ? `${step.t}:${step.actions[0].currency}` : null;
   $('clock').textContent = clockLabel(step.t);
-  renderCards(step, ep.bands);
-  renderPlan(step);
-  renderKpi(step, ep);
-  renderChart(ep, state.index);
+  updateCards(step, ep.bands);
+  if (withLog) appendToLog(step);
+  updateKpi(step, ep);
+  updateChart(ep, state.index);
 }
 
 /* ------------------------------------------------------------------ */
@@ -343,7 +446,7 @@ async function loadEpisode(extra = {}) {
     const res = await fetch(`/api/episode?${q}`);
     state.episode = await res.json();
     state.index = 0;
-    state.log = [];
+    buildEpisodeView(state.episode);
     renderStep();
     $('status').textContent = `${state.episode.steps.length} epochs · ${state.episode.computeMs} ms`;
   } catch (err) {
@@ -413,7 +516,7 @@ $('shock').addEventListener('click', () => {
   loadEpisode({ shockAt: at, shockCurrency: 'BRL', shockAmount: 2_500_000 }).then(() => {
     // On se place juste avant le choc pour qu'il soit visible, et non déjà corrigé.
     state.index = Math.max(at - 2, 0);
-    renderStep();
+    renderStep(false);
     if (!prefersReducedMotion()) play();
   });
 });
