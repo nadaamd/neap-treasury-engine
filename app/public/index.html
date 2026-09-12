@@ -15,6 +15,7 @@
   .wrap { max-width: 1128px; margin-inline: auto; padding-inline: 24px; }
   .prose { max-width: 68ch; }
   section { padding: 96px 0; padding-block: clamp(64px, 9vw, 128px); border-top: 1px solid var(--line); }
+  section.raised { background: var(--panel); padding-inline: 4px; }
   section:first-of-type { border-top: 0; }
 
   h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -0.015em; }
@@ -63,9 +64,9 @@
   .bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
   .bar-name { font-size: 0.92rem; color: var(--dim); }
   .bar-value { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 1.05rem; }
-  .bar-track { height: 34px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+  .bar-track { height: 34px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 5px; transform-origin: left center; }
-  .bar-fill.ref { background: color-mix(in srgb, var(--grape) 28%, var(--panel-2)); }
+  .bar-fill.ref { background: color-mix(in srgb, var(--grape) 34%, var(--panel)); }
   .bar-fill.now { background: var(--accent); }
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
@@ -212,7 +213,7 @@
     </div>
   </section>
 
-  <section id="proof">
+  <section id="proof" class="raised">
     <div class="wrap">
       <div class="prose">
         <h2>Measured, with the parts that <em>do not</em> flatter it.</h2>

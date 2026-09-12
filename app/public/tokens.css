@@ -35,29 +35,34 @@
   --cyan: #119DA4;
   --slate: #19647E;
 
-  --bg: #f6f6fb;
+  /* Le fond n'est pas blanc : c'est un lavis d'indigo. Un fond blanc aurait rendu la
+     palette décorative — visible seulement dans les accents, absente de la surface qui
+     occupe quatre-vingt-dix pour cent de l'écran. Les panneaux restent blancs et se
+     détachent donc en relief au lieu de se confondre avec la page. */
+  --bg: #e4e1f1;
   --panel: #ffffff;
-  --panel-2: #ecebf4;
-  --line: #dedcea;
+  --panel-2: #d5d0e8;
+  --line: #cbc5e0;
   --ink: var(--indigo);
 
-  /* Trois paliers de texte : 15,7 / 8,9 / 6,7 sur panneau. */
-  --dim: #4a4668;
-  --faint: #5d5878;
+  /* Trois paliers de texte : 15,7 / 9,4 / 7,4 sur panneau, et jamais sous 4,9 sur les
+     deux fonds teintés. */
+  --dim: #464265;
+  --faint: #575272;
 
-  --ok: #0d7078;
-  --warn: #7a5410;
-  --bad: #9c2b45;
-  --accent: var(--slate);
-  --eur: var(--slate);
+  --ok: #0b6067;
+  --warn: #6f4c0e;
+  --bad: #8f2740;
+  --accent: #175c74;
+  --eur: #175c74;
   --gbp: var(--grape);
-  --brl: #7a5410;
+  --brl: #6f4c0e;
 
   /* Fonds de zone dérivés des mêmes teintes, assez pâles pour que le curseur et
      les chiffres restent ce qu'on lit en premier. */
-  --zone-low: #f7dfe4;
-  --zone-ok: #d6eef0;
-  --zone-high: #fdeecb;
+  --zone-low: #f4d9df;
+  --zone-ok: #cfe9ec;
+  --zone-high: #fbe7c2;
 
   --display: 'Gloock', ui-serif, Georgia, serif;
   --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
