@@ -154,38 +154,49 @@
   }
   .phone-screen {
     height: 100%; border-radius: 30px; background: var(--panel);
-    padding: 16px 15px 14px; display: flex; flex-direction: column; gap: 11px;
+    padding: 14px 13px 12px; display: flex; flex-direction: column; gap: 9px;
     overflow: hidden;
   }
-  .phone-notch {
-    width: 78px; height: 5px; border-radius: 3px; background: #2b2c55;
-    margin: 1px auto 4px; opacity: .85;
-  }
+  .phone-notch { width: 74px; height: 5px; border-radius: 3px; background: #2b2c55; margin: 0 auto 2px; opacity: .85; }
   .phone-top { display: flex; align-items: center; justify-content: space-between; }
   .phone-mark { font-family: var(--display); font-size: 15px; color: var(--ink); }
   .phone-mark i { font-style: normal; color: var(--accent); }
   .phone-chip {
-    font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
-    color: var(--indigo); background: var(--pollen); padding: 3px 8px; border-radius: 20px;
+    font-family: var(--mono); font-size: 9.5px; font-variant-numeric: tabular-nums;
+    color: var(--indigo); background: var(--pollen); padding: 3px 7px; border-radius: 20px;
   }
-  .phone-label { font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
-  .phone-bal { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 27px; letter-spacing: -0.02em; }
-  .phone-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-  .phone-band { display: grid; gap: 5px; }
-  .phone-ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--faint); }
-  .phone-log { margin-top: auto; display: grid; gap: 6px; }
+  .phone-label { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+
+  /* Trois devises, chacune avec son solde et sa bande : c'est ce que montre le vrai
+     pupitre, et c'est ce qui remplit l'écran de contenu plutôt que de vide. */
+  .phone-ccy { display: grid; gap: 5px; padding: 8px 2px; border-top: 1px solid var(--line); }
+  .phone-ccy:first-of-type { border-top: 0; padding-top: 2px; }
+  .phone-ccy-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .phone-ccy-head b { font-size: 11px; letter-spacing: .06em; }
+  .phone-ccy-head .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .phone-ccy-head .s { font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+  .phone-ccy-head .s.out { color: var(--bad); }
+  .phone-ccy-head .s.in { color: var(--ok); }
+
+  .phone-strip {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding: 9px 10px; border-radius: 9px; background: var(--panel-2);
+  }
+  .phone-strip b { display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+  .phone-log { display: grid; gap: 5px; }
   .phone-order {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
-    font-size: 11px; padding: 7px 9px; border-radius: 8px; background: var(--panel-2);
+    display: grid; grid-template-columns: auto 1fr auto; gap: 7px; align-items: baseline;
+    font-size: 10.5px; padding: 6px 8px; border-radius: 7px; background: var(--panel-2);
   }
-  .phone-order b { font-weight: 600; }
+  .phone-order .t { font-family: var(--mono); font-size: 9px; color: var(--faint); }
   .phone-order .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .phone-foot {
-    display: flex; gap: 6px; margin-top: 2px;
-  }
+  .phone-order.hot { background: color-mix(in srgb, var(--pollen) 34%, var(--panel-2)); }
+
+  .phone-foot { display: flex; gap: 5px; margin-top: auto; }
   .phone-foot span {
-    flex: 1; text-align: center; font-size: 9.5px; letter-spacing: .06em;
-    text-transform: uppercase; padding: 8px 0; border-radius: 8px;
+    flex: 1; text-align: center; font-size: 9px; letter-spacing: .07em;
+    text-transform: uppercase; padding: 7px 0; border-radius: 7px;
     color: var(--faint); background: var(--panel-2);
   }
   .phone-foot span.on { background: var(--indigo); color: #fff; }
@@ -301,35 +312,73 @@
               <div class="phone-notch"></div>
               <div class="phone-top">
                 <span class="phone-mark">NEAP<i>.</i></span>
-                <span class="phone-chip">EUR</span>
+                <span class="phone-chip">D+2 09:15</span>
               </div>
 
               <div>
-                <div class="phone-label">Observed balance</div>
-                <div class="phone-bal">$212k</div>
+                <div class="phone-ccy">
+                  <div class="phone-ccy-head">
+                    <b style="color:var(--eur)">EUR</b>
+                    <span class="v">$212k</span>
+                    <span class="s out">below</span>
+                  </div>
+                  <svg viewBox="0 0 100 8" width="100%" height="11" preserveAspectRatio="none">
+                    <rect x="0" y="2" width="100" height="4" rx="1.5" fill="var(--panel-2)"/>
+                    <rect x="0" y="2" width="26" height="4" fill="var(--zone-low)"/>
+                    <rect x="26" y="2" width="46" height="4" fill="var(--zone-ok)"/>
+                    <rect x="72" y="2" width="28" height="4" fill="var(--zone-high)"/>
+                    <line x1="44" y1="0" x2="44" y2="8" stroke="var(--dim)" stroke-width=".6" stroke-dasharray="1.2 1.2"/>
+                    <rect x="17" y="0" width="1.7" height="8" fill="var(--bad)"/>
+                  </svg>
+                </div>
+
+                <div class="phone-ccy">
+                  <div class="phone-ccy-head">
+                    <b style="color:var(--gbp)">GBP</b>
+                    <span class="v">$1.42M</span>
+                    <span class="s out">above</span>
+                  </div>
+                  <svg viewBox="0 0 100 8" width="100%" height="11" preserveAspectRatio="none">
+                    <rect x="0" y="2" width="100" height="4" rx="1.5" fill="var(--panel-2)"/>
+                    <rect x="0" y="2" width="22" height="4" fill="var(--zone-low)"/>
+                    <rect x="22" y="2" width="48" height="4" fill="var(--zone-ok)"/>
+                    <rect x="70" y="2" width="30" height="4" fill="var(--zone-high)"/>
+                    <line x1="42" y1="0" x2="42" y2="8" stroke="var(--dim)" stroke-width=".6" stroke-dasharray="1.2 1.2"/>
+                    <rect x="86" y="0" width="1.7" height="8" fill="var(--bad)"/>
+                  </svg>
+                </div>
+
+                <div class="phone-ccy">
+                  <div class="phone-ccy-head">
+                    <b style="color:var(--brl)">BRL</b>
+                    <span class="v">$604k</span>
+                    <span class="s in">in band</span>
+                  </div>
+                  <svg viewBox="0 0 100 8" width="100%" height="11" preserveAspectRatio="none">
+                    <rect x="0" y="2" width="100" height="4" rx="1.5" fill="var(--panel-2)"/>
+                    <rect x="0" y="2" width="24" height="4" fill="var(--zone-low)"/>
+                    <rect x="24" y="2" width="47" height="4" fill="var(--zone-ok)"/>
+                    <rect x="71" y="2" width="29" height="4" fill="var(--zone-high)"/>
+                    <line x1="45" y1="0" x2="45" y2="8" stroke="var(--dim)" stroke-width=".6" stroke-dasharray="1.2 1.2"/>
+                    <rect x="47" y="0" width="1.7" height="8" fill="var(--ok)"/>
+                  </svg>
+                </div>
               </div>
 
-              <div class="phone-band">
-                <svg viewBox="0 0 100 12" width="100%" height="20" preserveAspectRatio="none">
-                  <rect x="0" y="3" width="100" height="6" rx="2" fill="var(--panel-2)"/>
-                  <rect x="0" y="3" width="26" height="6" fill="var(--zone-low)"/>
-                  <rect x="26" y="3" width="46" height="6" fill="var(--zone-ok)"/>
-                  <rect x="72" y="3" width="28" height="6" fill="var(--zone-high)"/>
-                  <line x1="44" y1="1" x2="44" y2="11" stroke="var(--dim)" stroke-width=".7" stroke-dasharray="1.4 1.4"/>
-                  <rect x="17" y="0.5" width="1.6" height="11" fill="var(--bad)"/>
-                </svg>
-                <div class="phone-ticks"><span>400k</span><span>600k</span><span>900k</span></div>
+              <div class="phone-strip">
+                <div><span class="phone-label">ES 97.5%</span><b>$8.2k</b></div>
+                <div><span class="phone-label">Idle capital</span><b>$2.24M</b></div>
               </div>
 
               <div class="phone-log">
-                <div class="phone-order"><span><b>EUR</b> buy</span><span class="amt">$390k</span></div>
-                <div class="phone-order"><span><b>GBP</b> release</span><span class="amt">$120k</span></div>
+                <div class="phone-order hot"><span class="t">09:15</span><span><b>EUR</b> buy</span><span class="amt">$390k</span></div>
+                <div class="phone-order"><span class="t">09:15</span><span><b>GBP</b> release</span><span class="amt">$520k</span></div>
+                <div class="phone-order"><span class="t">08:45</span><span><b>EUR</b> buy</span><span class="amt">$110k</span></div>
               </div>
 
               <div class="phone-foot">
                 <span class="on">Bands</span><span>Risk</span><span>Log</span>
               </div>
-            </div>
           </div>
         </div>
       </div>
