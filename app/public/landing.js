@@ -82,7 +82,52 @@ function drawTable(metrics) {
   }).join('');
 }
 
+/**
+ * Repère de section dans le masthead.
+ *
+ * `IntersectionObserver` plutôt qu'un écouteur de défilement : le navigateur fait le
+ * calcul hors du fil principal, et une barre collante qui saccade pendant qu'on scrolle
+ * est pire que pas de repère du tout.
+ *
+ * La marge haute décale la zone de détection sous la barre : sans elle, une section
+ * masquée par le masthead compterait comme visible.
+ */
+function trackSections() {
+  const links = new Map();
+  for (const a of document.querySelectorAll(".topbar nav a[href^='#']")) {
+    links.set(a.getAttribute('href').slice(1), a);
+  }
+  const visible = new Set();
+
+  const mark = () => {
+    let current = null;
+    for (const id of links.keys()) if (visible.has(id)) { current = id; break; }
+    for (const [id, a] of links) {
+      if (id === current) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    }
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      }
+      mark();
+    },
+    { rootMargin: '-64px 0px -55% 0px' },
+  );
+
+  for (const id of links.keys()) {
+    const section = document.getElementById(id);
+    if (section) observer.observe(section);
+  }
+}
+
 async function main() {
+  trackSections();
+
   let summary;
   try {
     const response = await fetch('/api/backtest');
