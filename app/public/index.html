@@ -50,19 +50,19 @@
   }
   /* Haut au repos, compact une fois qu'on lit. Une barre collante généreuse donne au
      nom la place d'exister au premier écran ; la même hauteur maintenue pendant la
-     lecture mangerait un huitième du viewport pour ne plus rien dire. Le passage d'un
-     état à l'autre est un changement d'état, pas un effet. */
+     lecture mangerait un huitième du viewport pour ne plus rien dire.
+     Le passage est instantané et non animé : une transition sur `padding` ou
+     `font-size` force un recalcul de mise en page à chaque image, et la barre est
+     l'élément le plus mal placé pour saccader puisqu'elle reste à l'écran. */
   .topbar .wrap {
     display: flex; align-items: center; gap: 18px;
     padding: 34px 24px;
-    transition: padding .22s cubic-bezier(.2,.8,.2,1);
   }
   .topbar.compact .wrap { padding: 13px 24px; }
 
   .mark {
     font-family: var(--display); letter-spacing: .01em; line-height: 1;
     font-size: clamp(1.9rem, 3vw, 2.5rem);
-    transition: font-size .22s cubic-bezier(.2,.8,.2,1);
   }
   .topbar.compact .mark { font-size: 1.4rem; }
   .mark b { font-weight: 400; }
@@ -78,7 +78,6 @@
   .whatis {
     color: #b9b6cd; font-size: 0.95rem; padding-left: 18px; margin-left: 2px;
     border-left: 1px solid rgba(255,255,255,.18);
-    transition: font-size .22s cubic-bezier(.2,.8,.2,1);
   }
   .topbar.compact .whatis { font-size: 0.82rem; padding-left: 14px; }
 
