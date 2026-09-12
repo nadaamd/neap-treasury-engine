@@ -76,14 +76,15 @@
   /* Un mot sur l'objet, juste après la marque : un visiteur qui arrive par un lien
      direct doit savoir de quoi il s'agit sans descendre. */
   .whatis {
-    color: #b9b6cd; font-size: 0.95rem; padding-left: 18px; margin-left: 2px;
+    color: #b9b6cd; font-size: 0.92rem; padding-left: 18px; margin-left: 2px;
     border-left: 1px solid rgba(255,255,255,.18);
   }
   .topbar.compact .whatis { font-size: 0.82rem; padding-left: 14px; }
 
   .topbar nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
   .topbar nav a {
-    color: #b9b6cd; text-decoration: none; font-size: 0.94rem;
+    color: #b9b6cd; text-decoration: none; font-size: 0.92rem; font-weight: 500;
+    letter-spacing: -0.005em;
     padding: 9px 13px; border-radius: 6px; position: relative;
     transition: color .15s ease, background-color .15s ease;
   }
@@ -98,7 +99,8 @@
   .topbar .go {
     margin-left: 12px; background: var(--pollen); color: var(--indigo);
     font-weight: 600; padding: 11px 18px; border-radius: 8px; text-decoration: none;
-    font-size: 0.94rem; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.92rem; letter-spacing: -0.005em;
+    display: inline-flex; align-items: center; gap: 8px;
     transition: filter .15s ease, transform .15s ease;
   }
   .topbar .go:hover { filter: brightness(1.06); transform: translateY(-1px); }
