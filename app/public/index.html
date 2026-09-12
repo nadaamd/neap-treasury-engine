@@ -15,7 +15,10 @@
   .wrap { max-width: 1128px; margin-inline: auto; padding-inline: 24px; }
   .prose { max-width: 68ch; }
   section { padding: 96px 0; padding-block: clamp(64px, 9vw, 128px); border-top: 1px solid var(--line); }
-  section.raised { background: var(--panel); padding-inline: 4px; }
+  /* La gouttière appartient à l'élément qui porte le fond et la bordure, pas à son
+     enfant : sinon le contenu vient buter contre la teinte. */
+  section.raised { background: var(--panel); padding-inline: 24px; }
+  section.raised > .wrap { padding-inline: 0; }
   section:first-of-type { border-top: 0; }
 
   h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -0.015em; }
