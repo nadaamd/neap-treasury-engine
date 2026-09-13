@@ -85,7 +85,7 @@ get a thicker buffer.
 
 ## Architecture
 
-Three sponsors, none decorative. Remove any one and something breaks.
+Three sponsors. Remove any one and something breaks.
 
 | | Role | Remove it and… |
 |---|---|---|
