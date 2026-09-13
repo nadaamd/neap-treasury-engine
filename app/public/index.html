@@ -295,9 +295,15 @@
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
   /* ── Mechanism ────────────────────────────────────────────────────────── */
-  .beats { margin: 40px 0 0; padding: 0; list-style: none; counter-reset: none; }
-  .beat { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 18px; padding: 24px 4px; border-top: 1px solid var(--line); }
-  .beat:first-child { border-top: 0; padding-top: 4px; }
+  /* Three columns across the full measure, same grid as the architecture row. Stacked,
+     these read as a list of footnotes; side by side they read as three steps of one
+     argument, which is what they are. */
+  .beats {
+    margin: 44px 0 0; padding: 0; list-style: none;
+    display: grid; gap: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .beat { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; padding: 22px 0 0; border-top: 1px solid var(--line); }
   .beat svg { margin-top: 3px; color: var(--cyan); }
   .beat p { margin: 0; color: var(--dim); }
 
@@ -486,7 +492,7 @@
           execution costs. The buffer collapsing is the visible result; it is not the mechanism.
         </p>
       </div>
-      <ul class="beats prose">
+      <ul class="beats">
         <li class="beat">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 18 9 9l4 5 3-4 4 8z"/><path d="M3 21h18"/></svg>
           <div>
