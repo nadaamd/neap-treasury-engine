@@ -333,19 +333,20 @@
 
   /* ── Architecture ─────────────────────────────────────────────────────── */
   .flow { margin-top: 40px; display: grid; gap: 2px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
-  .stage { background: var(--panel); border: 1px solid var(--line); padding: 22px 20px 24px; }
-  /* On a white section the cards would vanish into it, leaving only their border. They
-     invert instead: the wash becomes the card, the panel becomes the page. */
-  section.raised .stage { background: var(--bg); }
+  /* Each card takes its sponsor's colour as a background. White clears AA on all three
+     as published — 5.85, 9.32 and 4.68 to 1 — so the brand values are used unaltered.
+     Every level of text stays pure white: the Arc blue has only 4.68 of headroom, and any
+     softening of the body text would drop it under 4.5. Hierarchy comes from size and
+     weight instead of from colour. */
+  .stage {
+    background: var(--brand, var(--panel)); border: 0; padding: 22px 20px 24px;
+    color: #fff;
+  }
   .stage:first-child { border-radius: 10px 0 0 10px; }
   .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
-  .stage p { margin: 0; font-size: 0.87rem; color: var(--dim); }
-  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--brand-ink, var(--accent)); margin-bottom: 12px; font-weight: 600; }
-  /* Each card carries its sponsor's colour on a top rule and on the label. The rule takes
-     the brand value as published; the label takes a darkened variant, because two of the
-     three fail AA on this background at their published lightness. */
-  .stage { border-top-width: 3px; border-top-color: var(--brand, var(--line)); }
+  .stage p { margin: 0; font-size: 0.87rem; }
+  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: #fff; margin-bottom: 12px; font-weight: 600; }
   @media (max-width: 700px) {
     .stage, .stage:first-child, .stage:last-child { border-radius: 10px; }
     .flow { gap: 10px; }
@@ -583,19 +584,19 @@
         </p>
       </div>
       <div class="flow">
-        <div class="stage" style="--brand: #375BD2; --brand-ink: #2E4CAF">
+        <div class="stage" style="--brand: #375BD2">
           <span class="who">Chainlink CRE</span>
           <h3>Decide in a TEE</h3>
           <p>Balances go in encrypted. A signed report comes out — a commitment and basis
             points, never amounts.</p>
         </div>
-        <div class="stage" style="--brand: #4B3F72; --brand-ink: #4B3F72">
+        <div class="stage" style="--brand: #4B3F72">
           <span class="who">Privy</span>
           <h3>Authorise with two keys</h3>
           <p>Three function selectors, nothing else. A stolen key passes authentication. It
             does not pass the policy.</p>
         </div>
-        <div class="stage" style="--brand: #2775CA; --brand-ink: #1F5E9E">
+        <div class="stage" style="--brand: #2775CA">
           <span class="who">Arc</span>
           <h3>Settle PvP</h3>
           <p>Both legs, or neither. Sub-second finality, and gas in USDC makes the fixed cost
