@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#1F2041"/>
+
+  <rect x="140" y="126" width="150" height="13" rx="6.5" fill="#FFC857"/>
+  <rect x="140" y="150" width="150" height="13" rx="6.5" fill="#FFC857"/>
+  <circle cx="215" cy="144.5" r="7.5" fill="#ffffff"/>
+  <text x="322" y="166" font-family="Georgia, serif" font-size="62" fill="#ffffff">NEAP<tspan fill="#FFC857">.</tspan></text>
+
+  <text x="140" y="336" font-family="Georgia, serif" font-size="82" fill="#ffffff">Instant payments need pre-funded cash.</text>
+  <text x="140" y="436" font-family="Georgia, serif" font-size="82" fill="#FFC857">NEAP cuts that cash by 84.6%.</text>
+
+  <text x="140" y="592" font-family="Helvetica, Arial, sans-serif" font-size="27" fill="#b9b6cd">Conservative pre-funding, sized on the worst day observed</text>
+  <rect x="140" y="616" width="1200" height="60" rx="8" fill="#6e639a"/>
+  <text x="1372" y="660" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#ffffff">$1.74M</text>
+
+  <text x="140" y="760" font-family="Helvetica, Arial, sans-serif" font-size="27" fill="#b9b6cd">NEAP, bands solved against a cost function</text>
+  <rect x="140" y="784" width="185" height="60" rx="8" fill="#FFC857"/>
+  <text x="357" y="828" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#FFC857">$269k</text>
+
+  <text x="140" y="952" font-family="Helvetica, Arial, sans-serif" font-size="26" fill="#b9b6cd">Intraday multi-currency treasury engine</text>
+  <text x="140" y="996" font-family="Helvetica, Arial, sans-serif" font-size="26" fill="#b9b6cd">ETHOnline 2026   ·   Arc   ·   Chainlink CRE   ·   Privy</text>
+</svg>
