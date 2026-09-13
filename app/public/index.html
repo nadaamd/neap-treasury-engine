@@ -341,7 +341,11 @@
   .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
   .stage p { margin: 0; font-size: 0.87rem; color: var(--dim); }
-  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); margin-bottom: 12px; font-weight: 600; }
+  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--brand-ink, var(--accent)); margin-bottom: 12px; font-weight: 600; }
+  /* Each card carries its sponsor's colour on a top rule and on the label. The rule takes
+     the brand value as published; the label takes a darkened variant, because two of the
+     three fail AA on this background at their published lightness. */
+  .stage { border-top-width: 3px; border-top-color: var(--brand, var(--line)); }
   @media (max-width: 700px) {
     .stage, .stage:first-child, .stage:last-child { border-radius: 10px; }
     .flow { gap: 10px; }
@@ -579,29 +583,23 @@
         </p>
       </div>
       <div class="flow">
-        <div class="stage">
+        <div class="stage" style="--brand: #375BD2; --brand-ink: #2E4CAF">
           <span class="who">Chainlink CRE</span>
           <h3>Decide in a TEE</h3>
-          <p>A pure function with no I/O, no clock and no randomness reads encrypted state and emits
-            a signed report carrying an order commitment and metrics in basis points, never amounts.</p>
+          <p>Balances go in encrypted. A signed report comes out — a commitment and basis
+            points, never amounts.</p>
         </div>
-        <div class="stage">
+        <div class="stage" style="--brand: #4B3F72; --brand-ink: #4B3F72">
           <span class="who">Privy</span>
           <h3>Authorise with two keys</h3>
-          <p>Role wallets whose policies allow three function selectors and nothing else. A stolen
-            key passes authentication; it does not pass the policy.</p>
+          <p>Three function selectors, nothing else. A stolen key passes authentication. It
+            does not pass the policy.</p>
         </div>
-        <div class="stage">
-          <span class="who">On-chain vault</span>
-          <h3>Bound the plan</h3>
-          <p>Per-order cap, per-epoch cap, rolling 24-hour window, and a price-deviation check.
-            A deranged model produces a perfectly signed, perfectly absurd plan.</p>
-        </div>
-        <div class="stage">
+        <div class="stage" style="--brand: #2775CA; --brand-ink: #1F5E9E">
           <span class="who">Arc</span>
           <h3>Settle PvP</h3>
-          <p>Both legs complete or neither does, with sub-second finality and gas denominated in
-            USDC, which is what makes the fixed cost a known number in the objective.</p>
+          <p>Both legs, or neither. Sub-second finality, and gas in USDC makes the fixed cost
+            a known number.</p>
         </div>
       </div>
     </div>
