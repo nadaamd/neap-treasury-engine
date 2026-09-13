@@ -2,7 +2,7 @@
 
 ### Instant payments need pre-funded cash. NEAP cuts that cash by 84.6%.
 
-**[Open the live demo →](https://neap-git-main-nadas-projects-0f34418c.vercel.app)**  ·  [Dashboard](https://neap-git-main-nadas-projects-0f34418c.vercel.app/app)  ·  [Results](./docs/BACKTEST.md)
+**[Open the live demo →](https://neap-treasury.vercel.app)**  ·  [Dashboard](https://neap-treasury.vercel.app/app)  ·  [Results](./docs/BACKTEST.md)
 
 Intraday multi-currency treasury engine, built for ETHOnline 2026 on **Arc** · **Chainlink CRE** · **Privy**.
 

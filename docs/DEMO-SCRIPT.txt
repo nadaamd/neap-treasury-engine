@@ -1,0 +1,205 @@
+NEAP — DEMO VIDEO
+3 minutes. Spoken in English. Shooting notes in French.
+
+
+===============================================================================
+SCRIPT
+===============================================================================
+
+
+0:00   [ carte de titre, ou webcam ]
+
+       I'm Nada, an engineering student in Paris. This is NEAP, my submission
+       for ETHGlobal Online 2026.
+
+
+0:08   [ landing, hero — le titre est a l'ecran, dites-le ]
+
+       A bank that settles in seconds still funds like it settles in days.
+
+       Instant payment means holding the destination currency before the money
+       arrives. Every corridor, all day. Idle, and unhedged.
+
+       NEAP sizes that buffer by stochastic control. Where a rebalance costs
+       cents, it doesn't shrink. It collapses.
+
+
+0:30   [ les deux barres s'effondrent — ne pas parler par-dessus l'animation ]
+
+       Conservative pre-funding is sized on the worst day observed. NEAP's
+       bands are solved against a cost function. Idle capital per corridor,
+       averaged over thirty-day windows: from 1.74 million down to 269
+       thousand.
+
+
+0:45   [ section "The saving does not come from where you would guess" ]
+
+       And the saving does not come from where you would guess. At a six
+       percent cost of capital, carrying a million dollars for a month is noise
+       next to execution costs. The buffer collapsing is the visible result. It
+       is not the mechanism.
+
+       Market impact grows with the square root of size, so many small orders
+       cost less than a few large ones. A fixed cost of cents is what unlocks
+       that regime. Execution cost falls nineteen point seven percent, while
+       the engine places thirty times more orders.
+
+
+1:15   [ clic sur "See it live" — basculer sur /app ]
+
+       Here is the engine running. Each currency has a gauge. The marker is the
+       balance. The coloured zone is the band, the range where the engine does
+       nothing.
+
+
+1:28   [ clic sur "Liquidity shock" — un seul clic, la lecture repart seule ]
+
+       Two and a half million leaves the Brazilian corridor. The balance drops
+       through the lower edge, and that crossing is the trigger. One order
+       brings it back to the target in the middle of the band, not to the edge
+       it just crossed.
+
+
+1:45   [ bouger "Risk aversion", puis "Breach cost", lentement ]
+
+       These sliders re-solve the optimisation on the server. Raise risk
+       aversion, the bands tighten. Nothing on this screen is a fixed
+       threshold.
+
+
+1:57   [ retour landing, section "Measured, with the parts that do not flatter it" ]
+
+       Measured, with the parts that do not flatter it. Walk-forward: every
+       parameter used at time t is estimated only from data before t. A canary
+       test injects a shock into the future, and fails if any earlier decision
+       moves.
+
+       Robust: capital falls 84.6 percent, and holds across the full
+       sensitivity range. Conditional: cost falls 24.4, but moves between 13
+       and 38 depending on one uncalibrated parameter. Worse: NEAP crosses the
+       threshold more often than conservative pre-funding. Synthetic: the
+       payment flows, because no institution publishes its own.
+
+
+2:32   [ section architecture, les trois cubes ]
+
+       Positions stay inside the enclave. The contract still doesn't trust the
+       model.
+
+       Chainlink CRE decides inside a TEE. Privy authorises with two keys. Arc
+       settles payment versus payment: both legs, or neither.
+
+
+2:48    Section Built, not sketched, puis bascule sur l'onglet GitHub ouvert sur docs/E2E.md
+
+	Built, not sketched. 241 tests: 151 in TypeScript, 90 in Solidity. 
+	Zero JavaScript dependencies outside the CRE workflow. 
+	And one command runs the whole chain: deploy, decide, 	sign, approve, execute.
+
+	The full trace is committed in the repository, so you can read it line by line: 
+	the separation of duties refusing, the execution refused before approval and the replay refused.
+
+
+2:58   [ carte de fin : URL du site + lien GitHub ]
+
+       Thank you.
+
+
+-------------------------------------------------------------------------------
+422 mots, soit 2:49 a 150 mots/minute. Les 11 secondes restantes sont la
+marge : ne pas la remplir.
+
+Le texte reprend les phrases de la page. Le juge lit et entend la meme chose,
+ce qui fait paraitre le site ecrit et non decore.
+
+Trois regles en le disant :
+  - ne pas parler par-dessus l'animation des barres a 0:30. Elle ne se joue
+    qu'une fois, laissez-la finir.
+  - ne jamais dire "real time". C'est un episode rejoue. Si un juge le
+    decouvre seul, ca devient un soupcon ; si vous le dites, c'est un choix
+    d'architecture.
+  - sur les chiffres, ralentir au lieu de monter la voix.
+    "Minus. Eighty-four. Point six."
+-------------------------------------------------------------------------------
+
+
+===============================================================================
+PREPARER LA MACHINE
+===============================================================================
+
+  Reglages > Concentration > Ne pas deranger
+      sinon une notification finit dans la video.
+
+  cd ~/ethonline-2026 && npm run dev
+
+  Filmer en LOCAL, pas sur Vercel : l'episode se calcule en 0,67 s en local
+  contre 2,6 s en ligne. Deux secondes de page figee, ca se voit.
+
+  Navigateur   fenetre 1920x1080, barre de favoris masquee (Maj-Cmd-B),
+               profil propre sans extensions. Charger /app UNE FOIS avant
+               d'enregistrer : ca met les polices en cache et resout un
+               premier episode.
+
+  Terminal     police 18-20 pt, fenetre effacee (Cmd-K), meme largeur que le
+               navigateur pour que le montage ne saute pas.
+
+
+===============================================================================
+ENREGISTRER
+===============================================================================
+
+  QuickTime > Nouvel enregistrement de l'ecran suffit. OBS seulement pour une
+  vignette webcam.
+
+  IMAGE ET VOIX SEPAREMENT. Une prise video muette, puis la voix par-dessus.
+  Chercher la prise parfaite avec commentaire en direct fait perdre une heure ;
+  en deux passes, chaque plan se refait en trente secondes.
+
+  Ordre de tournage, a assembler ensuite :
+
+    Scroll de la landing          25 s   Lent. Marquer un arret sur les barres
+                                         qui s'effondrent : elles ne se jouent
+                                         qu'une fois.
+
+    Tableau de bord + Shock       40 s   Le plan qui compte. Le bouton Shock
+                                         repositionne juste avant le choc et
+                                         relance la lecture seul : un clic.
+
+    Les trois curseurs            20 s   Lentement, un par un.
+
+    npm run e2e                   10 s   5,2 s en temps reel, 64 lignes.
+                                         Aucune acceleration necessaire.
+
+
+===============================================================================
+LES PIEGES DE CE PROJET
+===============================================================================
+
+  npm run backtest NE SE FILME PAS. 15 minutes. Les chiffres sont deja sur la
+  landing, c'est fait pour.
+
+  npm run cre:simulate ne marche pas tel quel. La CLI est dans ~/.cre/bin mais
+  absente du PATH, et le SDK n'est pas installe dans cre/workflow :
+
+      export PATH="$HOME/.cre/bin:$PATH"
+      cd cre/workflow && bun install
+
+  Sinon, reutiliser la trace deja capturee dans cre/README.md — le track
+  accepte une preuve de simulation, pas necessairement une simulation filmee.
+
+  RESPECTER LA TAILLE DE FENETRE. Le bloc vivant du tableau de bord est concu
+  pour tenir dans une hauteur d'ecran au-dela de 1100 px de large et 720 px de
+  haut. En dessous, la mise en page repasse en colonne et le plan est casse.
+
+
+===============================================================================
+MONTER
+===============================================================================
+
+  - Couper le temps mort pendant le calcul d'un episode, ou le couvrir par la
+    narration.
+  - Carte de titre 2 s : NEAP — intraday multi-currency treasury engine.
+  - Carte de fin avec l'URL live et le lien GitHub, tenue 3 s.
+  - Pas de musique : sur une demo technique, elle couvre la voix et n'ajoute
+    rien.
+  - Export 1080p, H.264.
