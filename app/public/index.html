@@ -318,6 +318,22 @@
   /* ── Tableau de preuve ────────────────────────────────────────────────── */
   /* The results table now sits on the tinted page background, so it carries its own
      panel: a data table has to read as a document, not as text on a wash. */
+  /* Four verdicts, side by side rather than run together in one grey paragraph. Each is
+     one sentence: a reader should be able to take all four in a glance and come back for
+     the one that matters to them. */
+  .verdicts {
+    list-style: none; margin: 30px 0 0; padding: 0;
+    display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .verdicts li {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 22px 22px 24px; font-size: 0.9rem; line-height: 1.55; color: var(--ink);
+  }
+  .verdicts .tag {
+    display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em;
+    font-weight: 600; color: var(--accent); margin-bottom: 12px;
+  }
+
   .scroll-x {
     overflow-x: auto; margin-top: 36px;
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
@@ -479,6 +495,7 @@
           </div>
         </div>
       </div>
+      </div>
 
       <div class="collapse" id="collapse">
         <div class="bar-row">
@@ -543,7 +560,7 @@
 
   <section id="proof">
     <div class="wrap">
-      <div class="prose">
+      <div class="wide-head">
         <h2>Measured, with the parts that <em>do not</em> flatter it.</h2>
         <p class="lead">
           Walk-forward: every parameter used at time <i>t</i> is estimated only from data before
@@ -563,17 +580,19 @@
           </tbody>
         </table>
       </div>
-      <div class="prose">
-        <p class="fine" style="margin-top:26px">
-          <b>What is robust:</b> the capital reduction holds from −84.9% to −84.2% across the full
-          sensitivity range of the one uncalibrated parameter. <b>What is conditional:</b> the cost
-          reduction moves between −13% and −38% over that same range, and should never be quoted
-          without it. <b>What is worse:</b> NEAP tolerates more threshold breaches than
-          conservative pre-funding. That is the optimiser applying the breach cost it was given,
-          priced at $50 000. <b>What is synthetic:</b> payment flows, because no institution publishes theirs
-          by corridor.
-        </p>
-      </div>
+      <ul class="verdicts">
+        <li><span class="tag">Robust</span>
+          Capital falls 84.6%, and holds between −84.9% and −84.2% across the full sensitivity
+          range of the one uncalibrated parameter.</li>
+        <li><span class="tag">Conditional</span>
+          Cost falls 24.4%, but moves from −13% to −38% over that same range. It should never
+          be quoted without it.</li>
+        <li><span class="tag">Worse</span>
+          NEAP crosses the threshold more often than conservative pre-funding. That is the
+          optimiser applying the $50 000 breach cost it was given.</li>
+        <li><span class="tag">Synthetic</span>
+          The payment flows. No institution publishes its own, by corridor or otherwise.</li>
+      </ul>
     </div>
   </section>
 
