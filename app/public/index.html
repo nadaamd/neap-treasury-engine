@@ -332,7 +332,7 @@
   tbody tr.hero td:first-child { box-shadow: inset 3px 0 0 var(--pollen); padding-left: 17px; }
 
   /* ── Architecture ─────────────────────────────────────────────────────── */
-  .flow { margin-top: 40px; display: grid; gap: 2px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+  .flow { margin-top: 44px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   /* Each card carries its sponsor's colour as a nine percent wash, not as a fill. A page
      built on one restrained palette cannot take three saturated blocks without the
      sponsors shouting over the argument. The colour identifies; it does not dominate.
@@ -340,10 +340,9 @@
   .stage {
     background: color-mix(in srgb, var(--brand, var(--accent)) 9%, var(--panel));
     border: 1px solid color-mix(in srgb, var(--brand, var(--line)) 24%, transparent);
-    padding: 28px 24px 30px;
+    padding: 34px 30px 36px;
+    min-height: 300px; border-radius: 12px;
   }
-  .stage:first-child { border-radius: 10px 0 0 10px; }
-  .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; margin-bottom: 14px; }
   /* Ink, not the muted grey: these three paragraphs carry the architecture and should
      read like body copy, not like a caption. */
@@ -357,8 +356,7 @@
      bounded by height and left to keep its own width. */
   .stage .who img { height: 18px; width: auto; display: block; }
   @media (max-width: 700px) {
-    .stage, .stage:first-child, .stage:last-child { border-radius: 10px; }
-    .flow { gap: 10px; }
+    .flow { gap: 12px; }
   }
 
   /* ── Chiffres de livraison ────────────────────────────────────────────── */
