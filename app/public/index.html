@@ -345,7 +345,9 @@
   .stage:first-child { border-radius: 10px 0 0 10px; }
   .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
-  .stage p { margin: 0; font-size: 0.87rem; color: var(--dim); }
+  /* Ink, not the muted grey: these three paragraphs carry the architecture and should
+     read like body copy, not like a caption. */
+  .stage p { margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--ink); }
   .stage .who {
     display: flex; align-items: center; gap: 9px;
     font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em;
@@ -594,20 +596,23 @@
         <div class="stage" style="--brand: #0847F7; --brand-ink: #0A3FD1">
           <span class="who"><img src="/logos/chainlink.svg" alt="" width="18" height="21" loading="lazy">Chainlink CRE</span>
           <h3>Decide in a TEE</h3>
-          <p>Balances go in encrypted. A signed report comes out — a commitment and basis
-            points, never amounts.</p>
+          <p>Balances, commitments and internal limits enter the enclave encrypted. What comes
+            out is a signed report carrying a commitment to the orders and metrics in basis
+            points. No amount ever leaves.</p>
         </div>
         <div class="stage" style="--brand: #000010; --brand-ink: #000010">
           <span class="who"><img src="/logos/privy.png" alt="" width="18" height="18" loading="lazy">Privy</span>
           <h3>Authorise with two keys</h3>
-          <p>Three function selectors, nothing else. A stolen key passes authentication. It
-            does not pass the policy.</p>
+          <p>Each role wallet may call three function selectors and nothing else, with zero
+            native value attached. A stolen key still passes authentication. It does not pass
+            the policy.</p>
         </div>
         <div class="stage" style="--brand: #2775CA; --brand-ink: #1F5E9E">
           <span class="who"><img src="/logos/arc.svg" alt="Arc" width="52" height="18" loading="lazy"></span>
           <h3>Settle PvP</h3>
-          <p>Both legs, or neither. Sub-second finality, and gas in USDC makes the fixed cost
-            a known number.</p>
+          <p>Both legs of the swap complete, or neither does. Finality lands under a second,
+            and gas is denominated in USDC, which turns the fixed cost of a rebalance into a
+            number the model can use.</p>
         </div>
       </div>
     </div>
