@@ -295,12 +295,10 @@
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
   /* ── Mechanism ────────────────────────────────────────────────────────── */
-  /* Heading left, lead right. Dropping the measure altogether would run the paragraph to
-     130 characters a line; splitting it uses the full width and keeps each side readable. */
-  .mech-head { display: grid; gap: clamp(16px, 3vw, 48px); align-items: baseline; }
-  @media (min-width: 900px) { .mech-head { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } }
-  .mech-head h2 { margin-bottom: 0; }
-  .mech-head .lead { margin-bottom: 0; }
+  /* Full width, no reading measure: the heading and the lead run edge to edge like the
+     beats below them. */
+  .mech-head h2 { max-width: none; }
+  .mech-head .lead { max-width: none; margin-bottom: 0; }
 
   /* Three columns across the full measure, same grid as the architecture row. Stacked,
      these read as a list of footnotes; side by side they read as three steps of one
