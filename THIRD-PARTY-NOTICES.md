@@ -43,3 +43,17 @@ the mainnet profile paused, with an inert venue and no funds
 Backtest figures are computed on **synthetic** payment flows and one uncalibrated market
 impact parameter. They are reproducible, documented and bounded — they are not a claim
 about any real institution's treasury.
+
+## Sponsor marks
+
+`app/public/logos/` holds the marks of the three sponsors, used to identify them in the
+architecture section:
+
+- `chainlink.svg` — the Chainlink symbol, from chain.link/brand-assets, unmodified.
+- `privy.png` — the Privy mark, taken from the privy.io icon, unmodified.
+- `arc.svg` — the Arc wordmark, from arc.io. **Modified**: the published file is white on
+  a transparent gradient, intended for dark backgrounds; the fill is replaced by a solid
+  colour so that it reads on a light page.
+
+These are trademarks of their respective owners, reproduced to identify the sponsors of an
+ETHOnline 2026 submission. They are not covered by this repository's MIT licence.
