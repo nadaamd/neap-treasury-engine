@@ -71,7 +71,13 @@
   .mark {
     font-family: var(--display); letter-spacing: .01em; line-height: 1;
     font-size: clamp(1.6rem, 2.4vw, 2.05rem);
+    display: inline-flex; align-items: center; gap: .5em;
   }
+  /* The mark is the band: two thresholds with the balance between them. It takes the
+     wordmark's own colour, so it works on the indigo bar and on the light footer alike. */
+  .logomark { height: .62em; width: auto; color: var(--pollen); }
+  .topbar .logomark { color: var(--pollen); --mark-dot: #fff; }
+  footer .logomark { color: var(--accent); --mark-dot: var(--panel); }
   .topbar.compact .mark { font-size: 1.25rem; }
   .mark b { font-weight: 400; }
   /* The dot in the wordmark takes pollen inside the indigo band, where it reaches
@@ -406,7 +412,7 @@
 
 <div class="topbar">
   <div class="wrap">
-    <a href="#main" class="mark" style="text-decoration:none"><b>NEAP</b><i>.</i></a>
+    <a href="#main" class="mark" style="text-decoration:none"><svg class="logomark" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><rect x="0" y="3" width="44" height="5" rx="2.5" fill="currentColor"/><rect x="0" y="18" width="44" height="5" rx="2.5" fill="currentColor"/><circle cx="22" cy="13" r="3.4" fill="var(--mark-dot, #fff)"/></svg><b>NEAP</b><i>.</i></a>
     <nav aria-label="Sections">
       <a href="#mechanism">Mechanism</a>
       <a href="#proof">Proof</a>
@@ -666,7 +672,7 @@
 
 <footer>
   <div class="wrap">
-    <span class="mark"><b>NEAP</b><i>.</i></span>
+    <span class="mark"><svg class="logomark" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><rect x="0" y="3" width="44" height="5" rx="2.5" fill="currentColor"/><rect x="0" y="18" width="44" height="5" rx="2.5" fill="currentColor"/><circle cx="22" cy="13" r="3.4" fill="var(--mark-dot, #fff)"/></svg><b>NEAP</b><i>.</i></span>
     <span class="fine">A neap tide is the smallest swing between high and low water · ETHOnline 2026</span>
     <span class="fine" style="margin-left:auto"><a href="/app">Dashboard</a></span>
   </div>

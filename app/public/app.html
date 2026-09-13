@@ -28,6 +28,8 @@
     background: linear-gradient(to right, var(--pollen), var(--cyan) 62%, transparent);
   }
   h1 { margin: 0; font-family: var(--display); font-size: 21px; font-weight: 400; line-height: 1; }
+  h1 a { display: inline-flex; align-items: center; gap: .5em; }
+  .logomark { height: .62em; width: auto; color: var(--pollen); --mark-dot: #fff; }
   h1 a { color: #fff; text-decoration: none; }
   h1 span { color: var(--pollen); }
   .thesis { color: #b9b6cd; font-size: 12.5px; max-width: 58ch; }
@@ -134,7 +136,7 @@
 </head>
 <body>
 <header>
-  <h1><a href="/">NEAP<span>.</span></a></h1>
+  <h1><a href="/"><svg class="logomark" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><rect x="0" y="3" width="44" height="5" rx="2.5" fill="currentColor"/><rect x="0" y="18" width="44" height="5" rx="2.5" fill="currentColor"/><circle cx="22" cy="13" r="3.4" fill="var(--mark-dot, #fff)"/></svg>NEAP<span>.</span></a></h1>
   <a class="back" href="/">
     <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.2 13.4 2 8l5.2-5.4 1.1 1.1L4.9 7.2H14v1.6H4.9l3.4 3.5z"/></svg>
     Overview
