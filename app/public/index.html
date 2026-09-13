@@ -340,18 +340,18 @@
   .stage {
     background: color-mix(in srgb, var(--brand, var(--accent)) 9%, var(--panel));
     border: 1px solid color-mix(in srgb, var(--brand, var(--line)) 24%, transparent);
-    padding: 22px 20px 24px;
+    padding: 28px 24px 30px;
   }
   .stage:first-child { border-radius: 10px 0 0 10px; }
   .stage:last-child { border-radius: 0 10px 10px 0; }
-  .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
+  .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; margin-bottom: 14px; }
   /* Ink, not the muted grey: these three paragraphs carry the architecture and should
      read like body copy, not like a caption. */
   .stage p { margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--ink); }
   .stage .who {
     display: flex; align-items: center; gap: 9px;
     font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em;
-    color: var(--brand-ink, var(--accent)); margin-bottom: 12px; font-weight: 600;
+    color: var(--brand-ink, var(--accent)); margin-bottom: 20px; font-weight: 600;
   }
   /* The marks come at different aspect ratios and none of them is square, so each is
      bounded by height and left to keep its own width. */
