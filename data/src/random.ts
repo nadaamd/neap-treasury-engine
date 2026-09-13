@@ -1,13 +1,13 @@
 /**
- * Générateur pseudo-aléatoire déterministe et lois de tirage.
+ * Deterministic pseudo-random generator and sampling distributions.
  *
- * Contrainte de conception : le backtest doit être reproductible (SPEC §17.2, test 5).
- * `Math.random()` est donc proscrit dans tout le dépôt — il n'est pas amorçable et
- * son implémentation varie selon le moteur JS.
+ * Design constraint: the backtest must be reproducible (SPEC §17.2, test 5).
+ * `Math.random()` is therefore banned across the repository — it cannot be seeded and
+ * its implementation varies between JS engines.
  *
- * Algorithme : xoshiro128** (Blackman & Vigna), amorcé par splitmix32.
- * Période 2^128-1, qualité statistique suffisante pour de la simulation Monte-Carlo,
- * et surtout : entièrement spécifié, donc identique sur toute plateforme.
+ * Algorithm: xoshiro128** (Blackman & Vigna), seeded by splitmix32.
+ * Period 2^128-1, statistical quality sufficient for Monte-Carlo simulation, and above
+ * all: fully specified, hence identical on every platform.
  */
 
 const TWO_POW_32 = 4294967296;
@@ -27,7 +27,7 @@ function rotl(x: number, k: number): number {
   return ((x << k) | (x >>> (32 - k))) >>> 0;
 }
 
-/** Approximation de Lanczos de log Γ(x), requise par le tirage de Poisson (PTRS). */
+/** Lanczos approximation of log Γ(x), required by the Poisson sampler (PTRS). */
 const LANCZOS = [
   676.5203681218851, -1259.1392167224028, 771.32342877765313,
   -176.61502916214059, 12.507343278686905, -0.13857109526572012,
@@ -60,7 +60,7 @@ export class Rng {
     this.s3 = sm();
   }
 
-  /** Entier non signé sur 32 bits. */
+  /** Unsigned 32-bit integer. */
   nextU32(): number {
     const result = Math.imul(rotl(Math.imul(this.s1, 5) >>> 0, 7), 9) >>> 0;
     const t = (this.s1 << 9) >>> 0;
@@ -73,18 +73,18 @@ export class Rng {
     return result;
   }
 
-  /** Uniforme sur [0, 1). */
+  /** Uniform on [0, 1). */
   uniform(): number {
     return this.nextU32() / TWO_POW_32;
   }
 
-  /** Uniforme sur ]0, 1), bornée strictement pour les logarithmes. */
+  /** Uniform on ]0, 1), strictly bounded away from zero for logarithms. */
   private uniformOpen(): number {
     const u = this.uniform();
     return u === 0 ? Number.EPSILON : u;
   }
 
-  /** Normale centrée réduite, par Box-Muller polaire (la seconde valeur est mise en cache). */
+  /** Standard normal, by polar Box-Muller (the second value is cached). */
   normal(): number {
     if (this.spareNormal !== null) {
       const v = this.spareNormal;
@@ -105,11 +105,11 @@ export class Rng {
   }
 
   /**
-   * Log-normale de moyenne arithmétique `mean` et de paramètre de forme `sigma`.
+   * Log-normal with arithmetic mean `mean` and shape parameter `sigma`.
    *
-   * On paramètre par la moyenne observable plutôt que par mu, parce que les sources de
-   * calibration publient des tailles moyennes de paiement, pas des mu de log-normale.
-   * Relation : mu = ln(mean) - sigma²/2.
+   * Parameterised by the observable mean rather than by mu, because calibration sources
+   * publish average payment sizes, not log-normal mus.
+   * Relation: mu = ln(mean) - sigma²/2.
    */
   lognormalWithMean(mean: number, sigma: number): number {
     const mu = Math.log(mean) - (sigma * sigma) / 2;
@@ -119,11 +119,11 @@ export class Rng {
   /**
    * Poisson(lambda).
    *
-   * lambda < 30  : algorithme de Knuth (produit d'uniformes), exact.
-   * lambda >= 30 : rejet transformé avec squeeze (Hörmann 1993, « PTRS »), exact également.
+   * lambda < 30  : Knuth's algorithm (product of uniforms), exact.
+   * lambda >= 30 : transformed rejection with squeeze (Hörmann 1993, "PTRS"), also exact.
    *
-   * On évite volontairement l'approximation normale usuelle : elle biaise la queue basse,
-   * or ce sont précisément les heures creuses qui déterminent les ruptures de seuil.
+   * The usual normal approximation is deliberately avoided: it biases the lower tail, and
+   * the quiet hours are precisely what determines threshold breaches.
    */
   poisson(lambda: number): number {
     if (lambda <= 0) return 0;
@@ -155,7 +155,7 @@ export class Rng {
     }
   }
 
-  /** Choix binaire de probabilité p. */
+  /** Binary draw with probability p. */
   bernoulli(p: number): boolean {
     return this.uniform() < p;
   }

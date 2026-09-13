@@ -1,10 +1,10 @@
 /**
- * Les quatre politiques comparées — SPEC §18.2.
+ * The four policies being compared — SPEC §18.2.
  *
- * Elles partagent la même mécanique de bandes et le même moteur d'exécution : seule
- * change la façon dont les bandes sont obtenues, et la cadence à laquelle on regarde
- * l'état. C'est délibéré — si les politiques différaient aussi par leur plomberie, la
- * comparaison mesurerait autre chose que ce qu'on veut mesurer.
+ * They share the same band mechanics and the same execution engine: all that changes is
+ * how the bands are obtained, and how often state is inspected. That is deliberate — if
+ * the policies also differed in their plumbing, the comparison would measure something
+ * other than what we want to measure.
  */
 
 import type { Currency } from '../../../data/src/types.ts';
@@ -20,24 +20,24 @@ import type { BacktestConfig } from './config.ts';
 import type { PolicyBands, PolicyKind } from './types.ts';
 
 /**
- * Pire besoin de trésorerie intrajournalier observé.
+ * Worst observed intraday liquidity need.
  *
- * C'est ainsi qu'une trésorerie dimensionne un pré-financement en pratique : on regarde
- * la pire journée du passé récent et on provisionne autant. La méthode est robuste et
- * chère — elle ignore le coût du capital, la structure des flux et le risque de change.
+ * This is how a treasury sizes pre-funding in practice: look at the worst day of the
+ * recent past and provision that much. The method is robust and expensive — it ignores
+ * the cost of capital, the structure of the flows and FX risk.
  *
- * Le premier jet mesurait la pire *sortie nette journalière*. C'était faux, et le
- * backtest l'a montré sans ambiguïté : sur un corridor structurellement entrant comme
- * l'euro, la sortie nette la plus défavorable est proche de zéro, la bande devenait
- * dérisoire et la politique censée être la plus conservatrice accumulait quatre cent
- * quarante ruptures. Un solde net positif sur la journée ne dit rien du creux traversé
- * en cours de route.
+ * The first attempt measured the worst *daily net outflow*. That was wrong, and the
+ * backtest showed it unambiguously: on a structurally inbound corridor such as the euro,
+ * the least favourable net outflow is close to zero, the band became negligible and the
+ * policy supposed to be the most conservative racked up four hundred and forty breaches.
+ * A positive net balance over the day says nothing about the trough crossed along the
+ * way.
  *
- * La bonne grandeur est le **maximum de repli du flux cumulé à l'intérieur d'une
- * journée** : combien de liquidité il faut détenir au matin pour absorber la pire série
- * de sorties avant que les entrées ne compensent. On la mesure jour par jour et on
- * retient le pire, ce qui borne le buffer à un horizon de réapprovisionnement d'un jour
- * — au-delà, une trésorerie recharge plutôt que de provisionner.
+ * The right quantity is the **maximum drawdown of cumulative flow within a day**: how
+ * much liquidity you must hold in the morning to absorb the worst run of outflows before
+ * inflows catch up. It is measured day by day and the worst is kept, which bounds the
+ * buffer to a one-day replenishment horizon — beyond that, a treasury tops up rather
+ * than provisions.
  */
 function worstIntradayDrawdown(epochFlows: readonly number[]): number {
   let worst = 0;
@@ -55,7 +55,7 @@ function worstIntradayDrawdown(epochFlows: readonly number[]): number {
   return Math.max(worst, 1);
 }
 
-/** ES par unité d'exposition sur l'horizon d'une période, à partir de la volatilité du jour. */
+/** ES per unit of exposure over a one-period horizon, from the day's volatility. */
 export function esPerUnit(dailyVol: number): number {
   return ES_FACTOR_975 * dailyVol * Math.sqrt(1 / EPOCHS_PER_DAY);
 }
@@ -74,8 +74,8 @@ function solveFor(
   const base = override ?? CURRENCY_COSTS[currency]!.costs;
   const costs = { ...base, esPerUnit: esPerUnit(dailyVol) };
 
-  // Les bandes sont amorcées par Miller-Orr sur la série sans dérive — c'est son cadre
-  // d'hypothèses — puis raffinées numériquement sur les flux réels, dérive comprise.
+  // The bands are warm-started by Miller-Orr on the driftless series — that is its
+  // assumption set — then refined numerically on the real flows, drift included.
   const warmStart = millerOrrBands({
     gammaFixed: costs.gammaFixed,
     flowSigma: sigma,
@@ -97,24 +97,24 @@ function solveFor(
 }
 
 export interface PolicyInput {
-  /** Flux de la fenêtre de calibration — le passé strict. */
+  /** Flows of the calibration window — the strict past. */
   readonly calibration: Record<Currency, number[]>;
   /**
-   * Flux de la fenêtre d'évaluation. Réservé à CLAIRVOYANT, qui est une **borne
-   * supérieure** et non une politique implémentable.
+   * Flows of the evaluation window. Reserved for CLAIRVOYANT, which is a **reference
+   * bound** and not an implementable policy.
    */
   readonly evaluation: Record<Currency, number[]>;
-  /** Volatilité quotidienne par devise, estimée sur la calibration. */
+  /** Daily volatility per currency, estimated on the calibration window. */
   readonly dailyVol: Record<Currency, number>;
   readonly cfg: BacktestConfig;
   readonly seed: number;
   /**
-   * Coûts par devise se substituant à ceux du dépôt.
+   * Per-currency costs overriding the repository defaults.
    *
-   * Sans ce passage explicite, le solveur lisait toujours les constantes du module et
-   * les curseurs du tableau de bord n'avaient aucun effet sur les bandes : la page
-   * affichait des paramètres qu'elle prétendait faire varier. Le contrôle de contrat
-   * entre l'API et la page l'a détecté ; une capture d'écran ne l'aurait pas montré.
+   * Without this explicit pass-through, the solver always read the module constants and
+   * the dashboard sliders had no effect on the bands: the page displayed parameters it
+   * claimed to be varying. The contract check between the API and the page caught it; a
+   * screenshot would not have.
    */
   readonly costs?: Readonly<Record<string, CostParams>>;
 }
@@ -126,16 +126,16 @@ export function buildPolicy(kind: PolicyKind, input: PolicyInput): PolicyBands {
     const calib = input.calibration[c]!;
     switch (kind) {
       case 'STATIC': {
-        // Pré-financement conservateur, jamais optimisé : on provisionne la pire journée
-        // observée, on réapprovisionne quand le solde tombe sous le quart, on ne dégage
-        // l'excédent qu'au-delà du triple.
+        // Conservative pre-funding, never optimised: provision the worst observed day,
+        // top up when the balance falls below a quarter of it, sweep the excess only
+        // beyond three times it.
         const z = worstIntradayDrawdown(calib);
         bands[c] = { lower: 0.25 * z, target: z, upper: 3 * z };
         break;
       }
       case 'CALENDAR': {
-        // Même dimensionnement, mais décision à heure fixe : la pratique de trésorerie
-        // la plus répandue, et le témoin réaliste de la comparaison.
+        // Same sizing, but decisions at a fixed time: the most widespread treasury
+        // practice, and the realistic control in the comparison.
         const z = worstIntradayDrawdown(calib);
         bands[c] = { lower: 0, target: z, upper: Number.POSITIVE_INFINITY };
         break;

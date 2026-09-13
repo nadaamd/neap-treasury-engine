@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="/tokens.css">
 <style>
   body { font-size: 14px; line-height: 1.5; }
-  /* Même bandeau que la page d'accueil, en plus serré : ici on travaille, la barre ne
-     doit pas prendre la place des données. */
+  /* The same masthead as the landing page, tighter: this is a working surface, the bar
+     must not take room from the data. */
   header {
     position: sticky; top: 0; z-index: 20;
     background: var(--indigo); color: #fff;
@@ -34,10 +34,10 @@
   main { padding: 14px 24px 60px; max-width: 1280px; margin: 0 auto; }
   section { margin-bottom: 14px; }
 
-  /* Le bloc vivant — soldes, décision, courbe, commandes — tient dans une hauteur
-     d'écran. C'est ce qu'on filme : si la capture coupe les commandes ou la courbe,
-     la démonstration doit se faire en deux prises ou en dézoomant, et les deux abîment
-     ce qu'on cherche à montrer. Le backtest reste dessous, il se lit à l'arrêt. */
+  /* The live block — balances, decision, chart, controls — fits in one screen height.
+     This is what gets recorded: if the capture cuts off the controls or the chart, the
+     demo has to be done in two takes or zoomed out, and both damage what it is meant to
+     show. The backtest stays below; it is read while paused. */
   .live { display: grid; gap: 12px; }
   @media (min-height: 720px) and (min-width: 1100px) {
     .live { min-height: calc(100vh - 118px); grid-template-rows: auto auto 1fr auto; }
@@ -94,8 +94,8 @@
   .kpi { display: flex; gap: 22px; flex-wrap: wrap; }
   .kpi div span { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
   .kpi div b { font-size: 18px; font-weight: 600; min-width: 5.2ch; display: inline-block; }
-  /* Mesure de lecture bornée : sans plafond, ces paragraphes s'étirent sur toute la
-     largeur d'un écran large et deviennent pénibles à suivre. */
+  /* Bounded measure: without a cap, these paragraphs stretch across the full width of a
+     wide screen and become tiring to follow. */
   .note { color: var(--faint); font-size: 12px; margin-top: 10px; max-width: 74ch; }
   .scroll-x { overflow-x: auto; }
   .chart-card { display: flex; flex-direction: column; min-height: 150px; }
@@ -107,8 +107,8 @@
   .badge.warn { color: var(--warn); border-color: var(--warn); }
   .spin { color: var(--warn); }
 
-  /* La page est longue et se termine sur un tableau. Sans sortie en bas, le seul
-     retour est la barre collante, ce qui oblige à remonter du regard pour repartir. */
+  /* The page is long and ends on a table. With no exit at the bottom, the only way back
+     is the sticky bar, which forces the eye upward to move on. */
   footer {
     border-top: 1px solid var(--line);
     margin: 40px 24px 0; padding: 26px 0 56px;

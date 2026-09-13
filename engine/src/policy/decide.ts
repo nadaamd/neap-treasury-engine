@@ -1,26 +1,25 @@
 /**
- * Fonction de décision — le corps du handler confidentiel (décisions D5 et D9).
+ * The decision function — the body of the confidential handler (decisions D5 and D9).
  *
- * ─── Ce que cette fonction est ────────────────────────────────────────────────
- * Une **fonction pure** : mêmes entrées, mêmes sorties, aucune E/S, aucune horloge, aucun
- * aléa. Elle s'exécute indifféremment dans le handler TEE de Chainlink CRE ou dans un
- * runner local, ce qui rend le plan de repli gratuit — c'est le même code.
+ * ─── What this function is ────────────────────────────────────────────────────
+ * A **pure function**: same inputs, same outputs, no I/O, no clock, no randomness. It
+ * runs identically inside the Chainlink CRE TEE handler and in a local runner, which
+ * makes the fallback plan free — it is the same code.
  *
- * ─── Pourquoi elle est courte ─────────────────────────────────────────────────
- * Tout ce qui est coûteux — résolution des bandes, calibration de la volatilité, du
- * shrinkage, de la queue — ne dépend que des *paramètres*, pas de l'*état*. Ce travail
- * est fait hors enclave et engagé on-chain par `bandParamsHash` (D5). Ne reste ici que
- * ce qui touche aux positions : comparer l'état aux bandes, mesurer le risque, produire
- * un plan. C'est ce découpage qui rend la confidentialité énonçable en une phrase.
+ * ─── Why it is short ──────────────────────────────────────────────────────────
+ * Everything expensive — solving the bands, calibrating volatility, shrinkage, the tail
+ * — depends only on *parameters*, not on *state*. That work happens outside the enclave
+ * and is committed on-chain through `bandParamsHash` (D5). What remains here is only
+ * what touches positions: compare state against bands, measure risk, emit a plan. That
+ * split is what makes the confidentiality claim stateable in one sentence.
  *
- * ─── Pourquoi il n'y a qu'une seule règle de décision ─────────────────────────
- * La spec avait initialement deux règles concurrentes : la bande, et un critère
- * coût/bénéfice sur la VaR. Elles pouvaient se contredire. La bande n'est pas une entrée
- * du système, c'est le **résultat** de la minimisation de J — laquelle contient déjà le
- * portage, le coût fixe, le coût variable, le risque de change et le risque de rupture.
- * Rajouter ici un second filtre économique reviendrait à facturer deux fois les mêmes
- * arbitrages. La décision en ligne est donc volontairement triviale : hors bande, on
- * ramène à la cible. Toute l'intelligence est dans le calcul des bandes.
+ * ─── Why there is only one decision rule ──────────────────────────────────────
+ * The spec initially had two competing rules: the band, and a cost/benefit test on VaR.
+ * They could contradict each other. The band is not an input of the system, it is the
+ * **result** of minimising J — which already contains carry, fixed cost, variable cost,
+ * FX risk and breach risk. Adding a second economic filter here would charge the same
+ * trade-offs twice. The online decision is therefore deliberately trivial: outside the
+ * band, return to target. All the intelligence lives in computing the bands.
  */
 
 import type { Currency } from '../../../data/src/types.ts';
@@ -33,16 +32,16 @@ import { filteredHistoricalES, normalVaR, portfolioSigma, Z_99 } from '../risk/m
 export type DecisionStatus = 'NOOP' | 'PROPOSE' | 'REJECTED';
 
 export interface Order {
-  /** Devise cédée. */
+  /** Currency sold. */
   readonly sell: Currency;
-  /** Devise acquise. */
+  /** Currency bought. */
   readonly buy: Currency;
-  /** Montant en équivalent numéraire, déjà quantifié. */
+  /** Amount in numeraire equivalent, already quantised. */
   readonly amount: number;
 }
 
-/** Engagement connu à venir. Un engagement *certain* ampute le solde disponible ; un
- *  engagement probable ne fait que déformer la distribution et n'est pas déduit ici. */
+/** A known upcoming commitment. A *certain* commitment reduces the available balance; a
+ *  probable one merely reshapes the distribution and is not deducted here. */
 export interface Commitment {
   readonly currency: Currency;
   readonly amount: number;
@@ -53,9 +52,9 @@ export interface Commitment {
 export interface CurrencyPolicy {
   readonly bands: Bands;
   readonly costs: CostParams;
-  /** Plafond par ordre unitaire. */
+  /** Cap on a single order. */
   readonly maxSingleOrder: number;
-  /** Délai de règlement du rail, en jours — un rail lent laisse l'exposition ouverte plus longtemps. */
+  /** Settlement delay of the rail, in days — a slow rail leaves the exposure open longer. */
   readonly settlementDays: number;
 }
 
@@ -63,17 +62,17 @@ export interface RiskParams {
   readonly horizonDays: number;
   readonly alpha: number;
   readonly basisHaircutBps: number;
-  /** Pas de quantification des ordres (D6). */
+  /** Order quantisation step (D6). */
   readonly lotSize: number;
-  /** En deçà, un ordre est de la poussière et n'est pas émis. */
+  /** Below this, an order is dust and is not emitted. */
   readonly minOrder: number;
-  /** Au-delà, l'approbation humaine est requise. */
+  /** Above this, human approval is required. */
   readonly autoApproveThreshold: number;
-  /** Plafond de notionnel cumulé sur l'epoch. */
+  /** Cap on cumulative notional over the epoch. */
   readonly maxPerEpoch: number;
-  /** Solde minimal à préserver dans la devise de financement. */
+  /** Minimum balance to preserve in the funding currency. */
   readonly fundingFloor: number;
-  /** Âge maximal toléré pour les données de marché, en secondes. */
+  /** Maximum tolerated age of market data, in seconds. */
   readonly maxStalenessSec: number;
 }
 
@@ -83,20 +82,20 @@ export interface DecisionInput {
   readonly policyVersion: number;
   readonly bandParamsHash: string;
 
-  /** Devise de financement, numéraire du système. */
+  /** Funding currency, the system's numeraire. */
   readonly numeraire: Currency;
-  /** Devises portant une bande, hors numéraire. */
+  /** Currencies carrying a band, excluding the numeraire. */
   readonly currencies: readonly Currency[];
 
-  /** — état confidentiel — */
+  /** — confidential state — */
   readonly balances: Readonly<Record<string, number>>;
   readonly commitments: readonly Commitment[];
 
-  /** — paramètres, engagés on-chain par bandParamsHash — */
+  /** — parameters, committed on-chain through bandParamsHash — */
   readonly policies: Readonly<Record<string, CurrencyPolicy>>;
   readonly risk: RiskParams;
 
-  /** — marché, public — */
+  /** — market, public — */
   readonly currentVol: readonly number[];
   readonly residuals: readonly (readonly number[])[];
   readonly marketTimestamp: number;
@@ -104,12 +103,12 @@ export interface DecisionInput {
 }
 
 export interface DecisionMetrics {
-  /** ES rapportée à l'exposition brute, en points de base — jamais en montant (D6). */
+  /** ES relative to gross exposure, in basis points — never as an amount (D6). */
   readonly esBeforeBps: number;
   readonly esAfterBps: number;
   readonly var99BeforeBps: number;
   readonly var99AfterBps: number;
-  /** Risque d'exécution : ES sur la durée de règlement des ordres, en points de base. */
+  /** Execution risk: ES over the settlement horizon of the orders, in basis points. */
   readonly settlementRiskBps: number;
   readonly costEstimate: number;
 }
@@ -120,7 +119,7 @@ export interface Decision {
   readonly orders: readonly Order[];
   readonly requiresApproval: boolean;
   readonly metrics: DecisionMetrics;
-  /** Encodage canonique des ordres — le hachage est fait à la frontière, pas ici. */
+  /** Canonical encoding of the orders — hashing happens at the boundary, not here. */
   readonly ordersCanonical: string;
   readonly epoch: number;
   readonly nonce: number;
@@ -137,14 +136,14 @@ const EMPTY_METRICS: DecisionMetrics = {
   costEstimate: 0,
 };
 
-/** Quantification vers le bas sur le pas de lot — jamais vers le haut : on ne veut pas
- *  qu'un arrondi fasse franchir un plafond. */
+/** Quantise down onto the lot step — never up: a rounding must not push an amount
+ *  across a cap. */
 function quantize(amount: number, lot: number): number {
   if (lot <= 0) return amount;
   return Math.floor(amount / lot) * lot;
 }
 
-/** Encodage canonique, stable et indépendant de l'ordre d'itération. */
+/** Canonical encoding, stable and independent of iteration order. */
 export function canonicalizeOrders(orders: readonly Order[]): string {
   return orders
     .map((o) => `${o.sell}>${o.buy}:${o.amount}`)
@@ -168,13 +167,13 @@ export function decide(input: DecisionInput): Decision {
 
   const envelope = { epoch, nonce, policyVersion, bandParamsHash };
 
-  // 1. Fraîcheur des données de marché. Le contrat refera ce contrôle, mais décider sur
-  //    des prix périmés puis se faire rejeter gaspille un epoch.
+  // 1. Market data freshness. The contract will re-run this check, but deciding on
+  //    stale prices and then being rejected wastes an epoch.
   const ageSec = (input.now - input.marketTimestamp) / 1000;
   if (ageSec > risk.maxStalenessSec || ageSec < 0) {
     return {
       status: 'REJECTED',
-      reason: `données de marché périmées : ${ageSec.toFixed(0)} s > ${risk.maxStalenessSec} s`,
+      reason: `stale market data: ${ageSec.toFixed(0)} s > ${risk.maxStalenessSec} s`,
       orders: [],
       requiresApproval: false,
       metrics: EMPTY_METRICS,
@@ -183,9 +182,9 @@ export function decide(input: DecisionInput): Decision {
     };
   }
 
-  // 2. Solde disponible : on retranche les engagements certains échus dans l'horizon.
-  //    Les engagements probables ne sont pas déduits — ils sont déjà dans la distribution
-  //    de flux qui a servi à calculer les bandes.
+  // 2. Available balance: subtract certain commitments falling due within the horizon.
+  //    Probable commitments are not deducted — they are already in the flow distribution
+  //    that produced the bands.
   const available: Record<string, number> = {};
   for (const c of [numeraire, ...currencies]) available[c] = balances[c] ?? 0;
   for (const k of commitments) {
@@ -194,7 +193,7 @@ export function decide(input: DecisionInput): Decision {
     }
   }
 
-  // 3. Écart aux bandes. Seule règle de décision du système.
+  // 3. Deviation from the bands. The system's only decision rule.
   const raw: { currency: Currency; delta: number }[] = [];
   for (const c of currencies) {
     const policy = policies[c];
@@ -204,7 +203,7 @@ export function decide(input: DecisionInput): Decision {
     else if (b > policy.bands.upper) raw.push({ currency: c, delta: policy.bands.target - b });
   }
 
-  // 4. Quantification, poussière, plafond unitaire.
+  // 4. Quantisation, dust, single-order cap.
   let candidates = raw
     .map(({ currency, delta }) => {
       const policy = policies[currency]!;
@@ -214,9 +213,8 @@ export function decide(input: DecisionInput): Decision {
     })
     .filter((o) => Math.abs(o.signed) >= risk.minOrder);
 
-  // 5. Contrainte de financement : on ne peut acheter que ce que le numéraire permet,
-  //    plancher préservé. Les achats sont réduits au prorata, les ventes ne le sont pas
-  //    puisqu'elles reconstituent le numéraire.
+  // 5. Funding constraint: you can only buy what the numeraire allows, floor preserved.
+  //    Buys are scaled down pro rata, sells are not — they replenish the numeraire.
   const buys = candidates.filter((o) => o.signed > 0);
   const sells = candidates.filter((o) => o.signed < 0);
   const proceeds = sells.reduce((a, o) => a - o.signed, 0);
@@ -226,7 +224,7 @@ export function decide(input: DecisionInput): Decision {
   let fundingScale = 1;
   if (needed > spendable && needed > 0) fundingScale = spendable / needed;
 
-  // 6. Plafond de notionnel sur l'epoch.
+  // 6. Notional cap over the epoch.
   const grossAfterFunding = needed * fundingScale + proceeds;
   const epochScale =
     grossAfterFunding > risk.maxPerEpoch && grossAfterFunding > 0
@@ -249,8 +247,8 @@ export function decide(input: DecisionInput): Decision {
       : { sell: o.currency, buy: numeraire, amount: -o.signed },
   );
 
-  // 7. Mesure du risque avant et après. L'exposition d'une devise, c'est son solde :
-  //    un pré-financement non couvert *est* une position directionnelle subie.
+  // 7. Risk measured before and after. A currency's exposure is its balance:
+  //    unhedged pre-funding *is* a directional position nobody chose.
   const before = currencies.map((c) => available[c] ?? 0);
   const after = before.slice();
   candidates.forEach((o) => {
@@ -276,9 +274,9 @@ export function decide(input: DecisionInput): Decision {
   const varBefore = normalVaR(portfolioSigma(before, sigma), risk.horizonDays, Z_99);
   const varAfter = normalVaR(portfolioSigma(after, sigma), risk.horizonDays, Z_99);
 
-  // Risque d'exécution : chaque ordre reste exposé jusqu'à son règlement. Un rail lent
-  // (J+2) porte donc un risque bien supérieur à un rail à finalité sub-seconde, à
-  // montant égal — c'est le coût caché du corridor sans stablecoin.
+  // Execution risk: every order stays exposed until it settles. A slow rail (T+2)
+  // therefore carries far more risk than a rail with sub-second finality, at equal
+  // size — that is the hidden cost of a corridor without stablecoins.
   let settlementRisk = 0;
   for (const o of candidates) {
     const policy = policies[o.currency]!;
@@ -305,7 +303,7 @@ export function decide(input: DecisionInput): Decision {
   if (orders.length === 0) {
     return {
       status: 'NOOP',
-      reason: 'tous les soldes disponibles sont à l’intérieur de leurs bandes',
+      reason: 'every available balance is inside its band',
       orders: [],
       requiresApproval: false,
       metrics,
@@ -318,10 +316,10 @@ export function decide(input: DecisionInput): Decision {
     status: 'PROPOSE',
     reason:
       fundingScale < 1
-        ? 'plan réduit par la contrainte de financement'
+        ? 'plan scaled down by the funding constraint'
         : epochScale < 1
-          ? 'plan réduit par le plafond de notionnel de l’epoch'
-          : 'écart aux bandes',
+          ? 'plan scaled down by the epoch notional cap'
+          : 'deviation from the bands',
     orders,
     requiresApproval: gross > risk.autoApproveThreshold,
     metrics,

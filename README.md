@@ -79,7 +79,7 @@ npm run dev          # landing on http://localhost:5173, dashboard on /app
 npm test             # 151 TypeScript tests
 npm run typecheck    # 0 errors
 npm run cre:simulate # the confidential handler, in the TEE simulator
-npm run backtest     # regenerates results (~9 min)
+npm run backtest     # regenerates results (~15 min)
 
 cd contracts && forge test   # 90 Solidity tests
 ```
@@ -106,9 +106,8 @@ saw them first.
 - [`docs/BACKTEST.md`](./docs/BACKTEST.md) — results with their limits
 - [`docs/E2E.md`](./docs/E2E.md) — trace of the end-to-end run
 - [`docs/DECISIONS.md`](./docs/DECISIONS.md) — 24 architecture decisions, each with its reason
-- [`docs/JALON-0.md`](./docs/JALON-0.md) — sponsor questions, and why six of eight were answerable from the docs
 - [`docs/MAINNET.md`](./docs/MAINNET.md) — the Arc mainnet commitment and what ships under it
-- [`SPEC.md`](./SPEC.md) — full technical specification
+- [`docs/SPEC.md`](./docs/SPEC.md) — full technical specification
 
 ## Licence
 

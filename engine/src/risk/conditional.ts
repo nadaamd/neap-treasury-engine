@@ -1,19 +1,19 @@
 /**
- * Covariance **conditionnelle** : volatilités EWMA du jour sur la diagonale, corrélation
- * estimée sur les résidus standardisés puis régularisée par shrinkage.
+ * **Conditional** covariance: today's EWMA volatilities on the diagonal, correlation
+ * estimated on standardised residuals and then regularised by shrinkage.
  *
- *   Σ_t = D_t · R · D_t     avec D_t = diag(σ_{1,t} … σ_{n,t})
+ *   Σ_t = D_t · R · D_t     with D_t = diag(σ_{1,t} … σ_{n,t})
  *
- * Pourquoi séparer volatilité et corrélation plutôt que de shrinker directement la
- * covariance des rendements bruts : la volatilité bouge vite et la corrélation bouge
- * lentement. Les estimer ensemble sur une même fenêtre force un compromis perdant —
- * fenêtre courte, corrélation bruitée ; fenêtre longue, volatilité périmée. C'est la
- * logique des modèles DCC, appliquée ici dans sa forme la plus simple.
+ * Why separate volatility from correlation rather than shrinking the covariance of raw
+ * returns directly: volatility moves fast and correlation moves slowly. Estimating both
+ * on a single window forces a losing trade-off — short window, noisy correlation; long
+ * window, stale volatility. This is the logic of DCC models, applied here in its
+ * simplest form.
  *
- * Conséquence pratique, et elle est importante pour la comparaison des estimateurs de
- * risque : une ES gaussienne bâtie sur cette covariance conditionnelle et une ES par FHS
- * partagent désormais le **même niveau** de volatilité. Leur écart ne mesure plus qu'une
- * chose — l'épaisseur des queues. C'est la seule comparaison honnête.
+ * A practical consequence, and it matters for comparing risk estimators: a Gaussian ES
+ * built on this conditional covariance and an FHS ES now share the **same level** of
+ * volatility. Their gap measures one thing only — tail thickness. That is the only
+ * honest comparison.
  */
 
 import { ledoitWolf } from './covariance.ts';
@@ -23,9 +23,9 @@ import type { Matrix } from '../linalg.ts';
 export interface ConditionalCovariance {
   /** Σ_t = D R D. */
   readonly sigma: Matrix;
-  /** Matrice de corrélation régularisée. */
+  /** Regularised correlation matrix. */
   readonly correlation: Matrix;
-  /** Intensité de shrinkage appliquée à la corrélation. */
+  /** Shrinkage intensity applied to the correlation. */
   readonly intensity: number;
 }
 
@@ -36,8 +36,8 @@ export function conditionalCovariance(
   const n = currentVol.length;
   const { sigma: sz, intensity } = ledoitWolf(residuals);
 
-  // Les résidus standardisés ont une variance proche de 1 sans l'être exactement :
-  // on normalise explicitement pour obtenir une vraie matrice de corrélation.
+  // Standardised residuals have a variance close to 1 without being exactly 1:
+  // normalise explicitly to obtain a genuine correlation matrix.
   const correlation = zeros(n);
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {

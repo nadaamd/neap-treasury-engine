@@ -1,10 +1,10 @@
 /**
- * Points d'entrée servis à l'enclave pendant la simulation.
+ * Endpoints served to the enclave during simulation.
  *
- * Ils matérialisent la frontière de confidentialité : `/treasury` exige un jeton porteur
- * et renvoie ce qui ne doit jamais sortir de l'enclave ; `/market` est ouvert et ne
- * renvoie que du public. Si les deux étaient sur le même point d'entrée, la distinction
- * ne serait qu'un commentaire.
+ * They make the confidentiality boundary concrete: `/treasury` requires a bearer token
+ * and returns what must never leave the enclave; `/market` is open and returns only
+ * public data. Were both on the same endpoint, the distinction would be a comment and
+ * nothing more.
  */
 
 import { CORRIDORS } from '../../data/calibration/corridors.ts';
@@ -45,8 +45,8 @@ function build(): { treasury: TreasurySnapshot; market: MarketSnapshot } {
     seed: SEED,
   });
 
-  // Un solde volontairement sous le seuil bas : la simulation doit produire un plan,
-  // pas un NOOP. Un exemple qui ne fait rien ne démontre rien.
+  // A balance deliberately below the lower threshold: the simulation must produce a
+  // plan, not a NOOP. An example that does nothing demonstrates nothing.
   const balances: Record<string, number> = { USD: 20_000_000 };
   for (const c of CURRENCIES) balances[c] = bands[c].target;
   balances.EUR = bands.EUR.lower * 0.4;
@@ -97,13 +97,13 @@ function snapshots() {
   return cached;
 }
 
-/** L'état confidentiel — protégé par le jeton que l'enclave présente. */
+/** The confidential state — protected by the token the enclave presents. */
 export function treasuryPayload(authorization: string | undefined, expected: string): string | null {
   if (authorization !== `Bearer ${expected}`) return null;
   return JSON.stringify(snapshots().treasury);
 }
 
-/** Le marché — public, et le rester est un choix documenté. */
+/** The market — public, and staying that way is a documented choice. */
 export function marketPayload(): string {
   return JSON.stringify({ ...snapshots().market, timestamp: Date.now() });
 }

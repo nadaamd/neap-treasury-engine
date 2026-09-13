@@ -1,25 +1,24 @@
 /**
- * Volatilité conditionnelle EWMA (RiskMetrics).
+ * EWMA conditional volatility (RiskMetrics).
  *
  *   σ²_t = λ σ²_{t−1} + (1 − λ) r²_{t−1}
  *
- * λ = 0.94 est la valeur RiskMetrics pour des données quotidiennes. Le choix d'un
- * estimateur à mémoire décroissante plutôt que d'une variance glissante n'est pas
- * cosmétique : les rendements de change présentent un groupement de volatilité, et une
- * fenêtre glissante y répond avec un retard égal à la moitié de sa largeur — puis
- * décroche brutalement quand le choc sort de la fenêtre.
+ * λ = 0.94 is the RiskMetrics value for daily data. Choosing a decaying-memory
+ * estimator over a rolling variance is not cosmetic: FX returns exhibit volatility
+ * clustering, and a rolling window responds to it with a lag equal to half its width —
+ * then drops abruptly once the shock leaves the window.
  *
- * Discipline anti-anticipation : `σ_t` n'utilise que les rendements strictement
- * antérieurs à `t`. La fenêtre d'amorçage est renvoyée séparément et doit être exclue
- * de tout calcul en aval (SPEC §18.1).
+ * No-lookahead discipline: `σ_t` only uses returns strictly earlier than `t`. The
+ * warm-up window is returned separately and must be excluded from every downstream
+ * computation (SPEC §18.1).
  */
 
 export const RISKMETRICS_LAMBDA = 0.94;
 
 export interface EwmaSeries {
-  /** σ_t pour t ∈ [warmup, T) — volatilité conditionnelle connue *avant* d'observer r_t. */
+  /** σ_t for t ∈ [warmup, T) — conditional volatility known *before* observing r_t. */
   readonly vol: number[];
-  /** Index du premier élément de `vol` dans la série de rendements d'origine. */
+  /** Index of the first element of `vol` within the original return series. */
   readonly warmup: number;
 }
 
@@ -28,12 +27,12 @@ export function ewmaVolSeries(
   lambda: number = RISKMETRICS_LAMBDA,
   warmup = 20,
 ): EwmaSeries {
-  if (lambda <= 0 || lambda >= 1) throw new RangeError('lambda doit être dans ]0,1[');
+  if (lambda <= 0 || lambda >= 1) throw new RangeError('lambda must lie in ]0,1[');
   if (returns.length <= warmup) {
-    throw new RangeError(`série trop courte : ${returns.length} ≤ warmup ${warmup}`);
+    throw new RangeError(`series too short: ${returns.length} ≤ warmup ${warmup}`);
   }
 
-  // Amorçage par la variance empirique de la fenêtre initiale, qui est ensuite jetée.
+  // Seeded with the sample variance of the initial window, which is then discarded.
   const seed = returns.slice(0, warmup);
   const m = seed.reduce((a, b) => a + b, 0) / warmup;
   let sigma2 = seed.reduce((a, x) => a + (x - m) ** 2, 0) / (warmup - 1);
@@ -47,7 +46,7 @@ export function ewmaVolSeries(
   return { vol, warmup };
 }
 
-/** Dernière volatilité conditionnelle, c'est-à-dire la prévision pour la période suivante. */
+/** Last conditional volatility, i.e. the forecast for the next period. */
 export function ewmaVolNext(
   returns: readonly number[],
   lambda: number = RISKMETRICS_LAMBDA,

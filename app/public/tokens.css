@@ -1,15 +1,15 @@
 /*
- * Monde visuel de NEAP — partagé par la page d'accueil et le tableau de bord.
+ * NEAP's visual world — shared by the landing page and the dashboard.
  *
- * Les deux surfaces ne font pas le même travail : l'une convainc, l'autre sert à
- * travailler. Elles partagent la palette, les surfaces du navigateur et les chiffres
- * tabulaires ; elles ne partagent pas la densité ni l'échelle typographique.
+ * The two surfaces do different jobs: one persuades, the other is for working. They
+ * share the palette, the browser surfaces and the tabular figures; they do not share
+ * density or type scale.
  */
 
-/* Archivo en fichier variable : une seule requête couvre 400 à 700, là où des graisses
-   statiques en auraient demandé trois. Grotesque à ouvertures serrées et à hauteur d'x
-   élevée — il tient les petites tailles d'interface, ce que la sans du système faisait
-   aussi, mais sans jamais ressembler à un choix. */
+/* Archivo as a variable file: one request covers 400 to 700, where static weights would
+   have taken three. A grotesque with tight apertures and a tall x-height — it holds up at
+   small interface sizes, which the system sans also did, but without ever looking like a
+   decision. */
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
@@ -21,10 +21,10 @@
     U+2215, U+FEFF, U+FFFD;
 }
 
-/* Young Serif : un serif à empattements francs et à contraste faible. Gloock, le
-   didone qu'il remplace, tirait la page vers la mode — un fort contraste et des déliés
-   fins conviennent à une couverture de magazine, pas à un moteur de trésorerie. Des
-   fûts épais et réguliers tiennent mieux face à des chiffres tabulaires. */
+/* Young Serif: a serif with blunt slab serifs and low contrast. Gloock, the didone it
+   replaces, pulled the page towards fashion — high contrast and thin hairlines suit a
+   magazine cover, not a treasury engine. Thick, even stems stand up better next to
+   tabular figures. */
 @font-face {
   font-family: 'Young Serif';
   font-style: normal;
@@ -42,30 +42,29 @@
   /* ── Palette ──────────────────────────────────────────────────────────
      Space Indigo, Vintage Grape, Golden Pollen, Dark Cyan, Blue Slate.
 
-     Deux des cinq ne peuvent pas porter de texte sur fond clair : Golden Pollen
-     tombe à 1,5:1 et Dark Cyan à 3,3:1. Plutôt que de les écarter ou de les
-     dénaturer, on leur donne le rôle où ils sont les meilleurs — la surface.
-     Golden Pollen portant du Space Indigo donne 10,2:1, ce qui en fait le
-     surligneur le plus lisible de la page. Les rôles de texte sont tenus par des
-     valeurs dérivées de la même famille, toutes conformes AA. */
+     Two of the five cannot carry text on a light background: Golden Pollen falls to
+     1.5:1 and Dark Cyan to 3.3:1. Rather than dropping them or distorting them, they
+     get the role they are best at — surface. Golden Pollen carrying Space Indigo gives
+     10.2:1, which makes it the most legible highlighter on the page. The text roles are
+     held by values derived from the same family, all AA compliant. */
   --indigo: #1F2041;
   --grape: #4B3F72;
   --pollen: #FFC857;
   --cyan: #119DA4;
   --slate: #19647E;
 
-  /* Le fond n'est pas blanc : c'est un lavis d'indigo. Un fond blanc aurait rendu la
-     palette décorative — visible seulement dans les accents, absente de la surface qui
-     occupe quatre-vingt-dix pour cent de l'écran. Les panneaux restent blancs et se
-     détachent donc en relief au lieu de se confondre avec la page. */
+  /* The background is not white: it is an indigo wash. A white background would have
+     made the palette decorative — visible only in accents, absent from the surface that
+     occupies ninety percent of the screen. Panels stay white and therefore stand out in
+     relief instead of merging with the page. */
   --bg: #e4e1f1;
   --panel: #ffffff;
   --panel-2: #d5d0e8;
   --line: #cbc5e0;
   --ink: var(--indigo);
 
-  /* Trois paliers de texte : 15,7 / 9,4 / 7,4 sur panneau, et jamais sous 4,9 sur les
-     deux fonds teintés. */
+  /* Three text levels: 15.7 / 9.4 / 7.4 on a panel, and never under 4.9 on the two
+     tinted backgrounds. */
   --dim: #464265;
   --faint: #575272;
 
@@ -77,8 +76,8 @@
   --gbp: var(--grape);
   --brl: #6f4c0e;
 
-  /* Fonds de zone dérivés des mêmes teintes, assez pâles pour que le curseur et
-     les chiffres restent ce qu'on lit en premier. */
+  /* Zone backgrounds derived from the same hues, pale enough that the marker and the
+     figures stay the first thing you read. */
   --zone-low: #f4d9df;
   --zone-ok: #cfe9ec;
   --zone-high: #fbe7c2;
@@ -90,8 +89,8 @@
 
 * { box-sizing: border-box; }
 
-/* Surfaces que le navigateur dessine et qui n'appartiennent à aucun système de design
-   tant qu'on ne les réclame pas. */
+/* Surfaces the browser paints, which belong to no design system until you claim
+   them. */
 ::selection { background: var(--pollen); color: var(--indigo); }
 html { scrollbar-color: var(--line) var(--bg); }
 ::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -110,9 +109,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Chiffres alignés en colonne : dans un tableau financier, des chiffres qui dansent
-   d'une ligne à l'autre empêchent la comparaison verticale, qui est la seule chose
-   qu'on fait avec eux. */
+/* Column-aligned figures: in a financial table, digits that shift from row to row
+   prevent vertical comparison, which is the only thing anyone does with them. */
 .num { font-variant-numeric: tabular-nums; font-family: var(--mono); }
 
 @media (prefers-reduced-motion: reduce) {

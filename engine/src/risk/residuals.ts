@@ -1,17 +1,17 @@
 /**
- * Construction des résidus standardisés alimentant la FHS.
+ * Construction of the standardised residuals that feed FHS.
  *
- * z_{t,i} = r_{t,i} / σ_{t,i}, où σ_{t,i} est la volatilité EWMA connue *avant*
- * d'observer r_{t,i}. Les vecteurs transversaux sont conservés intacts : c'est ce qui
- * transporte la corrélation et la dépendance de queue jusqu'au calcul d'ES.
+ * z_{t,i} = r_{t,i} / σ_{t,i}, where σ_{t,i} is the EWMA volatility known *before*
+ * observing r_{t,i}. Cross-sectional vectors are kept intact: that is what carries
+ * correlation and tail dependence through to the ES computation.
  */
 
 import { ewmaVolNext, ewmaVolSeries, RISKMETRICS_LAMBDA } from './ewma.ts';
 
 export interface ResidualSet {
-  /** Matrice T × n de résidus standardisés. */
+  /** T × n matrix of standardised residuals. */
   readonly residuals: number[][];
-  /** Volatilité conditionnelle courante par devise (prévision pour la période suivante). */
+  /** Current conditional volatility per currency (forecast for the next period). */
   readonly currentVol: number[];
   readonly names: readonly string[];
 }

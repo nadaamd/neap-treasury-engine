@@ -1,4 +1,4 @@
-/** Tests des politiques Privy — la seconde couche de contrôle. */
+/** Privy policy tests — the second layer of control. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,14 +12,14 @@ const POLICY = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 const TARGETS = { vault: VAULT, treasuryPolicy: POLICY, abi: VAULT_ABI_FRAGMENT };
 const ROLES: readonly Role[] = ['OPERATOR', 'TREASURER', 'RISK_OFFICER'];
 
-describe('sélecteurs', () => {
+describe('selectors', () => {
   /**
-   * Ces valeurs viennent de `forge inspect ... methodIdentifiers` sur les contrats
-   * compilés. Une suite Solidity les confronte au bytecode à chaque exécution ; ce
-   * test-ci verrouille le versant TypeScript, pour qu'une signature retouchée ici ne
-   * passe pas inaperçue.
+   * These values come from `forge inspect ... methodIdentifiers` on the compiled
+   * contracts. A Solidity suite checks them against the bytecode on every run; this test
+   * locks down the TypeScript side, so that a signature edited here does not slip past
+   * unnoticed.
    */
-  test('correspondent aux contrats compilés', () => {
+  test('match the compiled contracts', () => {
     assert.equal(selector('approve(bytes32)'), '0xa53a1adf');
     assert.equal(selector('commitBandParams(bytes32)'), '0x97b00759');
     assert.equal(
@@ -28,48 +28,48 @@ describe('sélecteurs', () => {
     );
   });
 
-  test('chaque sélecteur fait quatre octets', () => {
+  test('every selector is four bytes', () => {
     for (const signatures of Object.values(ALLOWED_CALLS)) {
       for (const s of signatures) assert.match(selector(s), /^0x[0-9a-f]{8}$/);
     }
   });
 });
 
-describe('séparation des devoirs, seconde couche', () => {
+describe('separation of duties, second layer', () => {
   const policies = buildAllPolicies(TARGETS);
 
   /**
-   * Le contrat impose déjà la séparation des devoirs. Pourquoi la redire ici ?
+   * The contract already enforces separation of duties. Why restate it here?
    *
-   * Parce que les deux couches échouent différemment. Le contrat protège contre un
-   * opérateur qui tenterait une action interdite ; la politique protège contre une clé
-   * **compromise** qui signerait autre chose — un transfert vers une adresse
-   * arbitraire, un appel à un contrat étranger. Le contrat ne voit jamais ces
-   * transactions-là et n'a aucun moyen de les empêcher.
+   * Because the two layers fail differently. The contract protects against an operator
+   * attempting a forbidden action; the policy protects against a **compromised** key
+   * signing something else entirely — a transfer to an arbitrary address, a call to a
+   * foreign contract. The contract never sees those transactions and has no way to
+   * prevent them.
    */
-  test('aucun rôle ne peut approuver hormis le trésorier', () => {
+  test('no role can approve except the treasurer', () => {
     const approveSelector = selector('approve(bytes32)');
     for (const role of ROLES) {
       const allowed = ALLOWED_CALLS[role].map(selector);
       assert.equal(
         allowed.includes(approveSelector),
         role === 'TREASURER',
-        `${role} et l'approbation`,
+        `${role} and approval`,
       );
     }
   });
 
-  test('le trésorier ne peut rien faire d’autre qu’approuver', () => {
+  test('the treasurer can do nothing but approve', () => {
     assert.equal(ALLOWED_CALLS.TREASURER.length, 1);
   });
 
-  test('le responsable des risques ne vise pas le coffre', () => {
+  test('the risk officer does not target the vault', () => {
     const rule = policies.RISK_OFFICER.rules[0]!;
     const to = rule.conditions.find((c) => c.field === 'to');
     assert.equal(to?.value, POLICY);
   });
 
-  test('opérateur et trésorier visent le coffre', () => {
+  test('operator and treasurer target the vault', () => {
     for (const role of ['OPERATOR', 'TREASURER'] as const) {
       const to = policies[role].rules[0]!.conditions.find((c) => c.field === 'to');
       assert.equal(to?.value, VAULT);
@@ -77,51 +77,50 @@ describe('séparation des devoirs, seconde couche', () => {
   });
 });
 
-describe('forme des politiques', () => {
+describe('policy shape', () => {
   const policies = buildAllPolicies(TARGETS);
 
-  test('chaque politique se termine par un refus explicite', () => {
+  test('every policy ends with an explicit denial', () => {
     for (const role of ROLES) {
       const rules = policies[role].rules;
       const last = rules[rules.length - 1]!;
       assert.equal(last.action, 'DENY');
-      assert.equal(last.conditions.length, 0, 'le refus final ne doit rien conditionner');
+      assert.equal(last.conditions.length, 0, 'the final denial must be unconditional');
     }
   });
 
   /**
-   * La condition qu'on oublie. Un portefeuille autorisé à *appeler* un contrat reste
-   * autorisé à lui **envoyer** de la valeur — et sur Arc le gaz est de l'USDC, donc la
-   * valeur native est de l'argent.
+   * The condition everyone forgets. A wallet allowed to *call* a contract stays allowed
+   * to **send** it value — and on Arc gas is USDC, so native value is money.
    */
-  test('aucun rôle ne peut transférer de valeur native', () => {
+  test('no role can transfer native value', () => {
     for (const role of ROLES) {
       const value = policies[role].rules[0]!.conditions.find((c) => c.field === 'value');
-      assert.ok(value, `${role} : aucune contrainte de valeur`);
+      assert.ok(value, `${role}: no value constraint`);
       assert.equal(value!.operator, 'eq');
       assert.equal(value!.value, '0');
     }
   });
 
-  test('la calldata est contrainte et l’ABI fournie', () => {
+  test('calldata is constrained and the ABI is supplied', () => {
     for (const role of ROLES) {
       const calldata = policies[role].rules[0]!.conditions.find(
         (c) => c.field_source === 'ethereum_calldata',
       );
-      assert.ok(calldata, `${role} : aucune contrainte de calldata`);
-      assert.ok(calldata!.abi, 'Privy exige une ABI pour décoder la calldata');
+      assert.ok(calldata, `${role}: no calldata constraint`);
+      assert.ok(calldata!.abi, 'Privy requires an ABI to decode calldata');
       assert.deepEqual(calldata!.value, ALLOWED_CALLS[role].map(selector));
     }
   });
 
-  test('la version et le type de chaîne sont ceux attendus par l’API', () => {
+  test('the version and chain type are the ones the API expects', () => {
     for (const role of ROLES) {
       assert.equal(policies[role].version, '1.0');
       assert.equal(policies[role].chain_type, 'ethereum');
     }
   });
 
-  test('changer d’adresse de coffre change la politique', () => {
+  test('changing the vault address changes the policy', () => {
     const other = buildPolicy('OPERATOR', { ...TARGETS, vault: POLICY });
     assert.notDeepEqual(other, policies.OPERATOR);
   });
@@ -129,19 +128,19 @@ describe('forme des politiques', () => {
 
 describe('quorum', () => {
   /**
-   * Un seul rôle exige deux clés : le trésorier. C'est le geste le plus lourd de
-   * conséquences du système, et le seul dont le ralentissement soit justifié. Un quorum
-   * sur l'opérateur alourdirait chaque epoch de quinze minutes sans rien protéger que
-   * le contrat ne protège déjà.
+   * Only one role requires two keys: the treasurer. It is the most consequential action in
+   * the system, and the only one worth slowing down. A quorum on the operator would weigh
+   * down every fifteen-minute epoch without protecting anything the contract does not
+   * already protect.
    */
-  test('seul le trésorier exige plusieurs signatures', () => {
+  test('only the treasurer requires multiple signatures', () => {
     assert.ok(QUORUM.TREASURER.threshold > 1);
     assert.equal(QUORUM.OPERATOR.threshold, 1);
   });
 
-  test('aucun seuil n’excède le nombre de clés', () => {
+  test('no threshold exceeds the number of keys', () => {
     for (const role of ROLES) {
-      assert.ok(QUORUM[role].threshold <= QUORUM[role].keys, `${role} : quorum impossible`);
+      assert.ok(QUORUM[role].threshold <= QUORUM[role].keys, `${role}: impossible quorum`);
       assert.ok(QUORUM[role].threshold >= 1);
     }
   });

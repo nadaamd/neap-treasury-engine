@@ -1,4 +1,4 @@
-/** Agrégation des événements de flux en flux nets par devise et par intervalle. */
+/** Aggregation of flow events into net flows per currency and per bucket. */
 
 import type { Currency, FlowBucket, FlowEvent, NetByCurrency } from './types.ts';
 
@@ -9,11 +9,11 @@ function emptyNet(): NetByCurrency {
 }
 
 /**
- * Regroupe les flux en intervalles réguliers.
+ * Groups flows into regular buckets.
  *
- * Les intervalles vides sont conservés : une série de flux nets doit être régulièrement
- * échantillonnée pour que l'autocorrélation et la volatilité aient un sens. Supprimer
- * les trous décalerait les retards et fausserait la saisonnalité mesurée.
+ * Empty buckets are kept: a net flow series must be regularly sampled for
+ * autocorrelation and volatility to mean anything. Dropping the gaps would shift the
+ * lags and distort the measured seasonality.
  */
 export function bucketize(
   events: readonly FlowEvent[],
@@ -42,7 +42,7 @@ export function bucketize(
   return buckets;
 }
 
-/** Série du volume brut (somme des montants) par intervalle — support des tests de calibration. */
+/** Gross volume series (sum of amounts) per bucket — support for the calibration tests. */
 export function grossVolumeSeries(
   events: readonly FlowEvent[],
   startTs: number,

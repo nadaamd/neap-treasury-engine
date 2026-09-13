@@ -1,26 +1,25 @@
 /**
- * NEAP — décision de rééquilibrage exécutée dans une enclave.
+ * NEAP — the rebalancing decision, executed inside an enclave.
  *
- * Ce fichier ne contient aucune logique métier. Elle vit dans `buildReport`, une
- * fonction pure testée sans enclave, sans réseau et sans chaîne. Ici on ne fait que
- * trois choses : chercher deux secrets, faire deux appels HTTP, publier un rapport.
+ * This file contains no business logic. That lives in `buildReport`, a pure function
+ * tested with no enclave, no network and no chain. Only three things happen here: fetch
+ * two secrets, make two HTTP calls, publish a report.
  *
- * ─── Ce que l'enclave protège, et ce qu'elle ne protège pas ───────────────────
- * Le binaire du workflow — donc cette logique — est fourni à l'enclave par le Workflow
- * DON et n'est **pas** confidentiel. Ce qui l'est : les secrets du Vault DON, les
- * charges utiles des requêtes et réponses HTTP émises depuis l'enclave, et les valeurs
- * intermédiaires.
+ * ─── What the enclave protects, and what it does not ──────────────────────────
+ * The workflow binary — hence this logic — is supplied to the enclave by the Workflow DON
+ * and is **not** confidential. What is: the Vault DON secrets, the payloads of HTTP
+ * requests and responses issued from the enclave, and the intermediate values.
  *
- * C'est exactement ce dont NEAP a besoin. Le modèle n'a aucune raison d'être secret —
- * il est même publié dans la spec. Ce qui doit le rester, ce sont les soldes vivants par
- * devise, les engagements connus à venir et les limites internes. Pris séparément, chacun
- * est anodin ; publiés ensemble, ils dressent une carte de la position de liquidité
- * suffisante pour qu'une contrepartie s'y positionne contre.
+ * That is exactly what NEAP needs. The model has no reason to be secret — it is even
+ * published in the spec. What must stay secret are the live balances per currency, the
+ * known upcoming commitments and the internal limits. Taken separately each is
+ * innocuous; published together they draw a map of the liquidity position detailed
+ * enough for a counterparty to trade against it.
  *
- * ─── Déterminisme ─────────────────────────────────────────────────────────────
- * Le résultat de l'enclave est attesté puis vérifié par consensus du DON : à entrées
- * identiques il doit produire une sortie identique. `buildReport` n'a ni horloge, ni
- * aléa, ni E/S — l'horodatage et la graine du sel lui sont passés en argument.
+ * ─── Determinism ──────────────────────────────────────────────────────────────
+ * The enclave's result is attested and then verified by DON consensus: on identical
+ * inputs it must produce identical output. `buildReport` has no clock, no randomness and
+ * no I/O — the timestamp and the salt seed are passed in as arguments.
  */
 
 import { cre, hexToBase64, ok, text, type TeeRuntime } from '@chainlink/cre-sdk'
@@ -30,7 +29,7 @@ import { z } from 'zod'
 import { buildReport } from '../../handler/buildReport.ts'
 import type { ChainConfig, MarketSnapshot, TreasurySnapshot } from '../../handler/types.ts'
 
-// ─── Schéma de configuration ────────────────────────────────
+// ─── Configuration schema ───────────────────────────────────
 export const configSchema = z.object({
 	schedule: z.string(),
 	treasuryUrl: z.string(),
@@ -58,27 +57,27 @@ const httpGet = (runtime: TeeRuntime<Config>, url: string, bearer?: string): str
 		.result()
 
 	if (!ok(response)) {
-		throw new Error(`appel refusé (${response.statusCode}) : ${url}`)
+		throw new Error(`call refused (${response.statusCode}): ${url}`)
 	}
 	return text(response)
 }
 
-// ─── Callback exécuté dans l'enclave ────────────────────────
+// ─── Callback executed inside the enclave ───────────────────
 export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	const config = runtime.config
 
-	// ── Secrets, déchiffrés dans l'enclave au moment où le code en a besoin ──
+	// ── Secrets, decrypted inside the enclave at the moment the code needs them ──
 	const treasuryToken = runtime.getSecret({ id: config.treasuryTokenSecretId }).result().value
 	const saltSeed = runtime.getSecret({ id: config.saltSeedSecretId }).result().value
 
-	// ── Deux appels HTTP. La limite de la plateforme est de cinq. ──
-	// Le premier rapporte l'état confidentiel : son en-tête porte le secret, et sa
-	// réponse ne quitte jamais l'enclave.
+	// ── Two HTTP calls. The platform limit is five. ──
+	// The first returns the confidential state: its header carries the secret, and its
+	// response never leaves the enclave.
 	const treasury = JSON.parse(
 		httpGet(runtime, config.treasuryUrl, treasuryToken),
 	) as TreasurySnapshot
-	// Le second ne rapporte que du public : taux, volatilité, gaz. Aucune raison de le
-	// protéger, et protéger ce qui n'en a pas besoin coûte sans rien apporter.
+	// The second returns only public data: rates, volatility, gas. No reason to protect
+	// it, and protecting what does not need it costs without buying anything.
 	const market = JSON.parse(httpGet(runtime, config.marketUrl)) as MarketSnapshot
 
 	const chain: ChainConfig = {
@@ -98,18 +97,18 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 		now: market.timestamp,
 	})
 
-	// ⚠️ À retirer avant tout déploiement : journaliser depuis l'enclave érode
-	// précisément ce qu'elle protège. On ne trace ici qu'un statut, jamais un montant.
-	runtime.log(`décision : ${outcome.status} — ${outcome.reason}`)
+	// ⚠️ Remove before any deployment: logging from inside the enclave erodes precisely
+	// what it protects. Only a status is traced here, never an amount.
+	runtime.log(`decision: ${outcome.status} — ${outcome.reason}`)
 
 	if (outcome.status !== 'PROPOSE') {
-		return `${outcome.status} : ${outcome.reason}`
+		return `${outcome.status}: ${outcome.reason}`
 	}
 
-	// ── Retour vers le DON pour ce qui exige un consensus ──
-	// Tout ce qui passe ici cesse d'être confidentiel. On ne fait traverser que le
-	// rapport : un engagement sur les ordres, et des métriques en points de base. Ni le
-	// plan, ni les soldes, ni les montants par devise.
+	// ── Back to the DON for what requires consensus ──
+	// Anything crossing here stops being confidential. Only the report crosses: a
+	// commitment to the orders, and metrics in basis points. Not the plan, not the
+	// balances, not the per-currency amounts.
 	const donRuntime = runtime.usingTheDons()
 	const r = outcome.report
 
@@ -145,9 +144,9 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 		})
 		.result()
 
-	// Le plan en clair et son sel ne sont pas dans le rapport : ils restent à
-	// l'opérateur, qui les révélera au coffre au moment d'exécuter (D6).
-	return `PROPOSE — ${outcome.reveal.orders.length} ordre(s), engagement ${r.ordersCommitment.slice(0, 10)}…`
+	// The cleartext plan and its salt are not in the report: they stay with the operator,
+	// who reveals them to the vault at execution time (D6).
+	return `PROPOSE — ${outcome.reveal.orders.length} order(s), commitment ${r.ordersCommitment.slice(0, 10)}…`
 }
 
 // ─── Initialisation ─────────────────────────────────────────

@@ -1,10 +1,10 @@
 /**
- * Client REST Privy minimal.
+ * Minimal Privy REST client.
  *
- * `fetch` est intégré à Node 24 : ce client n'ajoute aucune dépendance, comme le reste
- * du dépôt hors du workflow CRE. Il ne couvre que les trois appels dont NEAP a besoin —
- * créer une politique, créer un portefeuille, lire un portefeuille — plutôt que
- * d'envelopper une API entière dont on n'utiliserait qu'un dixième.
+ * `fetch` is built into Node 24: this client adds no dependency, like the rest of the
+ * repository outside the CRE workflow. It covers only the three calls NEAP needs — create
+ * a policy, create a wallet, read a wallet — rather than wrapping an entire API of which
+ * a tenth would be used.
  */
 
 import type { PolicyDocument } from './policies.ts';
@@ -21,17 +21,17 @@ export function credentialsFromEnv(env: Record<string, string | undefined>): Cre
   const appSecret = env.PRIVY_APP_SECRET;
   if (!appId || !appSecret) {
     throw new Error(
-      'PRIVY_APP_ID et PRIVY_APP_SECRET sont requis. ' +
-        'Les obtenir sur dashboard.privy.io, puis les placer dans privy/.env',
+      'PRIVY_APP_ID and PRIVY_APP_SECRET are required. ' +
+        'Get them from dashboard.privy.io, then put them in privy/.env',
     );
   }
   return { appId, appSecret };
 }
 
 /**
- * Encodage base64 sans `Buffer` : `btoa` est une fonction standard du langage, tandis
- * que `Buffer` appartient à Node et exigerait @types/node — une dépendance que ce dépôt
- * n'a pas hors du workflow CRE.
+ * Base64 encoding without `Buffer`: `btoa` is a standard language function, whereas
+ * `Buffer` belongs to Node and would require @types/node — a dependency this repository
+ * does not have outside the CRE workflow.
  */
 function toBase64(value: string): string {
   return btoa(value);
@@ -60,9 +60,9 @@ async function call<T>(
 
   const text = await response.text();
   if (!response.ok) {
-    // Le corps de la réponse porte la raison exacte du refus. La masquer derrière un
-    // « échec de la requête » obligerait à rejouer l'appel à la main pour la retrouver.
-    throw new Error(`Privy ${method} ${path} → ${response.status} : ${text}`);
+    // The response body carries the exact reason for the refusal. Hiding it behind a
+    // "request failed" would force replaying the call by hand to find it again.
+    throw new Error(`Privy ${method} ${path} → ${response.status}: ${text}`);
   }
   return (text ? JSON.parse(text) : {}) as T;
 }
@@ -112,12 +112,12 @@ export interface CreatedKeyQuorum {
 }
 
 /**
- * Quorum de clés — m signatures sur n.
+ * Key quorum — m signatures out of n.
  *
- * NEAP n'en met qu'un seul endroit : l'approbation du trésorier. C'est le geste le plus
- * lourd de conséquences du système, et le seul dont le ralentissement soit justifié. Un
- * quorum sur l'opérateur alourdirait chaque epoch de quinze minutes sans rien protéger
- * que le contrat ne protège déjà.
+ * NEAP puts one in a single place: the treasurer's approval. It is the most consequential
+ * action in the system, and the only one worth slowing down. A quorum on the operator
+ * would weigh down every fifteen-minute epoch without protecting anything the contract
+ * does not already protect.
  */
 export function createKeyQuorum(
   creds: Credentials,

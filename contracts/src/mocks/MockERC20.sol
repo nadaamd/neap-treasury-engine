@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-/// @notice Jeton minimal pour les tests. Six décimales, comme l'USDC.
+/// @notice Minimal token for the tests. Six decimals, like USDC.
 contract MockERC20 {
     string public name;
     string public symbol;

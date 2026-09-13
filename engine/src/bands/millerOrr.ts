@@ -1,52 +1,51 @@
 /**
- * Solution analytique de Miller-Orr (1966) pour le contrôle d'un solde de trésorerie.
+ * Miller-Orr (1966) closed-form solution for cash balance control.
  *
  *   Z* = ∛( 3γσ² / 4r ) + L        H = 3Z* − 2L
  *
- * Hypothèses : flux nets browniens **sans dérive**, coût fixe γ par rééquilibrage, coût
- * de portage r par période, pas de risque de change, pas de coût de rupture.
+ * Assumptions: Brownian net flows **with no drift**, fixed cost γ per rebalance, carry
+ * cost r per period, no FX risk, no breach cost.
  *
- * Ces hypothèses sont fausses dans notre cadre — un corridor de transfert de fonds est
- * structurellement déséquilibré, et le risque de change est justement ce qu'on cherche
- * à piloter. Miller-Orr n'est donc pas le modèle retenu (décision D3). Il sert à deux
- * choses, et elles comptent toutes les deux :
+ * Those assumptions are wrong in our setting — a remittance corridor is structurally
+ * unbalanced, and FX risk is precisely what we are trying to steer. Miller-Orr is
+ * therefore not the model we use (decision D3). It serves two purposes, and both matter:
  *
- *   1. **amorcer** la recherche numérique, qui converge alors en quelques dizaines
- *      d'évaluations au lieu de quelques milliers ;
- *   2. **valider** cette recherche : sur le cas dégénéré sans dérive ni risque, le
- *      solveur numérique doit retrouver la formule fermée. C'est le test de
- *      non-régression du moteur de bandes.
+ *   1. **warm-starting** the numerical search, which then converges in a few dozen
+ *      evaluations instead of a few thousand;
+ *   2. **validating** that search: on the degenerate case with no drift and no risk, the
+ *      numerical solver must recover the closed form. That is the regression test of the
+ *      band engine.
  *
- * Propriété structurante du projet : la largeur de bande croît en γ^(1/3). Diviser le
- * coût fixe d'un rééquilibrage par 10⁴ — ce que fait le passage d'un rail de
- * correspondant bancaire à un règlement stablecoin — divise la bande par 10⁴^(1/3) ≈ 21,5.
- * C'est l'effondrement du buffer que le backtest doit chiffrer (SPEC §1.2).
+ * A structural property of the project: band width grows as γ^(1/3). Divide the fixed
+ * cost of a rebalance by 10⁴ — which is what moving from a correspondent-bank rail to
+ * stablecoin settlement does — and the band divides by 10⁴^(1/3) ≈ 21.5. That is the
+ * buffer collapse the backtest has to quantify (SPEC §1.2).
  */
 
 export interface Bands {
-  /** Seuil bas : sous ce niveau, on réapprovisionne jusqu'à `target`. */
+  /** Lower threshold: below this level, top up to `target`. */
   readonly lower: number;
-  /** Cible de retour après rééquilibrage. */
+  /** Return point after a rebalance. */
   readonly target: number;
-  /** Seuil haut : au-dessus, on dégage l'excédent jusqu'à `target`. */
+  /** Upper threshold: above it, sweep the excess back down to `target`. */
   readonly upper: number;
 }
 
 export interface MillerOrrInput {
-  /** Coût fixe d'un rééquilibrage, en monnaie. */
+  /** Fixed cost of one rebalance, in currency. */
   readonly gammaFixed: number;
-  /** Écart-type du flux net par période. */
+  /** Standard deviation of the net flow per period. */
   readonly flowSigma: number;
-  /** Coût de portage par période (taux, pas pourcentage). */
+  /** Carry cost per period (rate, not percentage). */
   readonly carryRate: number;
-  /** Plancher opérationnel ou réglementaire. */
+  /** Operational or regulatory floor. */
   readonly lower: number;
 }
 
 export function millerOrrBands(input: MillerOrrInput): Bands {
   const { gammaFixed, flowSigma, carryRate, lower } = input;
-  if (carryRate <= 0) throw new RangeError('le coût de portage doit être strictement positif');
-  if (flowSigma <= 0) throw new RangeError('la volatilité des flux doit être strictement positive');
+  if (carryRate <= 0) throw new RangeError('carry cost must be strictly positive');
+  if (flowSigma <= 0) throw new RangeError('flow volatility must be strictly positive');
 
   const spread = Math.cbrt((3 * gammaFixed * flowSigma * flowSigma) / (4 * carryRate));
   const target = lower + spread;

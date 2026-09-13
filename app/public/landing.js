@@ -1,10 +1,9 @@
 /**
- * Page d'accueil — les chiffres viennent du backtest, jamais du HTML.
+ * Landing page — the numbers come from the backtest, never from the HTML.
  *
- * Le tableau et les barres sont alimentés par `/api/backtest`, c'est-à-dire par le
- * fichier que produit `npm run backtest`. Écrire ces valeurs à la main dans le balisage
- * aurait garanti qu'elles finissent périmées : un résultat qu'on recopie est un résultat
- * qu'on cesse de vérifier.
+ * The table and the bars are fed by `/api/backtest`, that is, by the file `npm run
+ * backtest` produces. Writing those values by hand into the markup would have guaranteed
+ * they end up stale: a result you copy is a result you stop checking.
  */
 
 const ORDER = ['STATIC', 'CALENDAR', 'NEAP', 'CLAIRVOYANT'];
@@ -26,9 +25,9 @@ const money = (x) => {
 const pct = (a, b) => `${(((a - b) / b) * 100).toFixed(1)}%`;
 
 /**
- * L'unique intention de mouvement de la page : la barre de NEAP part de la longueur du
- * pré-financement conservateur et tombe à la sienne. C'est la thèse, montrée plutôt
- * qu'affirmée — et jouée une seule fois, à l'arrivée en vue.
+ * The page's single intention of movement: NEAP's bar starts at the length of
+ * conservative pre-funding and collapses to its own. That is the thesis, shown rather
+ * than asserted — and played once, on entering view.
  */
 function drawCollapse(staticCapital, neapCapital, halfWidth) {
   const max = staticCapital;
@@ -83,14 +82,14 @@ function drawTable(metrics) {
 }
 
 /**
- * Repère de section dans le masthead.
+ * Section marker in the masthead.
  *
- * `IntersectionObserver` plutôt qu'un écouteur de défilement : le navigateur fait le
- * calcul hors du fil principal, et une barre collante qui saccade pendant qu'on scrolle
- * est pire que pas de repère du tout.
+ * `IntersectionObserver` rather than a scroll listener: the browser does the work off the
+ * main thread, and a sticky bar that stutters while you scroll is worse than no marker at
+ * all.
  *
- * La marge haute décale la zone de détection sous la barre : sans elle, une section
- * masquée par le masthead compterait comme visible.
+ * The top margin shifts the detection zone below the bar: without it, a section hidden
+ * behind the masthead would count as visible.
  */
 function trackSections() {
   const links = new Map();
@@ -126,11 +125,11 @@ function trackSections() {
 }
 
 /**
- * Bascule la barre en mode compact dès que la page quitte le haut.
+ * Switches the bar to compact mode as soon as the page leaves the top.
  *
- * Une sentinelle d'un pixel plutôt qu'une lecture de `scrollY` : le navigateur observe,
- * on ne calcule rien à chaque image, et le seuil ne peut pas osciller autour d'une
- * valeur limite quand l'utilisateur s'arrête pile dessus.
+ * A one-pixel sentinel rather than reading `scrollY`: the browser observes, nothing is
+ * computed per frame, and the threshold cannot oscillate around a boundary value when the
+ * user stops exactly on it.
  */
 function trackScrollState() {
   const bar = document.querySelector('.topbar');
@@ -142,15 +141,15 @@ function trackScrollState() {
 }
 
 /**
- * Parallaxe légère du téléphone.
+ * Light parallax on the phone.
  *
- * La dérive animée suffit à le faire vivre ; ce suivi ajoute la sensation qu'il occupe
- * un espace devant la page plutôt que dessus. On n'écrit qu'une variable CSS et on la
- * lit dans une rotation : la dérive continue de tourner sans être interrompue, et rien
- * d'autre que le compositeur ne travaille.
+ * The animated drift is enough to make it feel alive; this tracking adds the sense that
+ * it occupies a space in front of the page rather than on it. Only a CSS variable is
+ * written, read inside a rotation: the drift keeps turning uninterrupted, and nothing but
+ * the compositor does any work.
  *
- * Ignoré sur pointeur grossier — un doigt n'a pas de position de survol — et sous
- * préférence de mouvement réduit.
+ * Ignored on a coarse pointer — a finger has no hover position — and under a
+ * reduced-motion preference.
  */
 function trackPointer() {
   const phone = document.querySelector('.phone');
@@ -190,7 +189,7 @@ async function main() {
     if (!response.ok) throw new Error(String(response.status));
     summary = await response.json();
   } catch {
-    // Sans résultats, on le dit plutôt que d'afficher des chiffres inventés ou un vide.
+    // With no results, say so rather than showing invented numbers or a blank.
     document.getElementById('results-body').innerHTML =
       '<tr><td colspan="6" class="fine">No backtest on this host. Run <code>npm run backtest</code> to regenerate it.</td></tr>';
     document.getElementById('v-static').textContent = '—';

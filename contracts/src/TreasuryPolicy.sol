@@ -3,43 +3,43 @@ pragma solidity 0.8.28;
 
 /**
  * @title TreasuryPolicy
- * @notice Autorité du système NEAP : rôles, séparation des devoirs, limites, paramètres
- *         de risque, versionnement et délai d'application.
+ * @notice Authority of the NEAP system: roles, separation of duties, limits, risk
+ *         parameters, versioning and timelock.
  *
- * @dev Décision D7 — l'autorité est portée par le contrat, pas par le fournisseur de
- *      portefeuille. Trois raisons :
+ * @dev Decision D7 — authority is carried by the contract, not by the wallet provider.
+ *      Three reasons:
  *
- *      1. un modèle d'autorisation qui ne vit que dans un service tiers n'est pas
- *         vérifiable par un auditeur ni par une contrepartie ;
- *      2. cela supprime la dépendance à un éventuel quorum natif côté portefeuille ;
- *      3. cela donne au contrat une responsabilité substantielle — sans quoi le projet
- *         ne serait qu'un tableau de bord avec un `emit` décoratif.
+ *      1. an authorisation model that lives only in a third-party service is not
+ *         verifiable by an auditor or by a counterparty;
+ *      2. it removes any dependence on a native wallet-side quorum;
+ *      3. it gives the contract substantial responsibility — without which the project
+ *         would be a dashboard with a decorative `emit`.
  *
- *      Le système de rôles est écrit à la main plutôt qu'hérité d'une bibliothèque :
- *      l'invariant de séparation des devoirs demande de toute façon une logique
- *      spécifique dans l'attribution, et quarante lignes entièrement lisibles valent
- *      mieux qu'une dépendance pour un contrat dont c'est la seule raison d'être.
+ *      The role system is hand-written rather than inherited from a library: the
+ *      separation-of-duties invariant needs specific logic in the grant path anyway, and
+ *      forty fully readable lines beat a dependency for a contract whose entire purpose
+ *      this is.
  */
 contract TreasuryPolicy {
     /* ---------------------------------------------------------------------- */
-    /*                                  Rôles                                  */
+    /*                                  Roles                                  */
     /* ---------------------------------------------------------------------- */
 
-    /// @notice Définit les limites et les paramètres de risque. Ne peut pas exécuter.
+    /// @notice Sets the limits and the risk parameters. Cannot execute.
     bytes32 public constant RISK_OFFICER = keccak256("RISK_OFFICER");
-    /// @notice Approuve les plans au-delà du seuil. Ne peut pas modifier les limites.
+    /// @notice Approves plans above the threshold. Cannot change the limits.
     bytes32 public constant TREASURER = keccak256("TREASURER");
-    /// @notice Soumet et exécute les plans, dans les limites.
+    /// @notice Submits and executes plans, within the limits.
     bytes32 public constant OPERATOR = keccak256("OPERATOR");
-    /// @notice Peut suspendre le système immédiatement. L'urgence ne se planifie pas.
+    /// @notice Can pause the system immediately. Emergencies cannot be scheduled.
     bytes32 public constant GUARDIAN = keccak256("GUARDIAN");
-    /// @notice Administre les rôles.
+    /// @notice Administers the roles.
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
     mapping(bytes32 role => mapping(address account => bool)) private _roles;
 
     /* ---------------------------------------------------------------------- */
-    /*                                Paramètres                               */
+    /*                                Parameters                               */
     /* ---------------------------------------------------------------------- */
 
     struct CurrencyPolicy {
@@ -60,16 +60,16 @@ contract TreasuryPolicy {
         uint128 autoApproveThreshold;
     }
 
-    /// @notice Délai d'application des changements de paramètres.
+    /// @notice Timelock delay for parameter changes.
     uint256 public immutable TIMELOCK_DELAY;
 
     uint32 public policyVersion;
     bool public paused;
 
-    /// @notice Empreinte du jeu de paramètres statistiques ayant produit les bandes.
-    /// @dev Décision D5 : les bandes sont calculées hors enclave parce qu'elles ne
-    ///      dépendent que des paramètres, jamais de l'état. Ce hash lie un rapport
-    ///      confidentiel au jeu de paramètres auditable qui l'a produit.
+    /// @notice Hash of the statistical parameter set that produced the bands.
+    /// @dev Decision D5: the bands are computed outside the enclave because they depend
+    ///      only on parameters, never on state. This hash binds a confidential report to
+    ///      the auditable parameter set that produced it.
     bytes32 public bandParamsHash;
 
     RiskParams public riskParams;
@@ -77,14 +77,14 @@ contract TreasuryPolicy {
     mapping(address token => bool) public supported;
 
     /* ---------------------------------------------------------------------- */
-    /*                            File d'attente                               */
+    /*                              Pending queue                              */
     /* ---------------------------------------------------------------------- */
 
     mapping(bytes32 id => uint256 eta) public pendingEta;
     mapping(bytes32 id => bytes payload) private _pendingPayload;
 
     /* ---------------------------------------------------------------------- */
-    /*                                Événements                               */
+    /*                                  Events                                 */
     /* ---------------------------------------------------------------------- */
 
     event RoleGranted(bytes32 indexed role, address indexed account, address indexed by);
@@ -98,7 +98,7 @@ contract TreasuryPolicy {
     event Unpaused(address indexed by);
 
     /* ---------------------------------------------------------------------- */
-    /*                                 Erreurs                                 */
+    /*                                  Errors                                 */
     /* ---------------------------------------------------------------------- */
 
     error Unauthorized(bytes32 role, address account);
@@ -136,7 +136,7 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                          Gestion des rôles                              */
+    /*                             Role management                             */
     /* ---------------------------------------------------------------------- */
 
     function hasRole(bytes32 role, address account) external view returns (bool) {
@@ -144,13 +144,13 @@ contract TreasuryPolicy {
     }
 
     /**
-     * @notice Attribue un rôle.
-     * @dev Invariant central du contrôle interne : **une même adresse ne peut jamais
-     *      détenir à la fois RISK_OFFICER et TREASURER**. Celui qui fixe les limites ne
-     *      peut pas approuver les mouvements qui s'y conforment, et réciproquement.
+     * @notice Grants a role.
+     * @dev The central internal-control invariant: **one address can never hold both
+     *      RISK_OFFICER and TREASURER**. Whoever sets the limits cannot approve the
+     *      movements that comply with them, and vice versa.
      *
-     *      Ce n'est pas une règle d'interface : c'est un `revert`. Un contrôle interne
-     *      qui n'existe que dans l'écran n'est pas un contrôle interne.
+     *      This is not a UI rule: it is a `revert`. An internal control that exists only
+     *      on the screen is not an internal control.
      */
     function grantRole(bytes32 role, address account) external onlyRole(ADMIN) {
         if (
@@ -169,24 +169,24 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                          Suspension d'urgence                           */
+    /*                             Emergency pause                             */
     /* ---------------------------------------------------------------------- */
 
-    /// @dev Sans délai, volontairement : un délai sur l'arrêt d'urgence le viderait de son sens.
+    /// @dev Deliberately without a timelock: a delay on an emergency stop would empty it of meaning.
     function pause() external onlyRole(GUARDIAN) {
         paused = true;
         emit Paused(msg.sender);
     }
 
-    /// @dev La reprise passe par l'administrateur, pas par le gardien : arrêter est urgent,
-    ///      redémarrer ne l'est jamais.
+    /// @dev Resuming goes through the administrator, not the guardian: stopping is urgent,
+    ///      restarting never is.
     function unpause() external onlyRole(ADMIN) {
         paused = false;
         emit Unpaused(msg.sender);
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                    Changements de paramètres différés                   */
+    /*                        Timelocked parameter changes                     */
     /* ---------------------------------------------------------------------- */
 
     function queueCurrencyPolicy(address token, CurrencyPolicy calldata p)
@@ -219,11 +219,11 @@ contract TreasuryPolicy {
     }
 
     /**
-     * @notice Applique un changement dont le délai est écoulé.
-     * @dev Volontairement ouvert à tout appelant : la décision a déjà été prise et
-     *      publiée par le RISK_OFFICER, et l'exécution mécanique d'un changement mûr
-     *      n'est pas un pouvoir. Restreindre cet appel n'ajouterait aucune sécurité et
-     *      créerait un risque de blocage.
+     * @notice Applies a change whose timelock has elapsed.
+     * @dev Deliberately open to any caller: the decision has already been made and
+     *      published by the RISK_OFFICER, and mechanically executing a matured change is
+     *      not a power. Restricting this call would add no security and would create a
+     *      liveness risk.
      */
     function executeCurrencyPolicy(bytes32 id) external whenNotPaused {
         _requireMature(id);
@@ -254,9 +254,9 @@ contract TreasuryPolicy {
     }
 
     /**
-     * @notice Engage l'empreinte des paramètres statistiques ayant servi au calcul des bandes.
-     * @dev Pas de délai ici : ce hash ne confère aucun pouvoir, il documente. Les bandes
-     *      elles-mêmes, qui contraignent réellement, passent par `queueCurrencyPolicy`.
+     * @notice Commits the hash of the statistical parameters used to compute the bands.
+     * @dev No timelock here: this hash confers no power, it documents. The bands
+     *      themselves, which genuinely constrain, go through `queueCurrencyPolicy`.
      */
     function commitBandParams(bytes32 paramsHash) external onlyRole(RISK_OFFICER) {
         bandParamsHash = paramsHash;
@@ -276,13 +276,13 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                     Accesseurs unitaires de commodité                   */
+    /*                        Convenience single getters                       */
     /* ---------------------------------------------------------------------- */
 
-    /// @dev Le getter automatique d'une structure publique renvoie un n-uplet, que les
-    ///      contrats appelants devraient déballer position par position — fragile dès
-    ///      qu'on ajoute un champ. Ces accesseurs nommés rendent les dépendances
-    ///      explicites et résistent à l'évolution de la structure.
+    /// @dev The automatic getter of a public struct returns a tuple, which calling
+    ///      contracts would have to unpack position by position — fragile as soon as a
+    ///      field is added. These named getters make the dependencies explicit and survive
+    ///      changes to the struct.
     function maxStalenessSec() external view returns (uint32) {
         return riskParams.maxStalenessSec;
     }
@@ -318,10 +318,10 @@ contract TreasuryPolicy {
     function _requireMature(bytes32 id) private view {
         uint256 eta = pendingEta[id];
         if (eta == 0) revert ChangeNotQueued(id);
-        // Le linter signale block.timestamp comme manipulable par un validateur. La marge
-        // exploitable se compte en secondes, pour un délai nominal de 24 heures : ce n'est
-        // pas une surface d'attaque ici. Un délai qu'on pourrait raccourcir de quinze
-        // secondes reste un délai.
+        // The linter flags block.timestamp as validator-manipulable. The exploitable
+        // margin is a matter of seconds, against a nominal 24-hour delay: that is not an
+        // attack surface here. A timelock you could shorten by fifteen seconds is still a
+        // timelock.
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < eta) revert TimelockNotElapsed(id, eta);
     }

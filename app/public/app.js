@@ -1,9 +1,9 @@
 /**
- * Tableau de bord NEAP — animation d'un épisode calculé par le serveur.
+ * NEAP dashboard — animating an episode computed by the server.
  *
- * Aucun calcul métier ici : les bandes, les décisions, le risque et les coûts viennent
- * du moteur. Le client anime, il ne décide pas — sans quoi la démonstration montrerait
- * une réimplémentation approximative plutôt que le système lui-même.
+ * No business logic here: the bands, the decisions, the risk and the costs all come from
+ * the engine. The client animates, it does not decide — otherwise the demo would show an
+ * approximate reimplementation rather than the system itself.
  */
 
 const CURRENCIES = ['EUR', 'GBP', 'BRL'];
@@ -15,21 +15,21 @@ const state = {
   index: 0,
   timer: null,
   loading: false,
-  /** Derniers ordres émis, le plus récent en tête. */
+  /** Most recent orders, newest first. */
 };
 
 const $ = (id) => document.getElementById(id);
 
 /* ------------------------------------------------------------------ */
-/*                               Icônes                               */
+/*                               Icons                                */
 /* ------------------------------------------------------------------ */
 
 /**
- * Glyphes dessinés, d'un seul traitement — silhouettes pleines sur une grille de 16.
+ * Drawn glyphs, single-stroke — solid silhouettes on a 16-unit grid.
  *
- * Les caractères Unicode qui servaient d'icônes (▶, ❚❚, ⚡, ■) prenaient la police du
- * système : chaque plateforme en rendait une variante différente, avec sa propre chasse
- * et son propre alignement optique. Un jeu dessiné ne dépend de rien.
+ * The Unicode characters previously used as icons (▶, ❚❚, ⚡, ■) took the system font:
+ * every platform rendered a different variant, with its own width and optical alignment.
+ * A drawn set depends on nothing.
  */
 const ICON = {
   play: 'M5 3.4v9.2L13 8z',
@@ -99,24 +99,23 @@ function gauge(bands, balance) {
 }
 
 /* ------------------------------------------------------------------ */
-/*                               Rendu                                */
+/*                               Render                               */
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
-/*                        Rendu : construire, puis mettre à jour       */
+/*                   Render: build once, then update                  */
 /* ------------------------------------------------------------------ */
 
 /**
- * Le rendu construit la structure une fois, puis n'écrit que les valeurs.
+ * Rendering builds the structure once, then writes only values.
  *
- * La version précédente réécrivait `innerHTML` à chaque epoch. Quatre fois par seconde,
- * le navigateur jetait et reconstruisait chaque carte, chaque jauge et chaque ligne du
- * journal : les cartes clignotaient, la mise en page tremblait, et l'animation du dernier
- * ordre se redéclenchait sur toutes les lignes puisqu'elles étaient toutes neuves.
+ * The previous version rewrote `innerHTML` on every epoch. Four times a second the
+ * browser threw away and rebuilt every card, every gauge and every log row: the cards
+ * flickered, the layout shivered, and the latest-order animation retriggered on all rows
+ * since all of them were new.
  *
- * Ici les nœuds sont créés une seule fois et seules les valeurs changent. Rien ne
- * clignote, l'animation ne joue que sur la ligne réellement nouvelle, et le coût par pas
- * devient négligeable.
+ * Here nodes are created once and only values change. Nothing flickers, the animation
+ * plays only on the genuinely new row, and the per-step cost becomes negligible.
  */
 const nodes = { cards: new Map(), chart: null, log: null };
 
@@ -214,11 +213,11 @@ function buildLog() {
 }
 
 /**
- * Le journal n'ajoute que les lignes nouvelles, en tête.
+ * The log only prepends genuinely new rows.
  *
- * Le reconstruire entièrement relançait l'animation de mise en évidence sur chacune des
- * six lignes à chaque epoch : tout le panneau clignotait en jaune, et le repère perdait
- * exactement ce qu'il devait apporter.
+ * Rebuilding it wholesale restarted the highlight animation on all six rows every epoch:
+ * the whole panel flashed yellow, and the marker lost exactly what it was there to
+ * provide.
  */
 function appendToLog(step) {
   if (step.actions.length === 0) return;
@@ -324,7 +323,7 @@ function updateChart(episode, upto) {
   cursor.setAttribute('x2', cx);
 }
 
-/** Reconstruit la structure : une fois par épisode, jamais pendant la lecture. */
+/** Rebuilds the structure: once per episode, never during playback. */
 function buildEpisodeView(episode) {
   buildCards(episode.bands);
   buildLog();
@@ -430,8 +429,8 @@ function currentParams(extra = {}) {
   };
 }
 
-/** Les commandes sont inertes pendant qu'un épisode se calcule : un clic sans effet
- *  laisse croire à une panne, un bouton grisé dit ce qui se passe. */
+/** The controls are inert while an episode is solving: a click with no effect looks
+ *  like a failure, a greyed-out button says what is happening. */
 function setBusy(busy) {
   for (const id of ['play', 'step', 'shock']) $(id).disabled = busy;
 }
@@ -458,9 +457,9 @@ async function loadEpisode(extra = {}) {
 }
 
 /**
- * Déclarer `prefers-reduced-motion` en CSS ne suffit pas : ce qui gêne ici n'est pas une
- * transition, c'est une lecture automatique qui redessine la page quatre fois par
- * seconde. On la refuse et on avance d'un pas, ce qui donne accès au même contenu.
+ * Declaring `prefers-reduced-motion` in CSS is not enough: what bothers people here is
+ * not a transition, it is autoplay redrawing the page four times a second. We decline it
+ * and step forward once instead, which gives access to the same content.
  */
 const prefersReducedMotion = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -473,13 +472,13 @@ label('play', 'play', 'Play');
 }
 
 /**
- * Un pas vaut quinze minutes simulées. Le curseur se lit donc en temps simulé par
- * seconde réelle, pas en pas par seconde : « deux heures par seconde » dit quelque chose,
- * « huit pas par seconde » ne dit rien.
+ * One step is fifteen simulated minutes. The slider therefore reads in simulated time per
+ * real second, not in steps per second: "two hours per second" says something, "eight
+ * steps per second" says nothing.
  *
- * La valeur par défaut passe de vingt pas par seconde à quatre. À vingt, chaque carte
- * était redessinée toutes les cinquante millisecondes : l'œil ne suivait plus, et la
- * démonstration donnait à voir un scintillement plutôt qu'un mécanisme.
+ * The default moves from twenty steps per second to four. At twenty, each card was
+ * redrawn every fifty milliseconds: the eye could not follow, and the demo showed a
+ * flicker rather than a mechanism.
  */
 const SIM_MINUTES_PER_STEP = 15;
 
@@ -510,11 +509,11 @@ $('play').addEventListener('click', play);
 $('step').addEventListener('click', advance);
 $('shock').addEventListener('click', () => {
   stop();
-  // Le choc est injecté juste devant le curseur : la démonstration doit montrer la
-  // réaction, pas la faire chercher.
+  // The shock is injected just ahead of the cursor: the demo should show the reaction,
+  // not make you hunt for it.
   const at = Math.min((state.index ?? 0) + 2, (state.episode?.steps.length ?? 10) - 2);
   loadEpisode({ shockAt: at, shockCurrency: 'BRL', shockAmount: 2_500_000 }).then(() => {
-    // On se place juste avant le choc pour qu'il soit visible, et non déjà corrigé.
+    // Position just before the shock so it is visible, rather than already corrected.
     state.index = Math.max(at - 2, 0);
     renderStep(false);
     if (!prefersReducedMotion()) play();

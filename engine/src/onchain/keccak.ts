@@ -1,19 +1,17 @@
 /**
- * Keccak-256, l'algorithme de hachage d'Ethereum.
+ * Keccak-256, Ethereum's hash function.
  *
- * Node expose `sha3-256`, qui n'est **pas** la même fonction : la normalisation SHA-3 a
- * changé l'octet de bourrage de `0x01` à `0x06` après la publication de Keccak. Un octet
- * d'écart, des empreintes entièrement différentes — et Ethereum a conservé la version
- * d'origine. D'où cette implémentation, qui reste dans la discipline du dépôt : aucune
- * dépendance.
+ * Node exposes `sha3-256`, which is **not** the same function: SHA-3 standardisation
+ * changed the padding byte from `0x01` to `0x06` after Keccak was published. One byte
+ * apart, entirely different digests — and Ethereum kept the original. Hence this
+ * implementation, which stays within the repository's discipline: no dependencies.
  *
- * Les états sont représentés en `bigint` sur 64 bits plutôt qu'en paires de mots de
- * 32 bits. C'est plus lent, et sans importance : on hache des structures de quelques
- * centaines d'octets, pas des blocs.
+ * State lanes are held as 64-bit `bigint`s rather than pairs of 32-bit words. That is
+ * slower, and it does not matter: we hash structs of a few hundred bytes, not blocks.
  */
 
 const MASK64 = (1n << 64n) - 1n;
-const RATE_BYTES = 136; // 1088 bits, le débit de Keccak-256
+const RATE_BYTES = 136; // 1088 bits, the Keccak-256 rate
 
 const ROUND_CONSTANTS: readonly bigint[] = [
   0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
@@ -30,10 +28,10 @@ function rotl(x: bigint, n: number): bigint {
   return ((x << s) | (x >> (64n - s))) & MASK64;
 }
 
-/** Permutation Keccak-f[1600], appliquée sur place. */
+/** Keccak-f[1600] permutation, applied in place. */
 function keccakF(a: bigint[]): void {
   for (let round = 0; round < 24; round++) {
-    // θ — diffusion par colonnes
+    // θ — column diffusion
     const c = new Array<bigint>(5);
     for (let x = 0; x < 5; x++) {
       c[x] = a[x]! ^ a[x + 5]! ^ a[x + 10]! ^ a[x + 15]! ^ a[x + 20]!;
@@ -43,7 +41,7 @@ function keccakF(a: bigint[]): void {
       for (let y = 0; y < 25; y += 5) a[x + y] = a[x + y]! ^ d;
     }
 
-    // ρ et π — rotations et permutation des positions
+    // ρ and π — rotations and lane permutation
     let x = 1;
     let y = 0;
     let current = a[1]!;
@@ -58,7 +56,7 @@ function keccakF(a: bigint[]): void {
       y = nextY;
     }
 
-    // χ — la seule étape non linéaire
+    // χ — the only non-linear step
     for (let row = 0; row < 25; row += 5) {
       const r0 = a[row]!;
       const r1 = a[row + 1]!;
@@ -72,7 +70,7 @@ function keccakF(a: bigint[]): void {
       a[row + 4] = r4 ^ (~r0 & MASK64 & r1);
     }
 
-    // ι — brise la symétrie entre les tours
+    // ι — breaks the symmetry between rounds
     a[0] = a[0]! ^ ROUND_CONSTANTS[round]!;
   }
 }
@@ -80,7 +78,7 @@ function keccakF(a: bigint[]): void {
 export function keccak256(input: Uint8Array): Uint8Array {
   const state = new Array<bigint>(25).fill(0n);
 
-  // Bourrage pad10*1 avec l'octet de domaine 0x01 — celui de Keccak, pas celui de SHA-3.
+  // pad10*1 padding with domain byte 0x01 — Keccak's, not SHA-3's.
   const padded = new Uint8Array(Math.ceil((input.length + 1) / RATE_BYTES) * RATE_BYTES);
   padded.set(input);
   padded[input.length] = 0x01;
@@ -89,7 +87,7 @@ export function keccak256(input: Uint8Array): Uint8Array {
   for (let offset = 0; offset < padded.length; offset += RATE_BYTES) {
     for (let lane = 0; lane < RATE_BYTES / 8; lane++) {
       let value = 0n;
-      // Les lanes sont en petit-boutiste.
+      // Lanes are little-endian.
       for (let byte = 7; byte >= 0; byte--) {
         value = (value << 8n) | BigInt(padded[offset + lane * 8 + byte]!);
       }
@@ -115,7 +113,7 @@ export function toHex(bytes: Uint8Array): string {
 
 export function fromHex(hex: string): Uint8Array {
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  if (clean.length % 2 !== 0) throw new RangeError('chaîne hexadécimale de longueur impaire');
+  if (clean.length % 2 !== 0) throw new RangeError('hex string of odd length');
   const out = new Uint8Array(clean.length / 2);
   for (let i = 0; i < out.length; i++) out[i] = Number.parseInt(clean.substr(i * 2, 2), 16);
   return out;

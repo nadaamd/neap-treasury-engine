@@ -9,14 +9,14 @@
 <style>
   body { font-size: 16px; line-height: 1.6; }
 
-  /* ── Rythme ────────────────────────────────────────────────────────────
-     Une seule mesure de lecture et une seule gouttière, pour que chaque bloc
-     retombe sur la même verticale quelle que soit sa structure interne. */
+  /* ── Rhythm ────────────────────────────────────────────────────────────
+     One measure and one gutter, so that every block lands on the same vertical
+     whatever its internal structure. */
   .wrap { max-width: 1128px; margin-inline: auto; padding-inline: 24px; }
   .prose { max-width: 68ch; }
   section { padding: 96px 24px; padding-block: clamp(64px, 9vw, 128px); border-top: 1px solid var(--line); }
-  /* La gouttière appartient à l'élément qui porte le fond et la bordure, pas à son
-     enfant : sinon le contenu vient buter contre la teinte. */
+  /* The gutter belongs to the element carrying the background and the border, not to
+     its child: otherwise the content butts against the tint. */
   section > .wrap { padding-inline: 0; }
   section.raised { background: var(--panel); }
   section:first-of-type { border-top: 0; }
@@ -35,10 +35,10 @@
   .fine { font-size: 0.86rem; color: var(--faint); }
 
   /* ── Masthead ──────────────────────────────────────────────────────────
-     La barre prend Space Indigo. C'est la couleur la plus sombre de la palette et
-     elle n'avait nulle part où vivre sur une page claire : cantonnée au texte, elle
-     ne se voyait pas. En bandeau, elle donne enfin sa place à Golden Pollen, qui
-     atteint 10,2:1 dessus — le contraste le plus élevé de tout le système. */
+     The bar takes Space Indigo. It is the darkest colour of the palette and it had
+     nowhere to live on a light page: confined to text, it went unseen. As a band, it
+     finally gives Golden Pollen its place, reaching 10.2:1 on it — the highest contrast
+     in the whole system. */
   .topbar {
     position: sticky; top: 0; z-index: 20;
     background: var(--indigo);
@@ -48,12 +48,12 @@
     content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 1px;
     background: linear-gradient(to right, var(--pollen), var(--cyan) 62%, transparent);
   }
-  /* Haut au repos, compact une fois qu'on lit. Une barre collante généreuse donne au
-     nom la place d'exister au premier écran ; la même hauteur maintenue pendant la
-     lecture mangerait un huitième du viewport pour ne plus rien dire.
-     Le passage est instantané et non animé : une transition sur `padding` ou
-     `font-size` force un recalcul de mise en page à chaque image, et la barre est
-     l'élément le plus mal placé pour saccader puisqu'elle reste à l'écran. */
+  /* Tall at rest, compact once you are reading. A generous sticky bar gives the name
+     room to exist on the first screen; keeping that height while reading would eat an
+     eighth of the viewport to say nothing at all.
+     The switch is instant and unanimated: a transition on `padding` or `font-size`
+     forces a layout recalculation every frame, and the bar is the worst possible element
+     to stutter since it stays on screen. */
   .topbar .wrap {
     display: flex; align-items: center; gap: 18px;
     padding: 34px 24px;
@@ -66,9 +66,9 @@
   }
   .topbar.compact .mark { font-size: 1.25rem; }
   .mark b { font-weight: 400; }
-  /* Le point de la marque prend le pollen dans le bandeau indigo, où il atteint
-     10,2:1, et l'ardoise sur fond clair, où le pollen tomberait à 1,2:1. Une même
-     couleur de marque ne survit pas au changement de fond. */
+  /* The dot in the wordmark takes pollen inside the indigo band, where it reaches
+     10.2:1, and slate on a light background, where pollen would fall to 1.2:1. A single
+     brand colour does not survive a change of background. */
   .mark i { font-style: normal; color: var(--accent); }
   .topbar .mark { color: #fff; }
   .topbar .mark i { color: var(--pollen); }
@@ -82,8 +82,8 @@
     transition: color .15s ease, background-color .15s ease;
   }
   .topbar nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
-  /* La section courante est marquée par un trait de pollen, pas par une couleur de
-     texte : le repère reste lisible sans changer le poids de la ligne. */
+  /* The current section is marked by a pollen rule, not by a text colour: the marker
+     stays legible without changing the weight of the line. */
   .topbar nav a[aria-current='true'] { color: #fff; }
   .topbar nav a[aria-current='true']::after {
     content: ''; position: absolute; left: 13px; right: 13px; bottom: 3px;
@@ -127,13 +127,13 @@
   .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
 
 
-  /* ── Le téléphone ──────────────────────────────────────────────────────
-     Une maquette dessinée, pas une photo : elle reste nette à toute densité
-     d'écran, pèse zéro octet de plus, et surtout elle affiche l'interface réelle
-     plutôt qu'un appareil emprunté à une banque d'images.
+  /* ── The phone ─────────────────────────────────────────────────────────
+     A drawn mockup, not a photograph: it stays sharp at any screen density, weighs
+     zero extra bytes, and above all it shows the real interface rather than a device
+     borrowed from a stock library.
 
-     Le mouvement est une dérive lente, pas une entrée. L'objet doit sembler
-     tenu en main, ce qui veut dire ne jamais s'immobiliser tout à fait. */
+     The movement is a slow drift, not an entrance. The object should feel held in a
+     hand, which means never coming quite to rest. */
   .hero-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 5vw, 72px); align-items: center; }
   @media (min-width: 980px) { .hero-split { grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr); } }
 
@@ -143,8 +143,8 @@
     position: relative;
     width: min(300px, 78vw); aspect-ratio: 9 / 18.6;
     border-radius: 40px; padding: 11px;
-    /* Le châssis est éclairé de haut à gauche : une face claire, une arête vive, puis
-       la chute vers l'ombre. Un aplat uni ne se lit pas comme un objet. */
+    /* The chassis is lit from the top left: a bright face, a hard edge, then the fall
+       into shadow. A flat fill does not read as an object. */
     background:
       linear-gradient(148deg, #4a4b82 0%, #33345f 18%, #1e1f3c 52%, #14152b 100%);
     box-shadow:
@@ -155,11 +155,11 @@
     will-change: transform;
   }
 
-  /* ── Les arêtes ────────────────────────────────────────────────────────
-     Trois couches font la tranche. Une paroi reculée en Z donne l'épaisseur
-     réelle quand l'objet tourne ; un liseré clair pose l'arête vive côté
-     lumière ; une ombre portée à l'intérieur creuse le logement de l'écran.
-     Sans la première, le téléphone reste une carte plate en perspective. */
+  /* ── The edges ─────────────────────────────────────────────────────────
+     Three layers make the side. A wall pushed back in Z gives real thickness when the
+     object turns; a light rim sets the hard edge on the lit side; an inner shadow
+     recesses the screen housing. Without the first, the phone stays a flat card in
+     perspective. */
   .phone::before {
     content: ''; position: absolute; inset: 0; border-radius: 40px;
     transform: translateZ(-16px);
@@ -169,7 +169,7 @@
   .phone::after {
     content: ''; position: absolute; inset: 0; border-radius: 40px;
     pointer-events: none;
-    /* Liseré : clair en haut à gauche, éteint en bas à droite. */
+    /* Rim: bright at top left, extinguished at bottom right. */
     background: linear-gradient(148deg, rgba(255,255,255,.42), rgba(255,255,255,.06) 26%,
       transparent 46%, rgba(0,0,0,.28) 100%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -177,7 +177,7 @@
     padding: 1.4px;
   }
 
-  /* Boutons latéraux, décalés vers l'observateur pour tenir hors du châssis. */
+  /* Side buttons, pushed towards the viewer so they stand clear of the chassis. */
   .phone-key {
     position: absolute; right: -2.5px; width: 3px; border-radius: 2px;
     background: linear-gradient(180deg, #4a4b82, #24254a);
@@ -197,10 +197,10 @@
     padding: 14px 13px 12px; display: flex; flex-direction: column; gap: 9px;
     overflow: hidden;
   }
-  /* Le creusement de l'écran est porté par un calque et non par l'écran lui-même :
-     un bloc qui cumule fond, rayon et ombre à l'intérieur d'un autre est lu comme une
-     carte dans une carte, ce qui est un défaut partout ailleurs sur la page. Ici c'est
-     un écran dans un châssis, et le distinguer évite de relâcher la règle. */
+  /* The screen recess is carried by a separate layer, not by the screen itself: a block
+     combining background, radius and shadow inside another reads as a card within a
+     card, which is a defect everywhere else on the page. Here it is a screen within a
+     chassis, and keeping them distinct avoids relaxing the rule. */
   .phone-screen::after {
     content: ''; position: absolute; inset: 0; border-radius: 30px; pointer-events: none;
     box-shadow: inset 0 1px 3px rgba(15,16,32,.3), inset 0 0 0 1px rgba(15,16,32,.5);
@@ -216,11 +216,11 @@
   }
   .phone-label { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
 
-  /* ── L'écran : une application bancaire ordinaire ──────────────────────
-     Ce que voit la cliente, pas ce que voit la trésorerie. C'est le bon niveau
-     de récit : le virement part instantanément, et NEAP est la mécanique qui
-     rend ce « instantanément » finançable. Montrer le pupitre ici aurait
-     répété la section suivante. */
+  /* ── The screen: an ordinary banking app ───────────────────────────────
+     What the customer sees, not what the treasury sees. That is the right level of
+     narrative: the transfer leaves instantly, and NEAP is the machinery that makes that
+     "instantly" fundable. Showing the console here would have repeated the next
+     section. */
   .bank-greet { display: flex; align-items: center; gap: 8px; }
   .bank-avatar {
     width: 26px; height: 26px; border-radius: 50%; flex: none;
@@ -276,13 +276,13 @@
     .phone { animation: none; transform: rotateY(-11deg) rotateX(2deg) rotateZ(-1deg); }
   }
 
-  /* Sans perspective, la paroi reculée se superposerait au châssis au lieu de
-     s'effacer derrière : on la retire plutôt que de la laisser déborder. */
+  /* Without perspective, the pushed-back wall would overlay the chassis instead of
+     receding behind it: it is removed rather than left to overflow. */
   @supports not (transform-style: preserve-3d) {
     .phone::before { display: none; }
   }
 
-  /* ── Le point de bascule ──────────────────────────────────────────────── */
+  /* ── The tipping point ─────────────────────────────────────────────────── */
   .collapse { margin-top: clamp(48px, 6vw, 72px); }
   .bar-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 26px; }
   .bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
@@ -294,7 +294,7 @@
   .bar-fill.now { background: var(--accent); }
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
-  /* ── Mécanisme ────────────────────────────────────────────────────────── */
+  /* ── Mechanism ────────────────────────────────────────────────────────── */
   .beats { margin: 40px 0 0; padding: 0; list-style: none; counter-reset: none; }
   .beat { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 18px; padding: 24px 4px; border-top: 1px solid var(--line); }
   .beat:first-child { border-top: 0; padding-top: 4px; }
@@ -333,8 +333,8 @@
   footer .wrap { display: flex; gap: 28px; flex-wrap: wrap; align-items: baseline; }
   footer a { color: var(--accent); }
 
-  /* Une seule intention de mouvement sur la page : l'effondrement du buffer, joué
-     une fois à l'arrivée en vue. Tout le reste est immobile. */
+  /* A single intention of movement on the page: the buffer collapse, played once on
+     entering view. Everything else is still. */
   @keyframes drop { from { transform: scaleX(var(--from)); } to { transform: scaleX(var(--to)); } }
   .bar-fill.play { animation: drop 1.15s cubic-bezier(.16,.84,.28,1) both; }
 </style>

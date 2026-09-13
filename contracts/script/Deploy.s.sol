@@ -15,19 +15,19 @@ import {MockPriceOracle} from "../src/mocks/MockPriceOracle.sol";
 import {MockAttestationVerifier} from "../src/mocks/MockAttestationVerifier.sol";
 
 /**
- * @title Déploiement de NEAP
+ * @title NEAP deployment
  *
- * @dev Trois profils depuis la même source — `anvil`, `arc-testnet`, `arc-mainnet`.
+ * @dev Three profiles from one source — `anvil`, `arc-testnet`, `arc-mainnet`.
  *
- *      Ce qui distingue les profils n'est pas cosmétique. **Les mocks ne sont instanciés
+ *      What separates the profiles is not cosmetic. **The mocks are instantiated
  *      que hors mainnet, et c'est le script qui le garantit, pas une consigne.** Sur
- *      mainnet, l'USDC et l'EURC sont de vrais jetons ; y déployer un lieu d'exécution
- *      factice donnerait un contrat incapable de sourcer la moindre liquidité, et qui
- *      prendrait l'apparence d'un piège si quelqu'un l'alimentait.
+ *      mainnet, USDC and EURC are real tokens; deploying a fake venue there would give a
+ *      contract unable to source any liquidity, which would look like a trap if anyone
+ *      funded it.
  *
- *      Le profil mainnet déploie donc `PausedFxVenue` : un refus explicite, remplaçable
- *      par `setVenue` le jour où un lieu réel est accessible. Et il met le système en
- *      pause dans la foulée — ces contrats ne sont pas audités, les déployer est
+ *      The mainnet profile therefore deploys `PausedFxVenue`: an explicit refusal,
+ *      replaceable through `setVenue` the day a real venue becomes reachable. And it
+ *      pauses the system right afterwards — these contracts are not audited, deploying is
  *      acceptable, y placer des fonds ne l'est pas.
  *
  *      Usage :
@@ -59,8 +59,8 @@ contract Deploy is Script {
         d.policy = new TreasuryPolicy(admin, TIMELOCK);
         d.verifier = new ReportVerifier(
             d.policy,
-            // Sur mainnet, la vérification d'attestation est celle du consensus du DON
-            // (D23) ; l'adaptateur local n'a rien à y faire.
+            // On mainnet, attestation verification is DON consensus (D23); the local
+            // adapter has no business there.
             isMainnet
                 ? MockAttestationVerifier(vm.envAddress("NEAP_ATTESTATION_VERIFIER"))
                 : new MockAttestationVerifier(),
@@ -78,7 +78,7 @@ contract Deploy is Script {
             MockFxVenue venue = new MockFxVenue();
             MockPriceOracle oracle = new MockPriceOracle();
 
-            // 1 USDC → 0,92 EURC, spread de 2 bps, impact de 20 bps à pleine profondeur.
+            // 1 USDC → 0.92 EURC, 2 bps spread, 20 bps impact at full depth.
             venue.configure(address(usdc), address(eurc), 0.92e18, 2, 20, 5_000_000e6);
             venue.configure(address(eurc), address(usdc), 1.0869e18, 2, 20, 5_000_000e6);
             oracle.set(address(usdc), address(eurc), 0.92e18);
@@ -96,16 +96,16 @@ contract Deploy is Script {
             d.policy, d.verifier, d.usdc, IFxVenue(d.venue), IPriceOracle(d.oracle)
         );
 
-        // Le déployeur se donne les rôles opérationnels hors mainnet pour que le
-        // scénario de bout en bout puisse tourner sans cérémonie. Sur mainnet, seul
-        // l'administrateur existe : les rôles sont attribués délibérément, un par un.
+        // The deployer grants itself the operational roles off mainnet so the end-to-end
+        // scenario can run without ceremony. On mainnet only the administrator exists:
+        // roles are granted deliberately, one at a time.
         if (!isMainnet) {
             d.policy.grantRole(d.policy.OPERATOR(), admin);
             d.policy.grantRole(d.policy.GUARDIAN(), admin);
             d.policy.grantRole(d.policy.RISK_OFFICER(), admin);
         } else {
-            // Pause immédiate : ces contrats ne sont pas audités. Le déploiement est un
-            // déploiement, pas une mise en exploitation.
+            // Immediate pause: these contracts are not audited. A deployment is a
+            // deployment, not a go-live.
             d.policy.grantRole(d.policy.GUARDIAN(), admin);
             d.policy.pause();
         }

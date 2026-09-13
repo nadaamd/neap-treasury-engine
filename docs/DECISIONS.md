@@ -1,38 +1,34 @@
-# Journal des décisions d'architecture
+# Architecture decision log
 
-Format court : décision, raison, conséquence. Le détail vit dans `SPEC.md` §14.
+Short form: decision, reason, consequence. The detail lives in [`SPEC.md`](./SPEC.md) §14.
 
-| # | Décision | Raison en une ligne |
+| # | Decision | Reason, in one line |
 |---|---|---|
-| D1 | Nom : **NEAP** | « le float » est le terme métier exact du capital immobilisé en transit |
-| D2 | Périmètre **hybride** : 3 devises stablecoin + 1 corridor « rail lent » | crée l'arbitrage entre deux régimes de coût fixe — sans lui l'optimiseur n'optimise rien |
-| D3 | Bandes par **résolution numérique warm-startée** par Miller-Orr analytique | rapide, général, et Miller-Orr sert de test de non-régression |
-| D4 | **ES 97.5 % (FRTB) par Filtered Historical Simulation** | la VaR normale sous-estime la queue ; FRTB a fait ce choix pour la même raison |
-| D5 | **Le TEE ne calcule que ce qui dépend de l'état** ; les paramètres sont engagés on-chain par hash | frontière de confidentialité énonçable en une phrase et vérifiable |
-| D6 | Commitment + quantification en lots + jitter | protège le montant sans surjouer ; fuite résiduelle documentée |
-| D7 | **Le contrat fait autorité** sur les rôles ; Privy = custody + UX | rend l'autorisation vérifiable et le contrat substantiel |
-| D8 | `IFxVenue` : `MockFxVenue` de référence, `ArcFxVenue` en intégration | le mock est requis par le backtest de toute façon — pas un repli |
-| D9 | Moteur de risque = **fonction pure**, deux hôtes possibles | le plan B ne coûte rien parce qu'il est le même code |
-| D10 | Backtest **walk-forward, 20 seeds, IC 95 %**, + politique `ORACLE` de référence | supprime le biais d'anticipation et donne un référentiel au gain annoncé |
-| D11 | **TypeScript** pour le moteur ; Python réservé à l'exploration de calibration | la fonction pure doit être portable dans le handler CRE et réutilisable par le dashboard (D9) |
-| D12 | **Epoch de 15 minutes justifié quantitativement**, plus par convention | le modèle de bandes exige que le choc de flux d'une période soit petit devant la largeur de bande ; à granularité journalière le choc EUR vaut ±1,5 M$ contre une bande de 100 k$, et la politique dégénère |
-| D13 | **Le coût de rupture est tarifé en espérance analytique, pas compté en simulation** | la probabilité de rupture à l'optimum est de l'ordre de 10⁻⁵ à 10⁻⁸ ; 120 000 périodes simulées ne la mesurent pas, donc le terme et son gradient valaient zéro partout |
-| D14 | **Le coût de rupture est une grandeur absolue**, pas un multiple de γ | la spec proposait c_b = 250·γ ; quand γ s'effondre d'un facteur 10⁴ en passant au rail rapide, c_b s'effondrerait avec lui — or une rupture de paiement coûte la même chose quel que soit le rail utilisé pour la corriger |
+| D1 | Name: **NEAP** | a *neap tide* is the tide of smallest range — exactly what the engine does to a treasury buffer |
+| D2 | **Hybrid** scope: 3 stablecoin currencies + 1 "slow rail" corridor | creates the trade-off between two fixed-cost regimes — without it the optimiser has nothing to optimise |
+| D3 | Bands by **numerical solving, warm-started** by analytic Miller-Orr | fast, general, and Miller-Orr doubles as a regression test |
+| D4 | **ES 97.5% (FRTB) by Filtered Historical Simulation** | normal VaR underestimates the tail; FRTB made the same choice for the same reason |
+| D5 | **The TEE computes only what depends on state**; parameters are committed on-chain by hash | a confidentiality boundary stateable in one sentence and verifiable |
+| D6 | Commitment + lot quantisation + jitter | protects the amount without overplaying; residual leakage documented |
+| D7 | **The contract is the authority** on roles; Privy = custody + UX | makes authorisation verifiable and the contract substantial |
+| D8 | `IFxVenue`: `MockFxVenue` as the reference implementation | the mock is required by the backtest anyway — not a fallback |
+| D9 | The risk engine is a **pure function**, with two possible hosts | the plan B costs nothing because it is the same code |
+| D10 | Backtest **walk-forward, 20 seeds, 95% CI**, plus a reference policy calibrated on the realised window | removes lookahead bias and gives the claimed gain a frame of reference |
+| D11 | **TypeScript** for the engine; Python reserved for calibration exploration | the pure function must be portable into the CRE handler and reusable by the dashboard (D9) |
+| D12 | **The 15-minute epoch is justified quantitatively**, not by convention | the band model requires the one-period flow shock to be small against the band width; at daily granularity the EUR shock is ±$1.5M against a $100k band, and the policy degenerates |
+| D13 | **Breach cost is priced as an analytic expectation, not counted in simulation** | the breach probability at the optimum is of the order of 10⁻⁵ to 10⁻⁸; 120,000 simulated periods do not measure it, so the term and its gradient were zero everywhere |
+| D14 | **Breach cost is an absolute quantity**, not a multiple of γ | the spec proposed c_b = 250·γ; when γ collapses by 10⁴ on the fast rail, c_b would collapse with it — yet a missed payment costs the same whatever rail is used to fix it |
+| D15 | **Increasing sequence over the (epoch, nonce) pair**, not over the epoch alone | the crisis path (§2.3) requires an off-cycle report between two epochs; strict epoch growth would forbid it |
+| D16 | **The idempotency check comes before the sequence check** | a replay must fail for the right reason; an incidental rejection by the sequence check would mask the real guarantee |
+| D17 | **A genuinely rolling window** (24 hourly buckets) rather than a periodic reset | a reset window lets twice the limit through on either side of a boundary — one hole too many for a constraint meant to bound a compromised operator |
+| D18 | **`grossNotional` is published in the clear**, by exception to the relative-quantities principle | the approval threshold applies to the size of the plan, and the orders are sealed until execution; without this field the treasurer would approve blind, which would not be an approval. The decomposition stays protected |
+| D19 | **A plan is atomic**: one failing order fails the whole plan | partial execution — selling euros without buying the intended pounds — would leave a position nobody decided, worse than inaction |
+| D20 | **The `COMPENSATED` state is removed** from the vault state machine | StableFX's PvP is documented atomic: "both sides complete or neither does" |
+| D21 | **`ArcFxVenue` is not an on-chain contract** but an off-chain adapter (API RFQ → typed-data intent → Permit2 settlement) | StableFX is an API/SDK integration: "you don't need to interact with smart contracts directly". `IFxVenue` stays right for the mock and for any genuinely on-chain venue, but it does not describe StableFX |
+| D22 | **The L4 target is `cre workflow simulate`**, a testnet deployment being a bonus | the local simulator requires no registration, and the ETHGlobal track explicitly accepts a successful simulation. Beta registration opens 90 testnet days — useful but not on a three-day critical path |
+| D23 | **The attestation is verified by DON consensus**, not by the contract | "DON consensus verifies attestations from the enclave". `IAttestationVerifier` remains an honest extension point, but the real trust model must be stated as it is |
+| D24 | **Mocks never ship to mainnet; the mainnet profile deploys `PausedFxVenue` and pauses the system** | on mainnet USDC and EURC are real: a fake venue there could source no liquidity and would look like a trap if anyone funded it. An explicit refusal tells the truth — deployed, verifiable, provably inoperative. And these contracts are unaudited: deploying them is acceptable, putting funds in them is not |
 
-| D15 | **Séquence croissante sur le couple (epoch, nonce)**, pas sur l'epoch seul | le parcours de crise (§2.3) exige un rapport hors cycle entre deux epochs ; la stricte croissance de l'epoch l'interdirait |
-| D16 | **Le contrôle d'idempotence passe avant le contrôle de séquence** | un rejeu doit échouer pour la bonne raison ; un rejet incident par le contrôle de séquence masquerait la vraie garantie |
+## Still open
 
-| D17 | **Fenêtre réellement glissante** (24 seaux horaires) plutôt qu'à remise périodique | une fenêtre à remise laisse passer deux fois la limite de part et d'autre d'une frontière — un trou de trop pour une contrainte censée borner un opérateur compromis |
-| D18 | **`grossNotional` publié en clair dans le rapport**, par exception au principe des grandeurs relatives | le seuil d'approbation porte sur la taille du plan, or les ordres sont scellés jusqu'à l'exécution ; sans ce champ le trésorier approuverait à l'aveugle, ce qui ne serait pas une approbation. La décomposition, elle, reste protégée |
-| D19 | **Un plan est atomique** : un ordre qui échoue fait échouer tout le plan | exécuter partiellement — vendre l'euro sans acheter la livre prévue — laisserait une position que personne n'a décidée, pire que l'inaction |
-
-| D20 | **L'état `COMPENSATED` est supprimé** de la machine à états du coffre | le PvP de StableFX est documenté atomique : « both sides complete or neither does ». La question du jalon 0 avait une réponse publique |
-| D21 | **`ArcFxVenue` n'est pas un contrat on-chain** mais un adaptateur hors chaîne (RFQ par API → intention en données typées → règlement Permit2) | StableFX est une intégration API/SDK : « you don't need to interact with smart contracts directly ». L'interface `IFxVenue` reste juste pour le mock et pour tout lieu réellement on-chain, mais elle ne décrit pas StableFX |
-| D22 | **La cible de L4 est `cre workflow simulate`**, un déploiement testnet restant un bonus | le simulateur local ne demande aucune inscription, et le track ETHGlobal accepte explicitement « successful simulation ». L'inscription en bêta ouvre 90 jours de testnet — utile mais pas sur le chemin critique à trois jours |
-| D23 | **L'attestation est vérifiée par le consensus du DON**, pas par le contrat | « DON consensus verifies attestations from the enclave ». `IAttestationVerifier` reste un point d'extension honnête, mais le modèle de confiance réel doit être énoncé tel qu'il est |
-
-| D24 | **Les mocks ne partent jamais sur mainnet ; le profil mainnet déploie `PausedFxVenue` et met le système en pause** | sur mainnet USDC et EURC sont réels : un lieu factice y serait incapable de sourcer la moindre liquidité et prendrait l'apparence d'un piège si quelqu'un l'alimentait. Un refus explicite dit la vérité — déployé, vérifiable, prouvablement inopérant. Et ces contrats ne sont pas audités : les déployer est acceptable, y placer des fonds ne l'est pas |
-
-## Décisions encore ouvertes
-
-- Chaînes de destination supportées par CRE, et support d'Arc en particulier
+- Which destination chains CRE supports, and Arc in particular.

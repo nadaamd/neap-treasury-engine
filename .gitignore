@@ -22,7 +22,7 @@ artifacts/
 typechain-types/
 broadcast/*/dry-run/
 
-# Secrets — jamais commités
+# Secrets — never committed
 .env
 .env.*
 !.env.example
@@ -30,16 +30,14 @@ broadcast/*/dry-run/
 *.key
 secrets/
 
-# Sorties de backtest (volumineuses, reproductibles par seed)
+# Backtest output (large, reproducible from the seeds)
 data/generated/
-results/runs/
-*.parquet
+results/
 
-# OS / éditeurs
+# Deployment
+.vercel/
+
+# OS / editors
 .DS_Store
 .idea/
 .vscode/
-results/*.json
-results/*.txt
-.vercel
-.env*

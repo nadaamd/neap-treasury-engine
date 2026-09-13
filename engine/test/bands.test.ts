@@ -1,4 +1,4 @@
-/** Tests du solveur de bandes — SPEC §4.1 et §4.2, décision D3. */
+/** Band solver tests — SPEC §4.1 and §4.2, decision D3. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ const DAYS = 180;
 const events = generateFlows({ seed: 7, startTs: START, days: DAYS, corridors: CORRIDORS });
 const rawFlows = bucketize(events, START, EPOCH_MS, DAYS * EPOCHS_PER_DAY).map((b) => b.net.EUR);
 const drift = mean(rawFlows);
-/** Série sans dérive : c'est le cadre d'hypothèses de Miller-Orr. */
+/** Driftless series: this is Miller-Orr's assumption set. */
 const flatFlows = rawFlows.map((x) => x - drift);
 const FLOW_SIGMA = stdev(flatFlows);
 const CARRY = 0.06 / 365 / EPOCHS_PER_DAY;
@@ -65,14 +65,14 @@ function solve(costs: Partial<CostParams>, paths = PATHS) {
   };
 }
 
-describe('Miller-Orr analytique', () => {
+describe('analytic Miller-Orr', () => {
   const mo = millerOrrBands({ gammaFixed: 25, flowSigma: FLOW_SIGMA, carryRate: CARRY, lower: 0 });
 
-  test('l’identité H = 3Z − 2L est respectée', () => {
+  test('the identity H = 3Z − 2L holds', () => {
     assert.ok(Math.abs(mo.upper - (3 * mo.target - 2 * mo.lower)) < 1e-6);
   });
 
-  test('le plancher est respecté et l’ordre des bandes est cohérent', () => {
+  test('the floor is respected and the band ordering is consistent', () => {
     const withFloor = millerOrrBands({
       gammaFixed: 25,
       flowSigma: FLOW_SIGMA,
@@ -84,45 +84,45 @@ describe('Miller-Orr analytique', () => {
   });
 
   /**
-   * LA propriété du projet (SPEC §1.2).
+   * THE property of the project (SPEC §1.2).
    *
-   * La largeur de bande croît en γ^(1/3). Passer d'un rail de correspondant bancaire à
-   * un règlement stablecoin divise le coût fixe par 10⁴, donc la bande par 10⁴^(1/3) ≈ 21,5.
-   * C'est l'effondrement du buffer que le backtest doit chiffrer.
+   * Band width grows as γ^(1/3). Moving from a correspondent-bank rail to stablecoin
+   * settlement divides the fixed cost by 10⁴, hence the band by 10⁴^(1/3) ≈ 21.5. That is
+   * the buffer collapse the backtest has to quantify.
    */
-  test('la largeur de bande suit exactement la loi en γ^(1/3)', () => {
+  test('band width follows the γ^(1/3) law exactly', () => {
     const slow = millerOrrBands({ gammaFixed: 25, flowSigma: FLOW_SIGMA, carryRate: CARRY, lower: 0 });
     const fast = millerOrrBands({ gammaFixed: 0.0025, flowSigma: FLOW_SIGMA, carryRate: CARRY, lower: 0 });
     const ratio = (slow.upper - slow.lower) / (fast.upper - fast.lower);
-    assert.ok(Math.abs(ratio - Math.cbrt(10_000)) < 0.01, `facteur ${ratio.toFixed(3)} ≠ 21,544`);
+    assert.ok(Math.abs(ratio - Math.cbrt(10_000)) < 0.01, `factor ${ratio.toFixed(3)} ≠ 21.544`);
   });
 
-  test('les entrées dégénérées sont rejetées', () => {
+  test('degenerate inputs are rejected', () => {
     assert.throws(() => millerOrrBands({ gammaFixed: 1, flowSigma: 0, carryRate: CARRY, lower: 0 }), RangeError);
     assert.throws(() => millerOrrBands({ gammaFixed: 1, flowSigma: 1, carryRate: 0, lower: 0 }), RangeError);
   });
 });
 
-describe('solveur numérique — validation contre la solution analytique (D3)', () => {
+describe('numerical solver — validated against the closed form (D3)', () => {
   /**
-   * Le solveur ne doit pas *égaler* Miller-Orr : il résout un problème strictement plus
-   * riche (temps discret, coût de rupture, dérive éventuelle). On vérifie qu'il en
-   * reproduit la **structure** là où les hypothèses analytiques sont approximativement
-   * valides, c'est-à-dire quand la bande est large devant le choc de flux d'une période.
+   * The solver is not supposed to *equal* Miller-Orr: it solves a strictly richer problem
+   * (discrete time, breach cost, possible drift). What is checked is that it reproduces
+   * its **structure** where the analytic assumptions approximately hold, that is, when
+   * the band is wide relative to the one-period flow shock.
    */
-  test('la largeur numérique suit l’analytique dans le régime de validité', () => {
+  test('numerical width tracks the analytic one inside the valid regime', () => {
     for (const gammaFixed of [2, 25, 250]) {
       const { analytic, result } = solve({ gammaFixed });
       const wA = analytic.upper - analytic.lower;
       const wN = result.bands.upper - result.bands.lower;
       assert.ok(
         wN / wA > 0.7 && wN / wA < 1.5,
-        `γ=${gammaFixed} : largeur numérique/analytique = ${(wN / wA).toFixed(2)}`,
+        `γ=${gammaFixed}: numerical/analytic width = ${(wN / wA).toFixed(2)}`,
       );
     }
   });
 
-  test('l’exposant d’échelle numérique reste proche de la racine cubique', () => {
+  test('the numerical scaling exponent stays close to the cube root', () => {
     const xs: number[] = [];
     const ys: number[] = [];
     for (const gammaFixed of [0.2, 2, 25, 250]) {
@@ -139,54 +139,54 @@ describe('solveur numérique — validation contre la solution analytique (D3)',
       den += (xs[i]! - mx) ** 2;
     }
     const slope = num / den;
-    assert.ok(slope > 0.25 && slope < 0.6, `exposant ${slope.toFixed(3)} hors de [0,25 ; 0,60]`);
+    assert.ok(slope > 0.25 && slope < 0.6, `exponent ${slope.toFixed(3)} outside [0.25, 0.60]`);
   });
 
   /**
-   * Condition de validité du modèle de bandes, découverte en calibrant le solveur.
+   * The validity condition of the band model, discovered while calibrating the solver.
    *
-   * Miller-Orr est un résultat de temps continu : il suppose que le solde dérive
-   * lentement jusqu'à toucher une borne. Si le choc de flux d'une période dépasse la
-   * largeur de bande, le solde saute par-dessus les bornes à chaque pas et la politique
-   * dégénère en « rééquilibrer à chaque période ».
+   * Miller-Orr is a continuous-time result: it assumes the balance drifts slowly until it
+   * touches a boundary. If the one-period flow shock exceeds the band width, the balance
+   * jumps over the boundaries at every step and the policy degenerates into "rebalance
+   * every period".
    *
-   * C'est ce qui arrive à granularité journalière : un jour de flux déplace le solde EUR
-   * de ±1,5 M$ alors que la bande optimale sur rail rapide fait 100 k$. À 15 minutes le
-   * choc tombe à ~70 k$ et le modèle redevient applicable — ce qui **justifie
-   * quantitativement** le choix d'epoch de la spec, au lieu de le poser par convention.
+   * That is what happens at daily granularity: one day of flow moves the EUR balance by
+   * ±$1.5M while the optimal band on a fast rail is $100k. At fifteen minutes the shock
+   * falls to ~$70k and the model becomes applicable again — which **quantitatively
+   * justifies** the spec's epoch choice instead of settling it by convention.
    */
-  test('hors du régime de validité, la politique dégénère en rééquilibrage permanent', () => {
+  test('outside the valid regime, the policy degenerates into permanent rebalancing', () => {
     const { result } = solve({ gammaFixed: 0.02 });
     const pathLength = PATHS[0]!.length;
     const rate = result.outcome.rebalances / pathLength;
-    assert.ok(rate > 0.5, `taux de rééquilibrage ${rate.toFixed(2)} : la dégénérescence attendue n'apparaît pas`);
+    assert.ok(rate > 0.5, `rebalancing rate ${rate.toFixed(2)}: the expected degeneracy does not appear`);
     assert.ok(
       result.bands.upper - result.bands.lower < FLOW_SIGMA,
-      'la bande devrait être plus étroite que le choc de flux dans ce régime',
+      'the band should be narrower than the flow shock in this regime',
     );
   });
 });
 
-describe('propriétés du solveur', () => {
-  test('le résultat n’est jamais pire que l’amorçage', () => {
+describe('solver properties', () => {
+  test('the result is never worse than the warm start', () => {
     const { result } = solve({});
     assert.ok(result.outcome.cost <= result.warmStartOutcome.cost);
   });
 
-  test('déterminisme : mêmes trajectoires et mêmes coûts ⇒ mêmes bandes', () => {
+  test('determinism: same paths and same costs ⇒ same bands', () => {
     const a = solve({}).result.bands;
     const b = solve({}).result.bands;
     assert.deepEqual(a, b);
   });
 
-  test('les nombres aléatoires communs rendent l’évaluation reproductible', () => {
+  test('common random numbers make the evaluation reproducible', () => {
     const bands = { lower: 100_000, target: 400_000, upper: 900_000 };
     const one = evaluatePolicy(bands, PATHS, baseCosts, TAIL);
     const two = evaluatePolicy(bands, PATHS, baseCosts, TAIL);
     assert.deepEqual(one, two);
   });
 
-  test('le plancher opérationnel est respecté', () => {
+  test('the operational floor is respected', () => {
     const mo = millerOrrBands({ gammaFixed: 2, flowSigma: FLOW_SIGMA, carryRate: CARRY, lower: 250_000 });
     const r = solveBands({
       paths: PATHS,
@@ -203,25 +203,25 @@ describe('propriétés du solveur', () => {
   });
 });
 
-describe('statique comparative — l’économie du modèle', () => {
+describe('comparative statics — the economics of the model', () => {
   const targetOf = (c: Partial<CostParams>, paths = PATHS) => solve(c, paths).result.bands.target;
 
-  test('un coût de rupture plus élevé fait monter le buffer', () => {
+  test('a higher breach cost raises the buffer', () => {
     assert.ok(targetOf({ breachCost: 500_000 }) > targetOf({ breachCost: 20_000 }));
   });
 
   /**
-   * Validation de l'optimiseur par la condition du premier ordre.
+   * Validating the optimiser through the first-order condition.
    *
-   * À l'optimum, le coût marginal de portage d'un dollar supplémentaire de buffer égale
-   * la réduction marginale du coût de rupture espéré. Comme le portage ne dépend pas du
-   * coût de rupture, la probabilité de rupture optimale doit varier en **1/c_b** : la
-   * multiplier par dix doit la diviser par dix.
+   * At the optimum, the marginal carry cost of one extra dollar of buffer equals the
+   * marginal reduction in expected breach cost. Since carry does not depend on the breach
+   * cost, the optimal breach probability must scale as **1/c_b**: multiplying it by ten
+   * must divide the probability by ten.
    *
-   * C'est le test le plus exigeant du solveur — il ne vérifie pas une valeur mais une
-   * *relation* que seule une optimisation correcte peut produire.
+   * This is the most demanding test of the solver — it checks not a value but a
+   * *relation* that only a correct optimisation can produce.
    */
-  test('la probabilité de rupture optimale varie en 1/coût de rupture', () => {
+  test('the optimal breach probability scales as 1/breach cost', () => {
     const products: number[] = [];
     for (const breachCost of [5_000, 50_000, 500_000, 5_000_000]) {
       const { result } = solve({ breachCost });
@@ -231,39 +231,39 @@ describe('statique comparative — l’économie du modèle', () => {
     const hi = Math.max(...products);
     assert.ok(
       hi / lo < 3,
-      `c_b × P* devrait rester quasi constant ; observé ${products.map((x) => x.toFixed(3)).join(', ')}`,
+      `c_b × P* should stay near constant; observed ${products.map((x) => x.toFixed(3)).join(', ')}`,
     );
   });
 
-  test('la probabilité de rupture tarifée reste strictement positive', () => {
+  test('the priced breach probability stays strictly positive', () => {
     const { result } = solve({});
-    assert.ok(result.outcome.breachProbability > 0, 'le terme de rupture doit rester actif');
-    assert.ok(result.outcome.breachProbability < 1e-3, 'probabilité implausible à l’optimum');
+    assert.ok(result.outcome.breachProbability > 0, 'the breach term must stay active');
+    assert.ok(result.outcome.breachProbability < 1e-3, 'implausible probability at the optimum');
   });
 
-  test('un coût de portage plus élevé fait baisser le buffer', () => {
+  test('a higher carry cost lowers the buffer', () => {
     assert.ok(targetOf({ carryRate: CARRY * 8 }) < targetOf({ carryRate: CARRY }));
   });
 
-  test('une aversion au risque plus forte fait baisser le buffer', () => {
+  test('stronger risk aversion lowers the buffer', () => {
     const neutral = targetOf({ kappa: 0, esPerUnit: 0.001 });
     const averse = targetOf({ kappa: 2, esPerUnit: 0.001 });
-    assert.ok(averse < neutral, `averse ${averse.toFixed(0)} devrait être sous neutre ${neutral.toFixed(0)}`);
+    assert.ok(averse < neutral, `averse ${averse.toFixed(0)} should sit below neutral ${neutral.toFixed(0)}`);
   });
 
-  test('une dérive positive de flux réduit le buffer nécessaire', () => {
+  test('a positive flow drift reduces the required buffer', () => {
     assert.ok(targetOf({}, DRIFTED_PATHS) < targetOf({}, PATHS));
   });
 });
 
-describe('coût d’exécution', () => {
-  test('nul pour un ordre nul, symétrique en signe', () => {
+describe('execution cost', () => {
+  test('zero for a zero order, symmetric in sign', () => {
     assert.equal(executionCost(0, baseCosts), 0);
     const p = { ...baseCosts, spreadBps: 5, etaImpact: 0.1 };
     assert.equal(executionCost(1_000, p), executionCost(-1_000, p));
   });
 
-  test('l’impact est convexe : doubler la taille plus que double le coût d’impact', () => {
+  test('impact is convex: doubling the size more than doubles the impact cost', () => {
     const p = { ...baseCosts, spreadBps: 0, etaImpact: 0.1 };
     assert.ok(executionCost(2_000, p) > 2 * executionCost(1_000, p));
   });

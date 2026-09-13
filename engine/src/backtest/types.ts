@@ -1,4 +1,4 @@
-/** Types du protocole de backtest — SPEC §18, décision D10. */
+/** Backtest protocol types — SPEC §18, decision D10. */
 
 import type { Currency } from '../../../data/src/types.ts';
 import type { Bands } from '../bands/millerOrr.ts';
@@ -8,23 +8,23 @@ export type PolicyKind = 'STATIC' | 'CALENDAR' | 'NEAP' | 'CLAIRVOYANT';
 
 export interface PolicyBands {
   readonly bands: Record<Currency, Bands>;
-  /** Vrai si la politique ne décide qu'à heure fixe, indépendamment de l'état. */
+  /** True when the policy only decides at a fixed time, regardless of state. */
   readonly calendarOnly: boolean;
 }
 
 export interface WindowMetrics {
-  /** Capital moyen immobilisé, toutes devises confondues. */
+  /** Average idle capital, across all currencies. */
   readonly capital: number;
-  /** ES 97,5 % moyenne du portefeuille, mesurée en fin de journée. */
+  /** Average portfolio ES 97.5%, measured at end of day. */
   readonly es: number;
-  /** Coûts d'exécution cumulés — attendus **en hausse** pour NEAP. */
+  /** Cumulative execution costs — expected to be **higher** for NEAP. */
   readonly executionCost: number;
-  /** Coût de portage cumulé. */
+  /** Cumulative carry cost. */
   readonly carryCost: number;
-  /** Nombre de ruptures de solde. Contrainte dure : doit rester à zéro. */
+  /** Number of balance breaches. Hard constraint: must stay at zero. */
   readonly breaches: number;
   readonly rebalances: number;
-  /** Coût total : portage + exécution. C'est le critère de comparaison. */
+  /** Total cost: carry + execution. This is the comparison criterion. */
   readonly totalCost: number;
 }
 
@@ -40,7 +40,7 @@ export interface SeedResult {
 
 export interface Interval {
   readonly mean: number;
-  /** Demi-largeur de l'intervalle de confiance à 95 %. */
+  /** Half-width of the 95% confidence interval. */
   readonly halfWidth: number;
   readonly n: number;
 }
@@ -50,20 +50,20 @@ export interface BacktestSummary {
   readonly windows: number;
   readonly metrics: Record<PolicyKind, Record<keyof WindowMetrics, Interval>>;
   /**
-   * Coût de l'incertitude d'estimation, en fraction du coût de CLAIRVOYANT.
+   * Cost of estimation uncertainty, as a fraction of CLAIRVOYANT's cost.
    *
-   *   (coût NEAP − coût CLAIRVOYANT) / coût CLAIRVOYANT
+   *   (NEAP cost − CLAIRVOYANT cost) / CLAIRVOYANT cost
    *
-   * CLAIRVOYANT était initialement conçu comme borne supérieure — la politique optimale
-   * si l'on connaissait la période à venir. Le backtest a montré que ce n'en était pas
-   * une : NEAP le bat quatre fois sur cinq, d'un ou deux pour cent. La raison est que
-   * le solveur est heuristique et que le critère mesuré — le coût *réalisé* hors
-   * échantillon — n'est pas celui qu'il minimise.
+   * CLAIRVOYANT was initially designed as an upper bound — the optimal policy if you
+   * knew the period ahead. The backtest showed it is not one: NEAP beats it four times
+   * out of five, by a percent or two. The reason is that the solver is heuristic and
+   * that the measured criterion — *realised* out-of-sample cost — is not the one it
+   * minimises.
    *
-   * Plutôt que d'habiller une borne qui n'en est pas une, on renomme la grandeur pour ce
-   * qu'elle mesure réellement : l'écart entre calibrer sur le passé et calibrer sur la
-   * période elle-même. Un intervalle de confiance qui contient zéro est alors un
-   * résultat en soi — il dit que l'erreur d'estimation n'est pas le facteur limitant.
+   * Rather than dressing up a bound that is not a bound, the quantity is renamed for
+   * what it actually measures: the gap between calibrating on the past and calibrating
+   * on the period itself. A confidence interval containing zero is then a result in
+   * itself — it says estimation error is not the binding factor.
    */
   readonly estimationCost: Interval;
 }

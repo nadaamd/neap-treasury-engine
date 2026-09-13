@@ -4,12 +4,12 @@ pragma solidity 0.8.28;
 import {IAttestationVerifier} from "../interfaces/IAttestationVerifier.sol";
 
 /**
- * @notice Adaptateur d'attestation pour le runner local (D9).
- * @dev L'attestation est ici simplement `abi.encode(measurement, payloadHash)`. Ce n'est
- *      évidemment pas une preuve cryptographique — c'est un substitut assumé, dont le
- *      seul rôle est de garantir que le *chaînage* est correct : le rapport est bien lié
- *      à une mesure d'enclave et à son propre contenu. Le jour où CRE fournit de vraies
- *      citations TEE, seul ce contrat change.
+ * @notice Attestation adapter for the local runner (D9).
+ * @dev The attestation here is simply `abi.encode(measurement, payloadHash)`. This is
+ *      obviously not a cryptographic proof — it is an acknowledged stand-in whose only
+ *      role is to guarantee that the *chaining* is correct: the report is genuinely bound
+ *      to an enclave measurement and to its own content. The day CRE provides real TEE
+ *      quotes, only this contract changes.
  */
 contract MockAttestationVerifier is IAttestationVerifier {
     bool public shouldFail;

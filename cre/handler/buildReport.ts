@@ -1,12 +1,12 @@
 /**
- * Cœur du handler confidentiel : de l'état de trésorerie au rapport signable.
+ * Core of the confidential handler: from treasury state to a signable report.
  *
- * Ce module ne connaît pas le SDK CRE. Il prend un état, rend un rapport — donc il se
- * teste sans enclave, sans réseau et sans chaîne. Le handler CRE proprement dit se
- * réduira à récupérer un secret, faire deux appels HTTP et appeler cette fonction.
+ * This module knows nothing about the CRE SDK. It takes a state and returns a report — so
+ * it is testable with no enclave, no network and no chain. The CRE handler proper reduces
+ * to fetching a secret, making two HTTP calls and calling this function.
  *
- * C'est la conséquence directe de D9 : le moteur est une fonction pure, portable telle
- * quelle. Ce fichier est l'adaptateur qui la relie au format de la chaîne, et il est
+ * That is the direct consequence of D9: the engine is a pure function, portable as is.
+ * This file is the adapter that connects it to the chain's format, and it is
  * pur lui aussi.
  */
 
@@ -20,7 +20,7 @@ import type { HandlerInput, HandlerOutput, PlannedOrder } from './types.ts';
 
 const encoder = new TextEncoder();
 
-/** Empreinte stable d'une valeur JSON, insensible à l'ordre d'énumération des clés. */
+/** Stable hash of a JSON value, insensitive to key enumeration order. */
 function stableHash(value: unknown): string {
   const canonical = JSON.stringify(value, (_key, v: unknown) => {
     if (v && typeof v === 'object' && !Array.isArray(v)) {
@@ -32,19 +32,19 @@ function stableHash(value: unknown): string {
 }
 
 /**
- * Sel dérivé, jamais tiré au hasard.
+ * A derived salt, never a random one.
  *
- * Il doit être imprévisible pour un observateur — sinon l'engagement ne cache rien — et
- * reproductible dans l'enclave, puisqu'une fonction pure n'a pas d'aléa. Le dériver d'un
- * secret et du couple (epoch, nonce) satisfait les deux, et garantit au passage qu'aucun
- * sel n'est réutilisé d'un rapport à l'autre.
+ * It must be unpredictable to an observer — otherwise the commitment hides nothing — and
+ * reproducible inside the enclave, since a pure function has no randomness. Deriving it
+ * from a secret and the (epoch, nonce) pair satisfies both, and incidentally guarantees
+ * that no salt is reused across reports.
  */
 export function deriveSalt(seed: string, epoch: number, nonce: number): string {
   return toHex(keccak256(encoder.encode(`${seed}|${epoch}|${nonce}`)));
 }
 
 function toUnits(amount: number, decimals: number): bigint {
-  if (!Number.isFinite(amount) || amount < 0) throw new RangeError(`montant invalide : ${amount}`);
+  if (!Number.isFinite(amount) || amount < 0) throw new RangeError(`invalid amount: ${amount}`);
   return BigInt(Math.round(amount * 10 ** decimals));
 }
 
@@ -73,8 +73,8 @@ export function buildReport(input: HandlerInput): HandlerOutput {
   const decision = decide(decisionInput);
   const salt = deriveSalt(saltSeed, treasury.epoch, treasury.nonce);
 
-  // Les entrées publiques sont engagées séparément : le contrat ne peut pas les
-  // vérifier, mais leur empreinte rend l'audit possible après coup.
+  // Public inputs are committed separately: the contract cannot verify them, but their
+  // hash makes after-the-fact audit possible.
   const inputsHash = stableHash({
     timestamp: market.timestamp,
     rates: market.rates,
@@ -89,7 +89,7 @@ export function buildReport(input: HandlerInput): HandlerOutput {
     const rate = market.rates[foreign];
     if (rate === undefined || rate <= 0) throw new RangeError(`taux manquant pour ${foreign}`);
 
-    // Le moteur raisonne en équivalent numéraire ; la chaîne raisonne en unités de jeton.
+    // The engine reasons in numeraire equivalent; the chain reasons in token units.
     const keep = (10_000 - chain.slippageBps) / 10_000;
     const amountIn = buysForeign ? o.amount : o.amount * rate;
     const grossOut = buysForeign ? o.amount * rate : o.amount;
@@ -103,11 +103,10 @@ export function buildReport(input: HandlerInput): HandlerOutput {
   }
 
   /**
-   * Le notionnel brut doit être calculé **exactement comme le coffre le recalcule** :
-   * le montant entrant pour un achat, le montant sortant minimal pour une vente. Toute
-   * autre convention ferait échouer l'exécution sur `NotionalMismatch`, après une
-   * signature valide et une approbation humaine — le pire moment pour découvrir une
-   * divergence de convention.
+   * Gross notional must be computed **exactly the way the vault recomputes it**: the
+   * incoming amount for a buy, the minimum outgoing amount for a sell. Any other
+   * convention would make execution fail on `NotionalMismatch`, after a valid signature
+   * and a human approval — the worst possible moment to discover a convention mismatch.
    */
   const grossNotional = orders.reduce(
     (a, o) => a + (o.sell === chain.tokens[chain.numeraire] ? o.amountIn : o.minAmountOut),
@@ -145,5 +144,5 @@ export function buildReport(input: HandlerInput): HandlerOutput {
   };
 }
 
-/** Devises du périmètre, ré-exportées pour le handler. */
+/** In-scope currencies, re-exported for the handler. */
 export type { Currency };

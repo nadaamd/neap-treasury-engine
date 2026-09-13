@@ -1,5 +1,5 @@
-# Générateur de flux et calibration (L1)
+# Flow generator and calibration (L1)
 
-Poisson composé à intensité saisonnière, montants log-normaux.
-Calibré sur agrégats publics (BCE SEPA, corridors Banque Mondiale).
-Reproductible : même seed → même sortie (test de non-régression obligatoire).
+Compound Poisson with seasonal intensity, log-normal amounts.
+Calibrated on public aggregates (ECB SEPA statistics, World Bank remittance corridors).
+Reproducible: same seed → same output (a mandatory regression test).

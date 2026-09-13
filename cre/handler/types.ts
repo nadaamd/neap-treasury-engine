@@ -1,11 +1,10 @@
 /**
- * Contrat de données du handler confidentiel.
+ * Data contract of the confidential handler.
  *
- * La frontière tracée ici est celle de la décision D5 : ce qui dépend de l'**état** entre
- * dans l'enclave, ce qui ne dépend que des **paramètres** est calculé dehors et engagé
- * on-chain par empreinte. La séparation entre `TreasurySnapshot` et `MarketSnapshot` est
- * la matérialisation de cette frontière — l'un est un secret d'exploitation, l'autre est
- * public.
+ * The boundary drawn here is decision D5: what depends on **state** goes into the
+ * enclave, what depends only on **parameters** is computed outside and committed on-chain
+ * by hash. The split between `TreasurySnapshot` and `MarketSnapshot` is that boundary
+ * made concrete — one is an operational secret, the other is public.
  */
 
 import type { Currency } from '../../data/src/types.ts';
@@ -13,11 +12,11 @@ import type { Bands } from '../../engine/src/bands/millerOrr.ts';
 import type { Commitment, CurrencyPolicy, RiskParams } from '../../engine/src/policy/decide.ts';
 
 /**
- * Ce qui ne doit jamais sortir de l'enclave.
+ * What must never leave the enclave.
  *
- * Pris séparément, chacun de ces éléments est anodin. Publiés ensemble, ils dressent une
- * carte complète de la position de liquidité de l'institution — de quoi se positionner
- * contre elle. C'est cette conjonction, et non un élément isolé, qui justifie le TEE.
+ * Taken separately, each of these items is innocuous. Published together, they draw a
+ * complete map of the institution's liquidity position — enough to trade against it. It
+ * is that conjunction, not any single item, that justifies the TEE.
  */
 export interface TreasurySnapshot {
   readonly epoch: number;
@@ -31,26 +30,26 @@ export interface TreasurySnapshot {
   readonly risk: RiskParams;
 }
 
-/** Ce qui peut rester dehors : prix, volatilité, gaz. Rien de tout cela n'est un secret. */
+/** What can stay outside: prices, volatility, gas. None of it is a secret. */
 export interface MarketSnapshot {
   readonly timestamp: number;
   readonly currentVol: readonly number[];
   readonly residuals: readonly (readonly number[])[];
-  /** Unités de jeton par unité de numéraire, par devise. */
+  /** Token units per unit of numeraire, per currency. */
   readonly rates: Readonly<Record<string, number>>;
   readonly gasUsdc: number;
 }
 
-/** Adresses des jetons et paramètres d'exécution — publics, fixés par la politique. */
+/** Token addresses and execution parameters — public, set by policy. */
 export interface ChainConfig {
   readonly numeraire: Currency;
   readonly currencies: readonly Currency[];
   readonly tokens: Readonly<Record<string, string>>;
-  /** Décimales communes à tous les jetons du périmètre. */
+  /** Decimals shared by every token in scope. */
   readonly decimals: number;
-  /** Tolérance de glissement appliquée au `minAmountOut` de chaque ordre. */
+  /** Slippage tolerance applied to each order's `minAmountOut`. */
   readonly slippageBps: number;
-  /** Durée de validité du rapport, en secondes. */
+  /** Validity window of the report, in seconds. */
   readonly validitySec: number;
 }
 
@@ -59,16 +58,16 @@ export interface HandlerInput {
   readonly market: MarketSnapshot;
   readonly chain: ChainConfig;
   /**
-   * Graine du sel d'engagement, obtenue par `runtime.getSecret` dans l'enclave.
+   * Seed of the commitment salt, obtained through `runtime.getSecret` inside the enclave.
    *
-   * Le handler est une fonction pure : il n'a pas d'aléa. Or le sel doit être
-   * imprévisible pour un observateur, sans quoi l'espace des plans quantifiés est assez
-   * petit pour être exploré par force brute et l'engagement ne cache rien. Dériver le
-   * sel d'un secret résout les deux contraintes à la fois — déterministe dans l'enclave,
-   * imprévisible dehors.
+   * The handler is a pure function: it has no randomness. Yet the salt must be
+   * unpredictable to an observer, otherwise the space of quantised plans is small enough
+   * to brute-force and the commitment hides nothing. Deriving the salt from a secret
+   * satisfies both constraints at once — deterministic inside the enclave, unpredictable
+   * outside.
    */
   readonly saltSeed: string;
-  /** Horodatage fourni par le runtime : une fonction pure ne lit pas d'horloge. */
+  /** Timestamp supplied by the runtime: a pure function does not read a clock. */
   readonly now: number;
 }
 
@@ -82,7 +81,7 @@ export interface PlannedOrder {
 export interface HandlerOutput {
   readonly status: 'NOOP' | 'PROPOSE' | 'REJECTED';
   readonly reason: string;
-  /** Publié on-chain. Ne contient aucun montant par devise. */
+  /** Published on-chain. Contains no per-currency amount. */
   readonly report: {
     readonly epoch: bigint;
     readonly nonce: bigint;
@@ -97,7 +96,7 @@ export interface HandlerOutput {
     readonly costEstimate: bigint;
     readonly grossNotional: bigint;
   };
-  /** Transmis à l'opérateur, jamais publié tant que le plan n'est pas exécuté. */
+  /** Handed to the operator, never published until the plan is executed. */
   readonly reveal: {
     readonly orders: readonly PlannedOrder[];
     readonly salt: string;

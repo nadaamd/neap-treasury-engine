@@ -1,83 +1,79 @@
-# Obligation de déploiement mainnet — Arc
+# Mainnet deployment obligation — Arc
 
-> Règle du sponsor : tout projet primé doit être déployé sur mainnet **avant le
-> 30 septembre 2026**. Pendant le hackathon, le testnet suffit. L'équipe Arc accompagne
-> le passage après l'événement.
+> Sponsor rule: any winning project must be deployed on mainnet **before 30 September
+> 2026**. During the hackathon, testnet is enough. The Arc team supports the transition
+> after the event.
 
-## Le calendrier, qui est serré des deux côtés
+## The calendar, which is tight on both sides
 
-| Date | Événement |
+| Date | Event |
 |---|---|
-| 10 septembre 2026 | aujourd'hui — le mainnet Arc **n'existe pas encore** |
-| 16 septembre 2026 | ouverture du mainnet public ; Circle publie alors chain ID, RPC et explorateur |
-| 30 septembre 2026 | date limite de déploiement mainnet en cas de prix |
+| 10 September 2026 | Arc mainnet **does not exist yet** |
+| 16 September 2026 | public mainnet opens; Circle then publishes chain ID, RPC and explorer |
+| 30 September 2026 | deadline for mainnet deployment in case of a prize |
 
-La fenêtre utile fait donc **quatorze jours**, et elle commence après la fin du hackathon.
-Rien de ce qui suit n'est sur le chemin critique de la soumission — mais s'engager sur un
-prix Arc, c'est s'engager sur cette fenêtre.
+The usable window is therefore **fourteen days**, and it starts after the hackathon ends.
+None of what follows is on the critical path to submission — but committing to an Arc prize
+means committing to that window.
 
-## Réseaux
+## Networks
 
 | | Testnet | Mainnet |
 |---|---|---|
-| Chain ID | 5042002 | non publié à ce jour (5042 selon des sources tierces) |
-| RPC | publié | publié le 16 septembre |
-| Explorateur | testnet.arcscan.app | publié le 16 septembre |
-| Gaz | parrainé par la Gas Station de Circle, ou faucet | **USDC réel**, à ponter via CCTP |
+| Chain ID | 5042002 | not published to date (5042 according to third-party sources) |
+| RPC | published | published on 16 September |
+| Explorer | testnet.arcscan.app | published on 16 September |
+| Gas | sponsored by Circle's Gas Station, or faucet | **real USDC**, bridged via CCTP |
 
-Le jeu de validateurs est permissionné — onze institutions choisies par Circle — mais rien
-dans la documentation n'indique que le **déploiement de contrats** le soit. C'est à
-vérifier le 16, et c'est le seul point qui pourrait tout changer.
+The validator set is permissioned — eleven institutions chosen by Circle — but nothing in
+the documentation says that **contract deployment** is. That has to be checked on the 16th,
+and it is the only point that could change everything.
 
-## Ce qu'on déploiera, et ce qu'on ne déploiera pas
+## What will be deployed, and what will not
 
-C'est ici que la règle a une conséquence architecturale, et il faut la prendre au sérieux
-plutôt que d'y voir une formalité.
+This is where the rule has an architectural consequence, and it deserves to be taken
+seriously rather than treated as a formality.
 
-**Ne partent pas sur mainnet : `MockERC20` et `MockFxVenue`.** Sur mainnet, l'USDC et
-l'EURC sont de vrais jetons. Un lieu d'exécution factice y serait un contrat incapable de
-sourcer la moindre liquidité, et qui prendrait l'apparence d'un piège si quelqu'un
-l'alimentait. Le mock est un instrument de backtest et de démonstration, pas un artefact
-de production.
+**Not going to mainnet: `MockERC20` and `MockFxVenue`.** On mainnet, USDC and EURC are real
+tokens. A fake execution venue there would be a contract unable to source any liquidity,
+and it would look like a trap if anyone funded it. The mock is a backtest and demo
+instrument, not a production artefact.
 
-**Partent sur mainnet** : `TreasuryPolicy`, `ReportVerifier`, `RebalanceVault` et un lieu
-d'exécution explicite.
+**Going to mainnet**: `TreasuryPolicy`, `ReportVerifier`, `RebalanceVault` and an explicit
+execution venue.
 
-**Le lieu d'exécution mainnet est le point dur.** StableFX est une intégration API
-réservée aux institutions vérifiées, et son adaptateur vit hors chaîne (D21). Tant que
-l'accès n'est pas accordé, le coffre déployé sur mainnet n'a pas de contrepartie
-crédible. On déploie donc `PausedFxVenue` — un lieu qui refuse toute exécution avec une
-erreur explicite. Le système est déployé, vérifiable et **prouvablement inopérant**
-jusqu'à ce qu'un administrateur y branche un vrai lieu par `setVenue`.
+**The mainnet venue is the hard part.** StableFX is an API integration restricted to
+verified institutions, and its adapter lives off-chain (D21). Until access is granted, the
+vault deployed on mainnet has no credible counterparty. So `PausedFxVenue` is deployed — a
+venue that refuses every execution with an explicit error. The system is deployed,
+verifiable and **provably inoperative** until an administrator wires a real venue in
+through `setVenue`.
 
-Dire « déployé et volontairement inerte » est honnête. Déployer un mock sur mainnet en
-laissant croire qu'il exécute ne l'est pas.
+Saying "deployed and deliberately inert" is honest. Deploying a mock on mainnet while
+implying that it executes is not.
 
-## Règle de sécurité, non négociable
+## Safety rule, non-negotiable
 
-**Ces contrats ne sont pas audités.** Les déployer sur mainnet est acceptable ; y placer
-des fonds réels ne l'est pas. Le déploiement mainnet est un déploiement, pas une mise en
-exploitation :
+**These contracts are not audited.** Deploying them on mainnet is acceptable; putting real
+funds in them is not. A mainnet deployment is a deployment, not a go-live:
 
-- le coffre part **en pause** (`GUARDIAN.pause()` dans la foulée du déploiement) ;
-- aucun jeton n'y est transféré ;
-- les limites par devise restent à zéro tant qu'aucune politique n'est appliquée.
+- the vault ships **paused** (`GUARDIAN.pause()` immediately after deployment);
+- no token is transferred to it;
+- the per-currency limits stay at zero until a policy is applied.
 
-Un projet de hackathon qui déploie sur mainnet et y met de l'argent parce qu'une règle de
-concours l'y pousse commet exactement l'erreur que le reste de ce dépôt s'emploie à
-éviter.
+A hackathon project that deploys to mainnet and puts money in it because a contest rule
+pushes it there commits exactly the mistake the rest of this repository works to avoid.
 
-## À prévoir côté opérationnel
+## Operational checklist
 
-- **De l'USDC réel sur Arc mainnet** pour le gaz. Le déploiement de quatre contrats plus
-  un lieu inerte reste de l'ordre de quelques dollars, mais ce n'est pas zéro, et il faut
-  ponter via CCTP.
-- Une clé de déploiement distincte de toute clé personnelle.
-- La vérification du code source sur l'explorateur, dès qu'il est publié.
+- **Real USDC on Arc mainnet** for gas. Deploying four contracts plus an inert venue stays
+  in the order of a few dollars, but it is not zero, and it has to be bridged via CCTP.
+- A deployment key distinct from any personal key.
+- Source verification on the explorer, as soon as it is published.
 
-## Ce qui est prêt
+## What is ready
 
-Le script de déploiement gère trois profils depuis la même source — `anvil` pour le
-scénario de bout en bout, `arc-testnet` pour la démonstration, `arc-mainnet` pour
-l'obligation post-hackathon. Les mocks ne sont instanciés que sur les deux premiers, et
-c'est le script lui-même qui le garantit, pas une consigne.
+The deployment script handles three profiles from one source — `anvil` for the end-to-end
+scenario, `arc-testnet` for the demo, `arc-mainnet` for the post-hackathon obligation. The
+mocks are instantiated only on the first two, and the script itself guarantees that, not a
+convention.

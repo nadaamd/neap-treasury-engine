@@ -6,20 +6,20 @@ import {IAttestationVerifier} from "./interfaces/IAttestationVerifier.sol";
 
 /**
  * @title ReportVerifier
- * @notice Décide si un rapport produit par le moteur confidentiel est recevable.
+ * @notice Decides whether a report produced by the confidential engine is admissible.
  *
- * @dev Ce contrat ne juge pas du *contenu* du rapport — c'est le rôle du coffre, qui
- *      applique ses propres bornes. Il juge de sa *provenance* et de sa *fraîcheur* :
+ * @dev This contract does not judge the report's *content* — that is the vault's job,
+ *      which applies its own bounds. It judges its *provenance* and its *freshness*:
  *
- *        • le rapport vient bien du quorum de signataires attendu ;
- *        • il a bien été produit par l'enclave attendue, et l'attestation porte sur ce
- *          contenu précis et pas un autre ;
- *        • il se rapporte à la version de politique et au jeu de paramètres en vigueur ;
- *        • il n'a pas expiré, ses entrées de marché ne sont pas périmées ;
- *        • il n'a jamais été consommé.
+ *        • the report really comes from the expected signer quorum;
+ *        • it really was produced by the expected enclave, and the attestation covers
+ *          this precise content and no other;
+ *        • it refers to the policy version and parameter set currently in force;
+ *        • it has not expired, and its market inputs are not stale;
+ *        • it has never been consumed.
  *
- *      Les contrôles sont ordonnés du moins cher au plus cher : un rapport périmé est
- *      rejeté avant qu'on ne dépense du gaz à recouvrer des signatures.
+ *      Checks are ordered from cheapest to most expensive: an expired report is rejected
+ *      before any gas is spent recovering signatures.
  */
 contract ReportVerifier {
     /* ---------------------------------------------------------------------- */
@@ -29,33 +29,32 @@ contract ReportVerifier {
     struct RebalanceReport {
         uint64 epoch;
         uint64 nonce;
-        /// @notice Au-delà, le rapport n'est plus exécutable.
+        /// @notice Beyond this, the report is no longer executable.
         uint64 expiry;
-        /// @notice Horodatage des données de marché ayant servi à décider.
+        /// @notice Timestamp of the market data used to decide.
         uint64 inputsTimestamp;
         uint32 policyVersion;
-        /// @notice Lie le rapport au jeu de paramètres hors enclave (D5).
+        /// @notice Binds the report to the out-of-enclave parameter set (D5).
         bytes32 bandParamsHash;
-        /// @notice Empreinte des entrées publiques : taux, gaz, quotes indicatifs.
+        /// @notice Hash of the public inputs: rates, gas, indicative quotes.
         bytes32 inputsHash;
-        /// @notice Engagement sur le plan d'ordres, révélé plus tard par le coffre (D6).
+        /// @notice Commitment to the order plan, revealed later by the vault (D6).
         bytes32 ordersCommitment;
-        /// @notice Métriques agrégées, en points de base — jamais de montant.
+        /// @notice Aggregated metrics, in basis points — never an amount.
         int32 esBeforeBps;
         int32 esAfterBps;
         uint128 costEstimate;
         /**
-         * @notice Notionnel brut du plan, dans la devise de financement.
+         * @notice Gross notional of the plan, in the funding currency.
          *
-         * @dev Concession assumée à la confidentialité (D6). Le principe est de ne
-         *      publier que des grandeurs relatives, et ce champ est un montant. Il est
-         *      pourtant nécessaire : le seuil d'approbation humaine porte sur la taille
-         *      du plan, or les ordres sont scellés jusqu'à l'exécution. Sans ce champ,
-         *      le trésorier approuverait à l'aveugle — ce qui ne serait pas une
-         *      approbation.
+         * @dev An acknowledged concession on confidentiality (D6). The principle is to
+         *      publish only relative quantities, and this field is an amount. It is
+         *      nonetheless necessary: the human approval threshold applies to the size of
+         *      the plan, and the orders are sealed until execution. Without this field the
+         *      treasurer would approve blind — which would not be an approval.
          *
-         *      Ce qui reste protégé est la *décomposition* : quelles devises, dans quel
-         *      sens, pour quels montants. C'est elle qui trahirait la position.
+         *      What stays protected is the *decomposition*: which currencies, in which
+         *      direction, for which amounts. That is what would give away the position.
          */
         uint128 grossNotional;
     }
@@ -69,21 +68,21 @@ contract ReportVerifier {
         "uint128 grossNotional)"
     );
 
-    /// @dev Borne haute de s imposée par l'EIP-2 : sans elle, toute signature admet une
-    ///      seconde forme valide, ce qui donnerait deux identifiants pour un même rapport.
+    /// @dev Upper bound on s imposed by EIP-2: without it, every signature admits a
+    ///      second valid form, which would give two identifiers for one report.
     uint256 private constant HALF_ORDER =
         0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
 
     TreasuryPolicy public immutable POLICY;
 
     IAttestationVerifier public attestationVerifier;
-    /// @notice Mesure de l'enclave autorisée à produire des rapports.
+    /// @notice Measurement of the enclave authorised to produce reports.
     bytes32 public expectedMeasurement;
 
-    /// @notice Signataires du réseau d'oracles habilités.
+    /// @notice Authorised oracle network signers.
     mapping(address signer => bool) public isSigner;
     uint8 public signerCount;
-    /// @notice Nombre minimal de signatures distinctes.
+    /// @notice Minimum number of distinct signatures.
     uint8 public threshold;
 
     uint64 public lastEpoch;
@@ -93,7 +92,7 @@ contract ReportVerifier {
     mapping(bytes32 reportId => bool) public consumed;
     mapping(bytes32 reportId => RebalanceReport) private _reports;
 
-    /// @dev Mis en cache mais recalculé en cas de bifurcation de chaîne.
+    /// @dev Cached but recomputed in case of a chain fork.
     uint256 private immutable INITIAL_CHAIN_ID;
     bytes32 private immutable INITIAL_DOMAIN_SEPARATOR;
 
@@ -175,12 +174,12 @@ contract ReportVerifier {
     /* ---------------------------------------------------------------------- */
 
     /**
-     * @notice Clé d'idempotence d'un rapport.
-     * @dev Le rejeu d'un rapport signifierait un rééquilibrage exécuté deux fois, donc
-     *      une position doublée. C'est le défaut le plus coûteux imaginable dans ce
-     *      domaine, et la seule protection est de consommer un identifiant unique de
-     *      façon atomique. L'engagement sur les ordres en fait partie : deux plans
-     *      distincts au même epoch restent deux rapports distincts.
+     * @notice Idempotency key of a report.
+     * @dev Replaying a report would mean a rebalance executed twice, hence a doubled
+     *      position. That is the most expensive defect imaginable in this domain, and the
+     *      only protection is to consume a unique identifier atomically. The order
+     *      commitment is part of it: two distinct plans in the same epoch remain two
+     *      distinct reports.
      */
     function reportId(RebalanceReport calldata r) public pure returns (bytes32) {
         return keccak256(abi.encode(r.policyVersion, r.epoch, r.nonce, r.ordersCommitment));
@@ -191,9 +190,9 @@ contract ReportVerifier {
             block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : _buildDomainSeparator();
     }
 
-    /// @notice Empreinte de structure EIP-712, exposée pour l'outillage hors chaîne.
-    /// @dev Le moteur la recalcule en TypeScript ; une suite de conformité vérifie que
-    ///      les deux implémentations produisent les mêmes octets.
+    /// @notice EIP-712 struct hash, exposed for off-chain tooling.
+    /// @dev The engine recomputes it in TypeScript; a conformance suite checks that both
+    ///      implementations produce the same bytes.
     function structHash(RebalanceReport calldata r) external pure returns (bytes32) {
         return _structHash(r);
     }
@@ -207,14 +206,14 @@ contract ReportVerifier {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                              Vérification                               */
+    /*                              Verification                               */
     /* ---------------------------------------------------------------------- */
 
     /**
-     * @notice Vérifie un rapport et le consomme.
-     * @param signatures Signatures ordonnées par adresse de signataire strictement
-     *                   croissante. L'ordre n'est pas une commodité : il rend impossible
-     *                   de présenter deux fois la même signature pour atteindre le quorum.
+     * @notice Verifies a report and consumes it.
+     * @param signatures Signatures ordered by strictly increasing signer address. The
+     *                   ordering is not a convenience: it makes it impossible to present
+     *                   the same signature twice to reach the quorum.
      */
     function verify(
         RebalanceReport calldata r,
@@ -223,17 +222,16 @@ contract ReportVerifier {
     ) external returns (bytes32 id) {
         if (POLICY.paused()) revert SystemPaused();
 
-        // — contrôles de temps, les moins chers —
+        // — time checks, the cheapest ones —
         //
-        // Le linter signale l'usage de block.timestamp, et à juste titre : un validateur
-        // dispose d'une marge de quelques secondes, ce qui sur une fenêtre de fraîcheur de
-        // soixante secondes n'est pas anecdotique. La fenêtre n'est donc pas la protection
-        // principale contre une décision prise sur de mauvais prix — elle en est la
-        // première couche. La seconde, et la vraie, est le contrôle de déviation appliqué
-        // par le coffre au moment d'exécuter : le prix obtenu du lieu d'exécution est
-        // comparé à l'oracle, et l'ordre est refusé au-delà du seuil. Un rapport dont les
-        // entrées auraient vieilli de quelques secondes de plus que prévu ne peut donc pas
-        // produire une exécution hors marché.
+        // The linter flags the use of block.timestamp, and rightly so: a validator has a
+        // margin of a few seconds, which against a sixty-second freshness window is not
+        // negligible. The window is therefore not the main protection against deciding on
+        // bad prices — it is its first layer. The second, and the real one, is the
+        // deviation check applied by the vault at execution time: the price obtained from
+        // the venue is compared against the oracle, and the order is refused beyond the
+        // threshold. A report whose inputs aged a few seconds more than intended therefore
+        // cannot produce an off-market execution.
         // forge-lint: disable-next-line(block-timestamp)
         if (r.expiry <= block.timestamp) revert ReportExpired(r.expiry, block.timestamp);
         // forge-lint: disable-next-line(block-timestamp)
@@ -245,34 +243,32 @@ contract ReportVerifier {
             revert InputsStale(r.inputsTimestamp, maxStaleness);
         }
 
-        // — idempotence, avant tout le reste : c'est le contrôle le plus précis et il
-        //   coûte un seul accès au stockage. Le placer ici garantit qu'un rejeu échoue
-        //   pour la bonne raison, et non parce qu'un contrôle de séquence l'aurait
-        //   incidemment attrapé — un message d'erreur exact vaut mieux qu'un rejet
-        //   heureux —
+        // — idempotency, before everything else: it is the most precise check and it
+        //   costs a single storage read. Placing it here guarantees that a replay fails
+        //   for the right reason, rather than because a sequence check happened to catch
+        //   it — an exact error beats a lucky rejection —
         id = reportId(r);
         if (consumed[id]) revert ReportAlreadyConsumed(id);
 
-        // — séquence strictement croissante sur le couple (epoch, nonce) —
+        // — strictly increasing sequence on the (epoch, nonce) pair —
         //
-        // Le nonce n'est pas décoratif. Le parcours de crise de la spec (§2.3) exige un
-        // déclenchement *hors cycle* : un choc de flux vide un corridor entre deux
-        // epochs et il faut décider immédiatement. Imposer la stricte croissance du seul
-        // epoch interdirait ce rapport supplémentaire. Le couple (epoch, nonce) autorise
-        // plusieurs rapports dans un même epoch tout en interdisant tout retour en
-        // arrière.
+        // The nonce is not decorative. The spec's crisis path (§2.3) requires an
+        // *off-cycle* trigger: a flow shock empties a corridor between two epochs and a
+        // decision is needed immediately. Requiring strict growth of the epoch alone would
+        // forbid that extra report. The (epoch, nonce) pair allows several reports within
+        // one epoch while forbidding any step backwards.
         bool ordered = r.epoch > lastEpoch || (r.epoch == lastEpoch && r.nonce > lastNonce);
         if (!ordered) revert SequenceNotIncreasing(r.epoch, r.nonce, lastEpoch, lastNonce);
 
-        // — cadence : borne le préjudice d'un opérateur compromis et coupe court à un
-        //   attaquant qui provoquerait des rééquilibrages coûteux à répétition —
+        // — cadence: bounds the damage from a compromised operator and cuts off an
+        //   attacker triggering expensive rebalances in a loop —
         uint32 minInterval = POLICY.minEpochIntervalSec();
         if (lastVerifiedAt != 0) {
             uint64 elapsed = _toUint64(block.timestamp) - lastVerifiedAt;
             if (elapsed < minInterval) revert EpochTooSoon(elapsed, minInterval);
         }
 
-        // — cohérence avec la politique en vigueur —
+        // — consistency with the policy in force —
         uint32 version = POLICY.policyVersion();
         if (r.policyVersion != version) revert PolicyVersionMismatch(r.policyVersion, version);
         bytes32 expectedBandParams = POLICY.bandParamsHash();
@@ -280,7 +276,7 @@ contract ReportVerifier {
             revert BandParamsMismatch(r.bandParamsHash, expectedBandParams);
         }
 
-        // — état écrit avant tout appel externe —
+        // — state written before any external call —
         consumed[id] = true;
         _reports[id] = r;
         lastEpoch = r.epoch;
@@ -294,10 +290,10 @@ contract ReportVerifier {
             revert AttestationRejected(id);
         }
 
-        // Le linter voit un événement émis après des appels externes. Tous les appels
-        // externes de cette fonction sont déclarés `view`, donc compilés en STATICCALL :
-        // un rappel ne pourrait modifier aucun état. Et l'ordre importe ici — l'événement
-        // ne doit être émis que si l'attestation a été acceptée.
+        // The linter sees an event emitted after external calls. Every external call in
+        // this function is declared `view`, hence compiled to STATICCALL: a re-entrant
+        // callback could not modify any state. And the order matters here — the event must
+        // only be emitted if the attestation was accepted.
         // forge-lint: disable-next-line(reentrancy-events)
         emit ReportVerified(id, r.epoch, r.nonce);
     }
@@ -308,11 +304,11 @@ contract ReportVerifier {
         uint256 n = signatures.length;
         if (n < threshold) revert NotEnoughSignatures(n, threshold);
 
-        // Le linter déconseille de révoquer à l'intérieur d'une boucle, parce qu'un
-        // élément fautif y fait échouer tout un lot. Ici il ne s'agit pas d'un lot
-        // d'éléments indépendants mais d'un quorum : une signature invalide, dupliquée ou
-        // inconnue invalide l'ensemble par définition. Un succès partiel n'aurait aucun
-        // sens — on ne vérifie pas des signatures, on vérifie *une* décision collective.
+        // The linter discourages reverting inside a loop, because one bad element makes a
+        // whole batch fail. This is not a batch of independent elements but a quorum: an
+        // invalid, duplicated or unknown signature invalidates the whole thing by
+        // definition. Partial success would make no sense — we are not verifying
+        // signatures, we are verifying *one* collective decision.
         address previous = address(0);
         for (uint256 i = 0; i < n; i++) {
             address signer = _recover(payload, signatures[i]);
@@ -333,8 +329,8 @@ contract ReportVerifier {
             s := calldataload(add(signature.offset, 32))
             v := byte(0, calldataload(add(signature.offset, 64)))
         }
-        // Ces deux gardes sont signalées comme « revert dans une boucle » parce que
-        // l'appelant est une boucle de quorum : même raisonnement qu'au-dessus.
+        // These two guards are flagged as "revert in a loop" because the caller is a
+        // quorum loop: same reasoning as above.
         // forge-lint: disable-next-line(require-revert-in-loop)
         if (uint256(s) > HALF_ORDER) revert MalleableSignature();
         address signer = ecrecover(payload, v, r, s);
@@ -345,7 +341,7 @@ contract ReportVerifier {
 
     function _toUint64(uint256 v) private pure returns (uint64) {
         if (v > type(uint64).max) revert TimestampOverflow(v);
-        // La ligne précédente est la garde qui rend ce cast sûr.
+        // The preceding line is the guard that makes this cast safe.
         // forge-lint: disable-next-line(unsafe-typecast)
         return uint64(v);
     }

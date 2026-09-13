@@ -1,4 +1,4 @@
-/** Tests de la fonction de décision — SPEC §4.1, décisions D5, D6, D9. */
+/** Decision function tests — SPEC §4.1, decisions D5, D6, D9. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -65,20 +65,20 @@ function input(over: Partial<DecisionInput> = {}): DecisionInput {
   };
 }
 
-describe('garde-fous', () => {
-  test('des données de marché périmées font rejeter la décision', () => {
+describe('guardrails', () => {
+  test('stale market data causes the decision to be rejected', () => {
     const d = decide(input({ marketTimestamp: NOW - 600_000 }));
     assert.equal(d.status, 'REJECTED');
-    assert.match(d.reason, /périmées/);
+    assert.match(d.reason, /stale/);
     assert.equal(d.orders.length, 0);
   });
 
-  test('un horodatage de marché dans le futur est également rejeté', () => {
+  test('a market timestamp in the future is rejected too', () => {
     const d = decide(input({ marketTimestamp: NOW + 60_000 }));
     assert.equal(d.status, 'REJECTED');
   });
 
-  test('l’enveloppe est recopiée telle quelle — anti-rejeu côté contrat', () => {
+  test('the envelope is copied verbatim — replay protection on the contract side', () => {
     const d = decide(input());
     assert.equal(d.epoch, 100);
     assert.equal(d.nonce, 7);
@@ -87,57 +87,57 @@ describe('garde-fous', () => {
   });
 });
 
-describe('règle de décision — la bande, et rien d’autre', () => {
-  test('à l’intérieur des bandes, aucune action', () => {
+describe('decision rule — the band, and nothing else', () => {
+  test('inside the bands, no action', () => {
     const d = decide(input());
     assert.equal(d.status, 'NOOP');
     assert.equal(d.orders.length, 0);
   });
 
-  test('sous le seuil bas, on rachète jusqu’à la cible', () => {
+  test('below the lower threshold, buy back up to target', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 } }));
     assert.equal(d.status, 'PROPOSE');
     assert.equal(d.orders.length, 1);
     assert.deepEqual(d.orders[0], { sell: 'USD', buy: 'EUR', amount: 500_000 });
   });
 
-  test('au-dessus du seuil haut, on dégage l’excédent', () => {
+  test('above the upper threshold, sweep the excess', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 1_500_000, GBP: 600_000, BRL: 600_000 } }));
     assert.deepEqual(d.orders[0], { sell: 'EUR', buy: 'USD', amount: 900_000 });
   });
 
-  test('plusieurs devises hors bande produisent plusieurs ordres', () => {
+  test('several currencies outside their band produce several orders', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 1_500_000, BRL: 600_000 } }));
     assert.equal(d.orders.length, 2);
   });
 
   /**
-   * Propriété structurelle : la cible étant strictement à l'intérieur de la bande,
-   * tout franchissement produit un ordre d'au moins la plus petite demi-largeur —
-   * ici min(cible − bas, haut − cible) = 200 k$. Un solde à 385 k$ n'engendre donc pas
-   * un ordre de 15 k$ mais de 215 k$ : on revient à la cible, pas au seuil. C'est le
-   * mécanisme de Miller-Orr, et c'est ce qui évite de rééquilibrer sans cesse au bord
-   * de la bande.
+   * Structural property: the target sitting strictly inside the band, any crossing
+   * produces an order of at least the smaller half-width — here
+   * min(target − lower, upper − target) = $200k. A balance at $385k therefore does not
+   * generate a $15k order but a $215k one: you return to the target, not to the
+   * threshold. That is the Miller-Orr mechanism, and it is what avoids rebalancing
+   * endlessly at the edge of the band.
    */
-  test('franchir le seuil ramène à la cible, pas au seuil', () => {
+  test('crossing the threshold returns to the target, not to the threshold', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 385_000, GBP: 600_000, BRL: 600_000 } }));
-    // 600 000 − 385 000 = 215 000, quantifié vers le bas au lot de 10 000.
+    // 600,000 − 385,000 = 215,000, quantised down onto the 10,000 lot.
     assert.equal(d.orders[0]!.amount, 210_000);
   });
 
-  test('le filtre de poussière s’applique après réduction, jamais avant', () => {
+  test('the dust filter applies after scaling down, never before', () => {
     const d = decide(
       input({
         balances: { USD: 1_010_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 },
         risk: { ...input().risk, fundingFloor: 1_000_000, minOrder: 20_000 },
       }),
     );
-    assert.equal(d.status, 'NOOP', 'un ordre réduit à 10 k$ est de la poussière et ne doit pas être émis');
+    assert.equal(d.status, 'NOOP', 'an order scaled down to $10k is dust and must not be emitted');
   });
 });
 
-describe('engagements', () => {
-  test('un engagement certain ampute le disponible et peut déclencher un ordre', () => {
+describe('commitments', () => {
+  test('a certain commitment reduces the available balance and can trigger an order', () => {
     const commitments: Commitment[] = [
       { currency: 'EUR', amount: 300_000, dueEpoch: 101, certain: true },
     ];
@@ -146,14 +146,14 @@ describe('engagements', () => {
     assert.equal(d.orders[0]!.buy, 'EUR');
   });
 
-  test('un engagement probable ne se déduit pas : il est déjà dans la distribution des bandes', () => {
+  test('a probable commitment is not deducted: it is already in the band distribution', () => {
     const commitments: Commitment[] = [
       { currency: 'EUR', amount: 300_000, dueEpoch: 101, certain: false },
     ];
     assert.equal(decide(input({ commitments })).status, 'NOOP');
   });
 
-  test('un engagement hors horizon n’est pas déduit', () => {
+  test('a commitment outside the horizon is not deducted', () => {
     const commitments: Commitment[] = [
       { currency: 'EUR', amount: 300_000, dueEpoch: 500, certain: true },
     ];
@@ -161,18 +161,18 @@ describe('engagements', () => {
   });
 });
 
-describe('quantification et plafonds (D6)', () => {
-  test('les montants sont des multiples du pas de lot', () => {
+describe('quantisation and caps (D6)', () => {
+  test('amounts are multiples of the lot step', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 137_777, GBP: 600_000, BRL: 600_000 } }));
     assert.equal(d.orders[0]!.amount % 10_000, 0);
   });
 
-  test('la quantification arrondit vers le bas, jamais vers le haut', () => {
+  test('quantisation rounds down, never up', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 137_777, GBP: 600_000, BRL: 600_000 } }));
     assert.ok(d.orders[0]!.amount <= 600_000 - 137_777);
   });
 
-  test('le plafond par ordre unitaire est respecté', () => {
+  test('the single-order cap is respected', () => {
     const d = decide(
       input({
         balances: { USD: 50_000_000, EUR: 0, GBP: 600_000, BRL: 600_000 },
@@ -182,7 +182,7 @@ describe('quantification et plafonds (D6)', () => {
     assert.equal(d.orders[0]!.amount, 250_000);
   });
 
-  test('le plafond de notionnel de l’epoch réduit le plan au prorata', () => {
+  test('the epoch notional cap scales the plan down pro rata', () => {
     const d = decide(
       input({
         balances: { USD: 50_000_000, EUR: 0, GBP: 0, BRL: 0 },
@@ -190,13 +190,13 @@ describe('quantification et plafonds (D6)', () => {
       }),
     );
     const gross = d.orders.reduce((a, o) => a + o.amount, 0);
-    assert.ok(gross <= 900_000, `notionnel ${gross} au-delà du plafond`);
-    assert.match(d.reason, /plafond de notionnel/);
+    assert.ok(gross <= 900_000, `notional ${gross} above the cap`);
+    assert.match(d.reason, /notional cap/);
   });
 });
 
-describe('contrainte de financement', () => {
-  test('on ne peut pas acheter au-delà du numéraire disponible, plancher préservé', () => {
+describe('funding constraint', () => {
+  test('you cannot buy beyond the available numeraire, floor preserved', () => {
     const d = decide(
       input({
         balances: { USD: 1_300_000, EUR: 0, GBP: 0, BRL: 0 },
@@ -204,11 +204,11 @@ describe('contrainte de financement', () => {
       }),
     );
     const spent = d.orders.reduce((a, o) => a + (o.sell === 'USD' ? o.amount : 0), 0);
-    assert.ok(spent <= 300_000, `dépense ${spent} au-delà du disponible`);
-    assert.match(d.reason, /financement/);
+    assert.ok(spent <= 300_000, `spend ${spent} above what is available`);
+    assert.match(d.reason, /funding/);
   });
 
-  test('le produit des ventes finance les achats du même epoch', () => {
+  test('sale proceeds fund purchases in the same epoch', () => {
     const d = decide(
       input({
         balances: { USD: 1_000_000, EUR: 0, GBP: 3_000_000, BRL: 600_000 },
@@ -216,17 +216,17 @@ describe('contrainte de financement', () => {
       }),
     );
     const buy = d.orders.find((o) => o.buy === 'EUR');
-    assert.ok(buy && buy.amount > 0, 'la vente de GBP aurait dû financer l’achat d’EUR');
+    assert.ok(buy && buy.amount > 0, 'the GBP sale should have funded the EUR purchase');
   });
 });
 
-describe('approbation humaine', () => {
-  test('sous le seuil, exécution automatique', () => {
+describe('human approval', () => {
+  test('below the threshold, automatic execution', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 300_000, GBP: 600_000, BRL: 600_000 } }));
     assert.equal(d.requiresApproval, false);
   });
 
-  test('au-dessus du seuil, approbation requise', () => {
+  test('above the threshold, approval required', () => {
     const d = decide(
       input({
         balances: { USD: 10_000_000, EUR: 0, GBP: 0, BRL: 600_000 },
@@ -237,15 +237,15 @@ describe('approbation humaine', () => {
   });
 });
 
-describe('métriques de risque', () => {
+describe('risk metrics', () => {
   /**
-   * Le réapprovisionnement **augmente** l'exposition de change, donc l'ES. Ce n'est pas
-   * une anomalie : le solde pré-financé *est* la position directionnelle subie. La bande
-   * a déjà arbitré ce surcroît de risque contre la réduction du risque de rupture, via
-   * le terme κ·ES de la fonction objectif. Une décision qui ferait toujours baisser l'ES
-   * serait une décision qui ignore le risque de rupture.
+   * Topping up **increases** FX exposure, hence ES. That is not an anomaly: the
+   * pre-funded balance *is* the directional position nobody chose. The band has already
+   * traded off that extra risk against the reduction in breach risk, through the κ·ES
+   * term of the objective. A decision that always lowered ES would be a decision that
+   * ignores breach risk.
    */
-  test('reconstituer un buffer augmente l’ES — et c’est le comportement attendu', () => {
+  test('rebuilding a buffer increases ES — and that is the expected behaviour', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 } }));
     assert.ok(
       d.metrics.esAfterBps > d.metrics.esBeforeBps,
@@ -253,26 +253,26 @@ describe('métriques de risque', () => {
     );
   });
 
-  test('dégager un excédent réduit l’ES', () => {
+  test('sweeping an excess reduces ES', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 3_000_000, GBP: 600_000, BRL: 600_000 } }));
     assert.ok(d.metrics.esAfterBps < d.metrics.esBeforeBps);
   });
 
-  test('les métriques sont publiées en points de base, jamais en montant (D6)', () => {
+  test('metrics are published in basis points, never as amounts (D6)', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 } }));
     for (const v of [d.metrics.esBeforeBps, d.metrics.esAfterBps, d.metrics.var99BeforeBps]) {
-      assert.ok(Number.isInteger(v), `métrique non entière : ${v}`);
-      assert.ok(Math.abs(v) < 2 ** 31, 'métrique hors capacité d’un int32');
+      assert.ok(Number.isInteger(v), `non-integer metric: ${v}`);
+      assert.ok(Math.abs(v) < 2 ** 31, 'metric exceeds an int32');
     }
   });
 
   /**
-   * Le corridor sans stablecoin se règle en J+2 : à montant égal, l'exposition reste
-   * ouverte 192 fois plus longtemps qu'un règlement à finalité sub-seconde, donc le
-   * risque d'exécution est ~√192 ≈ 14 fois supérieur. C'est le coût caché du rail lent,
-   * et il ne se voit nulle part dans les frais affichés.
+   * The corridor without a stablecoin settles at T+2: at equal size, the exposure stays
+   * open 192 times longer than a settlement with sub-second finality, so execution risk
+   * is ~√192 ≈ 14 times higher. That is the hidden cost of the slow rail, and it appears
+   * nowhere in the quoted fees.
    */
-  test('le rail lent porte un risque de règlement bien supérieur, à montant égal', () => {
+  test('the slow rail carries far more settlement risk, at equal size', () => {
     const fast = decide(
       input({
         balances: { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 },
@@ -285,26 +285,26 @@ describe('métriques de risque', () => {
         policies: { EUR: policy({ settlementDays: 2 }), GBP: policy(), BRL: policy() },
       }),
     );
-    assert.deepEqual(fast.orders, slow.orders, 'les plans doivent être identiques');
+    assert.deepEqual(fast.orders, slow.orders, 'the plans must be identical');
     assert.ok(
       slow.metrics.settlementRiskBps > 5 * fast.metrics.settlementRiskBps,
-      `rail lent ${slow.metrics.settlementRiskBps} bps vs rapide ${fast.metrics.settlementRiskBps} bps`,
+      `slow rail ${slow.metrics.settlementRiskBps} bps vs fast ${fast.metrics.settlementRiskBps} bps`,
     );
   });
 
-  test('le coût estimé couvre le coût fixe et le coût variable', () => {
+  test('the estimated cost covers both fixed and variable cost', () => {
     const d = decide(input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 } }));
     assert.ok(d.metrics.costEstimate > costs.gammaFixed);
   });
 });
 
-describe('pureté et encodage canonique (D9, D6)', () => {
-  test('mêmes entrées ⇒ mêmes sorties, à l’identique', () => {
+describe('purity and canonical encoding (D9, D6)', () => {
+  test('same inputs ⇒ identical outputs', () => {
     const i = input({ balances: { USD: 10_000_000, EUR: 100_000, GBP: 1_400_000, BRL: 600_000 } });
     assert.deepEqual(decide(i), decide(i));
   });
 
-  test('l’encodage canonique ne dépend pas de l’ordre d’énumération', () => {
+  test('canonical encoding does not depend on enumeration order', () => {
     const a = canonicalizeOrders([
       { sell: 'USD', buy: 'EUR', amount: 500_000 },
       { sell: 'GBP', buy: 'USD', amount: 200_000 },
@@ -316,13 +316,13 @@ describe('pureté et encodage canonique (D9, D6)', () => {
     assert.equal(a, b);
   });
 
-  test('un montant différent produit un encodage différent — le commitment est liant', () => {
+  test('a different amount produces a different encoding — the commitment binds', () => {
     const a = canonicalizeOrders([{ sell: 'USD', buy: 'EUR', amount: 500_000 }]);
     const b = canonicalizeOrders([{ sell: 'USD', buy: 'EUR', amount: 510_000 }]);
     assert.notEqual(a, b);
   });
 
-  test('un NOOP ne publie aucun encodage', () => {
+  test('a NOOP publishes no encoding', () => {
     assert.equal(decide(input()).ordersCanonical, '');
   });
 });

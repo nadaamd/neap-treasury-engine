@@ -1,4 +1,4 @@
-/** Tests du cœur du handler confidentiel. */
+/** Tests for the core of the confidential handler. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -76,24 +76,23 @@ function input(over: Partial<HandlerInput> = {}, balances?: Record<string, numbe
       gasUsdc: 0.02,
     },
     chain: CHAIN,
-    saltSeed: 'graine-de-test',
+    saltSeed: 'test-seed',
     now: NOW,
     ...over,
   };
 }
 
-describe('sel d’engagement', () => {
+describe('commitment salt', () => {
   /**
-   * Le handler est une fonction pure : pas d'aléa. Le sel doit pourtant être
-   * imprévisible pour un observateur, sinon l'espace des plans quantifiés se parcourt
-   * par force brute et l'engagement ne cache rien. Le dériver d'un secret concilie les
-   * deux exigences.
+   * The handler is a pure function: no randomness. Yet the salt must be unpredictable to
+   * an observer, otherwise the space of quantised plans can be walked by brute force and
+   * the commitment hides nothing. Deriving it from a secret reconciles both requirements.
    */
-  test('déterministe à graine, epoch et nonce identiques', () => {
+  test('deterministic for identical seed, epoch and nonce', () => {
     assert.equal(deriveSalt('s', 100, 1), deriveSalt('s', 100, 1));
   });
 
-  test('aucun sel n’est réutilisé d’un rapport à l’autre', () => {
+  test('no salt is reused across reports', () => {
     const seen = new Set([
       deriveSalt('s', 100, 1),
       deriveSalt('s', 100, 2),
@@ -102,19 +101,19 @@ describe('sel d’engagement', () => {
     assert.equal(seen.size, 3);
   });
 
-  test('une graine différente donne un sel différent', () => {
+  test('a different seed gives a different salt', () => {
     assert.notEqual(deriveSalt('a', 100, 1), deriveSalt('b', 100, 1));
   });
 });
 
-describe('rapport', () => {
-  test('aucun ordre à l’intérieur des bandes', () => {
+describe('report', () => {
+  test('no order while inside the bands', () => {
     const out = buildReport(input());
     assert.equal(out.status, 'NOOP');
     assert.equal(out.reveal.orders.length, 0);
   });
 
-  test('un solde sous le seuil bas produit un achat', () => {
+  test('a balance below the lower threshold produces a buy', () => {
     const out = buildReport(input({}, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 }));
     assert.equal(out.status, 'PROPOSE');
     assert.equal(out.reveal.orders.length, 1);
@@ -123,12 +122,11 @@ describe('rapport', () => {
   });
 
   /**
-   * Le notionnel doit être calculé exactement comme le coffre le recalcule — montant
-   * entrant pour un achat, montant sortant minimal pour une vente. Toute autre
-   * convention ferait échouer l'exécution sur `NotionalMismatch`, après une signature
-   * valide et une approbation humaine.
+   * The notional must be computed exactly the way the vault recomputes it — incoming
+   * amount for a buy, minimum outgoing amount for a sell. Any other convention would make
+   * execution fail on `NotionalMismatch`, after a valid signature and a human approval.
    */
-  test('le notionnel suit la règle du coffre', () => {
+  test('the notional follows the vault rule', () => {
     const out = buildReport(
       input({}, { USD: 20_000_000, EUR: 100_000, GBP: 2_000_000, BRL: 600_000 }),
     );
@@ -137,20 +135,20 @@ describe('rapport', () => {
       0n,
     );
     assert.equal(out.report.grossNotional, expected);
-    assert.ok(out.reveal.orders.some((o) => o.sell === TOKENS.USD), 'aucun achat');
-    assert.ok(out.reveal.orders.some((o) => o.buy === TOKENS.USD), 'aucune vente');
+    assert.ok(out.reveal.orders.some((o) => o.sell === TOKENS.USD), 'no buy');
+    assert.ok(out.reveal.orders.some((o) => o.buy === TOKENS.USD), 'no sell');
   });
 
-  test('les montants sont convertis en unités de jeton par le taux', () => {
+  test('amounts are converted into token units through the rate', () => {
     const out = buildReport(input({}, { USD: 20_000_000, EUR: 600_000, GBP: 600_000, BRL: 3_000_000 }));
     const sale = out.reveal.orders.find((o) => o.sell === TOKENS.BRL);
-    assert.ok(sale, 'la vente de BRL est absente');
-    // Vente d'un excédent de BRL : le montant cédé est libellé en BRL, donc multiplié
-    // par le taux, tandis que le produit attendu reste en numéraire.
-    assert.ok(sale!.amountIn > sale!.minAmountOut * 4n, 'conversion par le taux non appliquée');
+    assert.ok(sale, 'the BRL sale is missing');
+    // Selling a BRL excess: the amount given up is denominated in BRL, hence multiplied
+    // by the rate, while the expected proceeds stay in numeraire.
+    assert.ok(sale!.amountIn > sale!.minAmountOut * 4n, 'rate conversion not applied');
   });
 
-  test('la tolérance de glissement réduit le montant minimal attendu', () => {
+  test('the slippage tolerance lowers the minimum expected amount', () => {
     const tight = buildReport(
       input({ chain: { ...CHAIN, slippageBps: 0 } }, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 }),
     );
@@ -160,15 +158,15 @@ describe('rapport', () => {
     assert.ok(loose.reveal.orders[0]!.minAmountOut < tight.reveal.orders[0]!.minAmountOut);
   });
 
-  test('l’engagement dépend du plan et du sel', () => {
+  test('the commitment depends on the plan and the salt', () => {
     const a = buildReport(input({}, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 }));
     const b = buildReport(
-      input({ saltSeed: 'autre' }, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 }),
+      input({ saltSeed: 'other' }, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 }),
     );
     assert.notEqual(a.report.ordersCommitment, b.report.ordersCommitment);
   });
 
-  test('l’enveloppe du rapport est cohérente', () => {
+  test('the report envelope is consistent', () => {
     const out = buildReport(input());
     assert.equal(out.report.epoch, 100n);
     assert.equal(out.report.policyVersion, 3n);
@@ -176,27 +174,27 @@ describe('rapport', () => {
     assert.ok(out.report.inputsTimestamp <= BigInt(Math.floor(NOW / 1000)));
   });
 
-  /** Aucun montant par devise ne doit apparaître dans ce qui est publié (D6). */
-  test('le rapport publié ne contient aucun montant par devise', () => {
+  /** No per-currency amount may appear in what is published (D6). */
+  test('the published report contains no per-currency amount', () => {
     const out = buildReport(input({}, { USD: 20_000_000, EUR: 100_000, GBP: 2_000_000, BRL: 600_000 }));
     const serialised = JSON.stringify(out.report, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
     for (const o of out.reveal.orders) {
-      assert.ok(!serialised.includes(o.amountIn.toString()), 'un montant d’ordre a fuité');
+      assert.ok(!serialised.includes(o.amountIn.toString()), 'an order amount leaked');
     }
   });
 
-  test('des données de marché périmées font rejeter la décision', () => {
+  test('stale market data causes the decision to be rejected', () => {
     const out = buildReport(input({ market: { ...input().market, timestamp: NOW - 3_600_000 } }));
     assert.equal(out.status, 'REJECTED');
     assert.equal(out.reveal.orders.length, 0);
   });
 
-  test('le résultat est déterministe — le handler est une fonction pure', () => {
+  test('the result is deterministic — the handler is a pure function', () => {
     const i = input({}, { USD: 20_000_000, EUR: 100_000, GBP: 600_000, BRL: 600_000 });
     assert.deepEqual(buildReport(i), buildReport(i));
   });
 
-  test('un taux manquant est signalé plutôt que silencieusement contourné', () => {
+  test('a missing rate is reported rather than silently worked around', () => {
     assert.throws(
       () =>
         buildReport(

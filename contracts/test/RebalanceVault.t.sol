@@ -73,8 +73,8 @@ contract RebalanceVaultTest is Test {
 
         _installPolicy();
 
-        // Carnet et oracle alignés : spread nul et impact nul, pour que les tests de
-        // bornes ne soient pas parasités par le coût d'exécution.
+        // Book and oracle aligned: zero spread and zero impact, so the bound tests are
+        // not polluted by execution cost.
         venue.configure(address(usdc), address(eurc), RATE, 0, 0, 100_000_000e6);
         venue.configure(address(eurc), address(usdc), WAD * WAD / RATE, 0, 0, 100_000_000e6);
         oracle.set(address(usdc), address(eurc), RATE);
@@ -164,7 +164,7 @@ contract RebalanceVaultTest is Test {
         id = vault.submit(r, att, sigs);
     }
 
-    /// @dev Cycle complet pour un achat d'EURC financé en USDC.
+    /// @dev Full cycle for an EURC purchase funded in USDC.
     function _run(uint128 amountIn) internal returns (bytes32 id, RebalanceVault.Order[] memory o) {
         o = _orders(address(usdc), address(eurc), amountIn, 0);
         id = _submit(_report(o, amountIn));
@@ -222,8 +222,8 @@ contract RebalanceVaultTest is Test {
         assertEq(uint8(vault.statusOf(id)), uint8(RebalanceVault.Status.Settled));
     }
 
-    /// @dev L'opérateur ne peut pas s'auto-approuver : c'est la séparation des devoirs
-    ///      appliquée au niveau du mouvement, et non plus seulement des paramètres.
+    /// @dev The operator cannot self-approve: separation of duties applied at the level
+    ///      of the movement, not just of the parameters.
     function test_operatorCannotApprove() public {
         RebalanceVault.Order[] memory o = _orders(address(usdc), address(eurc), 1_500_000e6, 0);
         bytes32 id = _submit(_report(o, 1_500_000e6));
@@ -250,7 +250,7 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                     Révélation de l'engagement (D6)                */
+    /*                    Commitment reveal (D6)                          */
     /* ------------------------------------------------------------------ */
 
     function test_revealedOrdersMustMatchTheCommitment() public {
@@ -265,7 +265,7 @@ contract RebalanceVaultTest is Test {
         vault.execute(id, tampered, SALT);
     }
 
-    /// @dev Sans sel, l'espace des plans quantifiés est assez petit pour être exploré
+    /// @dev Without a salt, the space of quantised plans is small enough to be explored
     ///      par force brute : l'engagement ne cacherait rien.
     function test_wrongSaltIsRejected() public {
         uint128 amount = 500_000e6;
@@ -300,12 +300,12 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*              Bornes de sanité, indépendantes du rapport            */
+    /*            Sanity bounds, independent of the report                */
     /* ------------------------------------------------------------------ */
 
-    /// @dev LE test qui porte la thèse du contrat. Le rapport est parfaitement signé,
-    ///      parfaitement attesté, parfaitement cohérent avec la politique — et le coffre
-    ///      le refuse quand même, parce qu'un moteur qui déraille produit exactement ce
+    /// @dev THE test that carries the contract's thesis. The report is perfectly signed,
+    ///      perfectly attested, perfectly consistent with the policy — and the vault
+    ///      refuses it anyway, because an engine going wrong produces exactly that
     ///      genre de plan.
     function test_perfectlySignedButOversizedOrderIsRefused() public {
         uint128 amount = MAX_SINGLE + 1;
@@ -324,7 +324,7 @@ contract RebalanceVaultTest is Test {
     }
 
     function test_epochCumulativeLimitIsEnforced() public {
-        // Deux plans du même epoch : chacun sous le plafond unitaire, leur somme au-dessus
+        // Two plans in the same epoch: each under the single-order cap, their sum above
         // du plafond d'epoch.
         uint128 amount = 1_800_000e6;
         RebalanceVault.Order[] memory o1 = _orders(address(usdc), address(eurc), amount, 0);
@@ -354,9 +354,9 @@ contract RebalanceVaultTest is Test {
         vault.execute(id2, o2, SALT);
     }
 
-    /// @dev La fenêtre est réellement glissante : franchir une frontière d'heure ne remet
-    ///      pas le compteur à zéro. Une fenêtre à remise périodique laisserait passer deux
-    ///      fois la limite de part et d'autre d'une frontière.
+    /// @dev The window is genuinely rolling: crossing an hour boundary does not reset the
+    ///      counter. A periodically reset window would let twice the limit through on
+    ///      either side of a boundary.
     function test_rollingWindowDoesNotResetAtHourBoundaries() public {
         uint128 amount = 1_800_000e6;
         for (uint256 i = 0; i < 2; i++) {
@@ -386,8 +386,8 @@ contract RebalanceVaultTest is Test {
     }
 
     function test_notionalMustMatchTheApprovedFigure() public {
-        // Le rapport annonce un notionnel, le plan révélé en porte un autre : le
-        // trésorier aurait approuvé un montant et l'opérateur en exécuterait un second.
+        // The report announces one notional, the revealed plan carries another: the
+        // treasurer would have approved one amount and the operator would execute another.
         uint128 amount = 500_000e6;
         RebalanceVault.Order[] memory o = _orders(address(usdc), address(eurc), amount, 0);
         ReportVerifier.RebalanceReport memory r = _report(o, amount / 2);
@@ -426,15 +426,15 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                        Contrôle de déviation                       */
+    /*                          Deviation check                           */
     /* ------------------------------------------------------------------ */
 
-    /// @dev La protection la plus importante du système. Un carnet vidé ou un lieu
-    ///      malveillant servirait au pire prix sans que rien ne le signale : le rapport
-    ///      serait valide, les bornes de taille respectées, et la trésorerie perdrait la
-    ///      différence en silence.
+    /// @dev The system's most important protection. An emptied book or a malicious venue
+    ///      would fill at the worst price with nothing to signal it: the report would be
+    ///      valid, the size bounds respected, and the treasury would lose the difference
+    ///      in silence.
     function test_executionFarFromTheOracleIsRefused() public {
-        // Le lieu se dégrade de 200 bps, l'oracle ne bouge pas.
+        // The venue degrades by 200 bps, the oracle does not move.
         venue.configure(address(usdc), address(eurc), RATE, 200, 0, 100_000_000e6);
 
         uint128 amount = 500_000e6;
@@ -456,7 +456,7 @@ contract RebalanceVaultTest is Test {
         assertEq(uint8(vault.statusOf(id)), uint8(RebalanceVault.Status.Settled));
     }
 
-    /// @dev Obtenir mieux que l'oracle n'est pas un incident : le contrôle est unilatéral.
+    /// @dev Doing better than the oracle is not an incident: the check is one-sided.
     function test_betterThanOracleIsNotAnIncident() public {
         oracle.set(address(usdc), address(eurc), RATE * 9000 / 10_000);
         uint128 amount = 500_000e6;

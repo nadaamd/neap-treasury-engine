@@ -1,11 +1,11 @@
 /**
- * Fonction serverless : un épisode à la demande.
+ * Serverless function: one episode on demand.
  *
- * Le serveur de développement est un processus permanent ; Vercel n'en héberge pas.
- * Seul ce point d'entrée devient une fonction, parce que lui seul calcule quelque chose —
- * la résolution des bandes prend quelques centaines de millisecondes et dépend des
- * curseurs. Le reste du site est statique, y compris les résultats du backtest, qui ne
- * changent qu'au moment où on relance `npm run backtest`.
+ * The development server is a long-lived process; Vercel hosts none. Only this endpoint
+ * becomes a function, because it is the only one that computes anything — solving the
+ * bands takes a few hundred milliseconds and depends on the sliders. The rest of the site
+ * is static, including the backtest results, which only change when `npm run backtest` is
+ * re-run.
  */
 
 import { buildEpisode, DEFAULT_PARAMS } from '../app/src/episode.ts';
@@ -20,7 +20,7 @@ function num(value: string | null, fallback: number): number {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
-/** Les bornes protègent la fonction : une requête ne doit pas pouvoir choisir son coût. */
+/** The bounds protect the function: a request must not be able to choose its own cost. */
 function paramsFrom(url: URL): EpisodeParams {
   const shockAt = url.searchParams.get('shockAt');
   return {
@@ -41,8 +41,8 @@ export function GET(request: Request): Response {
   return new Response(JSON.stringify({ ...episode, computeMs: Date.now() - started }), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      // Un épisode est déterministe : mêmes paramètres, même réponse. Le cache de bord
-      // évite de recalculer les mêmes bandes pour chaque visiteur.
+      // An episode is deterministic: same parameters, same response. The edge cache
+      // avoids recomputing the same bands for every visitor.
       'cache-control': 'public, s-maxage=86400, stale-while-revalidate=604800',
     },
   });

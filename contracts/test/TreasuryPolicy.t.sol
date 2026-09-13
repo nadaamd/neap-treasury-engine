@@ -18,12 +18,12 @@ contract TreasuryPolicyTest is Test {
     uint256 internal constant DELAY = 24 hours;
 
     /**
-     * Les constantes de rôle sont mises en cache une fois pour toutes.
+     * The role constants are cached once and for all.
      *
-     * Écrire `ROLE_RISK_OFFICER` à l'intérieur des arguments d'un `expectRevert`
-     * déclenche un appel externe qui consomme le `prank` posé juste avant — et devient
-     * lui-même « l'appel suivant » que `expectRevert` surveille. Le test échoue alors
-     * pour une raison qui n'a rien à voir avec ce qu'il prétend vérifier.
+     * Writing `ROLE_RISK_OFFICER` inside the arguments of an `expectRevert` triggers an
+     * external call that consumes the `prank` set just before — and itself becomes "the
+     * next call" that `expectRevert` watches. The test then fails for a reason unrelated
+     * to what it claims to check.
      */
     bytes32 internal ROLE_ADMIN;
     bytes32 internal ROLE_RISK_OFFICER;
@@ -58,11 +58,11 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*            Séparation des devoirs — l'invariant central            */
+    /*          Separation of duties — the central invariant              */
     /* ------------------------------------------------------------------ */
 
-    /// @dev C'est le test le plus important du contrat. Il vérifie que le contrôle
-    ///      interne est un revert et non une convention d'interface.
+    /// @dev The most important test of the contract. It checks that the internal control
+    ///      is a revert and not a UI convention.
     function test_separationOfDuties_treasurerCannotBecomeRiskOfficer() public {
         vm.prank(admin);
         vm.expectRevert(
@@ -79,8 +79,8 @@ contract TreasuryPolicyTest is Test {
         policy.grantRole(ROLE_TREASURER, riskOfficer);
     }
 
-    /// @dev La séparation doit être réversible : révoquer un rôle doit libérer l'autre,
-    ///      sinon une erreur d'attribution serait définitive.
+    /// @dev The separation must be reversible: revoking one role must free the other,
+    ///      otherwise a mistaken grant would be permanent.
     function test_separationOfDuties_isReleasedAfterRevocation() public {
         vm.startPrank(admin);
         policy.revokeRole(ROLE_TREASURER, treasurer);
@@ -89,9 +89,9 @@ contract TreasuryPolicyTest is Test {
         assertTrue(policy.hasRole(ROLE_RISK_OFFICER, treasurer));
     }
 
-    /// @dev La contrainte ne porte que sur le couple RISK_OFFICER / TREASURER. Cumuler
-    ///      OPERATOR avec l'un des deux reste légitime : exécuter n'est ni décider des
-    ///      limites, ni approuver.
+    /// @dev The constraint applies only to the RISK_OFFICER / TREASURER pair. Holding
+    ///      OPERATOR alongside either remains legitimate: executing is neither setting the
+    ///      limits nor approving.
     function test_separationOfDuties_doesNotBlockOtherCombinations() public {
         vm.startPrank(admin);
         policy.grantRole(ROLE_OPERATOR, treasurer);
@@ -102,9 +102,9 @@ contract TreasuryPolicyTest is Test {
     }
 
     function testFuzz_separationOfDuties_holdsForAnyAddress(address account) public {
-        // Le fuzzer a tiré l'adresse du trésorier du décor, qui détient déjà TREASURER :
-        // c'était alors la *première* attribution qui révoquait, et le test échouait sur
-        // une précondition qu'il n'avait jamais énoncée. On la rend explicite.
+        // The fuzzer drew the fixture treasurer's address, which already holds TREASURER:
+        // the *first* grant was then the reverting one, and the test failed on a
+        // precondition it had never stated. Make it explicit.
         vm.assume(account != address(0));
         vm.assume(!policy.hasRole(ROLE_TREASURER, account));
         vm.assume(!policy.hasRole(ROLE_RISK_OFFICER, account));
@@ -118,7 +118,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                          Contrôle d'accès                          */
+    /*                            Access control                          */
     /* ------------------------------------------------------------------ */
 
     function test_onlyAdminGrantsRoles() public {
@@ -157,7 +157,7 @@ contract TreasuryPolicyTest is Test {
         assertTrue(policy.paused());
     }
 
-    /// @dev Asymétrie assumée : arrêter est urgent, redémarrer ne l'est jamais.
+    /// @dev A deliberate asymmetry: stopping is urgent, restarting never is.
     function test_guardianCannotUnpause() public {
         vm.prank(guardian);
         policy.pause();
@@ -177,7 +177,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                       Changements différés                         */
+    /*                       Timelocked changes                           */
     /* ------------------------------------------------------------------ */
 
     function test_changeCannotBeAppliedBeforeDelay() public {
@@ -206,8 +206,8 @@ contract TreasuryPolicyTest is Test {
         assertEq(policy.policyVersion(), before + 1);
     }
 
-    /// @dev Rejouer une application déjà consommée doit échouer : la charge utile est
-    ///      effacée, donc l'identifiant redevient inconnu.
+    /// @dev Replaying an already consumed application must fail: the payload is erased,
+    ///      so the identifier becomes unknown again.
     function test_changeCannotBeReplayed() public {
         vm.prank(riskOfficer);
         bytes32 id = policy.queueCurrencyPolicy(usdc, _bands());
@@ -235,8 +235,8 @@ contract TreasuryPolicyTest is Test {
         policy.executeCurrencyPolicy(id);
     }
 
-    /// @dev L'application d'un changement mûr est ouverte à tout appelant : la décision
-    ///      a déjà été prise et publiée, l'exécution mécanique n'est pas un pouvoir.
+    /// @dev Applying a matured change is open to any caller: the decision has already
+    ///      been made and published, and mechanical execution is not a power.
     function test_anyoneCanApplyMatureChange() public {
         vm.prank(riskOfficer);
         bytes32 id = policy.queueCurrencyPolicy(usdc, _bands());
@@ -289,7 +289,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                     Engagement des paramètres (D5)                 */
+    /*                     Parameter commitment (D5)                      */
     /* ------------------------------------------------------------------ */
 
     function test_riskOfficerCommitsBandParams() public {
@@ -310,7 +310,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                        Paramètres de risque                        */
+    /*                          Risk parameters                           */
     /* ------------------------------------------------------------------ */
 
     function test_riskParamsApplyAfterDelay() public {

@@ -3,18 +3,18 @@ pragma solidity 0.8.28;
 
 /**
  * @title IPriceOracle
- * @notice Prix de référence indépendant du lieu d'exécution.
+ * @notice Reference price, independent of the execution venue.
  *
- * @dev Il ne sert pas à décider — la décision est prise hors chaîne — mais à **contredire**
- *      le lieu d'exécution. Sans une source de prix distincte de celui qui exécute, rien
- *      n'empêche un carnet vide ou un lieu malveillant de servir au pire prix disponible :
- *      le coffre n'aurait aucun moyen de savoir que le prix obtenu est aberrant.
+ * @dev It is not there to decide — the decision is made off-chain — but to **contradict**
+ *      the execution venue. Without a price source distinct from the one that executes,
+ *      nothing stops an empty book or a malicious venue from filling at the worst
+ *      available price: the vault would have no way to know the price obtained is absurd.
  *
- *      En production, Chainlink Data Streams.
+ *      In production, Chainlink Data Streams.
  */
 interface IPriceOracle {
-    /// @return priceWad Unités de `quote` par unité de `base`, en WAD.
-    /// @return updatedAt Horodatage de la dernière mise à jour.
+    /// @return priceWad Units of `quote` per unit of `base`, in WAD.
+    /// @return updatedAt Timestamp of the last update.
     function price(address base, address quote)
         external
         view

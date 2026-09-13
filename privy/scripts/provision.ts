@@ -1,13 +1,13 @@
 /**
- * Provisionne les portefeuilles d'organisation et leurs politiques.
+ * Provisions the organisation wallets and their policies.
  *
- *   node privy/scripts/provision.ts <adresse-coffre> <adresse-treasury-policy>
+ *   node privy/scripts/provision.ts <vault-address> <treasury-policy-address>
  *
- * Exige PRIVY_APP_ID et PRIVY_APP_SECRET. Écrit le résultat dans privy/wallets.json,
- * que le tableau de bord et le scénario de bout en bout consomment.
+ * Requires PRIVY_APP_ID and PRIVY_APP_SECRET. Writes the result to privy/wallets.json,
+ * which the dashboard and the end-to-end scenario consume.
  *
- * Le script est **idempotent par intention** : il n'invente aucune adresse et échoue
- * bruyamment plutôt que de créer un doublon silencieux si le fichier existe déjà.
+ * The script is **idempotent by intent**: it invents no address and fails loudly rather
+ * than silently creating a duplicate when the file already exists.
  */
 
 import { existsSync, writeFileSync } from 'node:fs';
@@ -21,12 +21,12 @@ const OUT = new URL('../wallets.json', import.meta.url);
 async function main(): Promise<void> {
   const [vault, treasuryPolicy] = process.argv.slice(2);
   if (!vault || !treasuryPolicy) {
-    throw new Error('usage : node privy/scripts/provision.ts <coffre> <treasury-policy>');
+    throw new Error('usage: node privy/scripts/provision.ts <vault> <treasury-policy>');
   }
   if (existsSync(OUT)) {
     throw new Error(
-      `${OUT.pathname} existe déjà. Le supprimer sciemment plutôt que de créer des ` +
-        'portefeuilles en double.',
+      `${OUT.pathname} already exists. Delete it deliberately rather than creating ` +
+        'duplicate wallets.',
     );
   }
 
@@ -43,18 +43,18 @@ async function main(): Promise<void> {
     });
     result[role] = { policyId: policy.id, walletId: wallet.id, address: wallet.address };
     console.log(
-      `${role.padEnd(13)} ${wallet.address}  politique ${policy.id}  quorum ` +
+      `${role.padEnd(13)} ${wallet.address}  policy ${policy.id}  quorum ` +
         `${QUORUM[role].threshold}/${QUORUM[role].keys}`,
     );
   }
 
   writeFileSync(OUT, `${JSON.stringify({ vault, treasuryPolicy, roles: result }, null, 2)}\n`);
-  console.log(`\nÉcrit dans ${OUT.pathname}`);
+  console.log(`\nWritten to ${OUT.pathname}`);
   console.log(
-    'Étape suivante : attribuer les rôles on-chain à ces adresses via TreasuryPolicy.grantRole.',
+    'Next step: grant the on-chain roles to these addresses via TreasuryPolicy.grantRole.',
   );
   console.log(
-    "Le contrat refusera d'attribuer RISK_OFFICER et TREASURER à la même adresse — c'est voulu.",
+    'The contract will refuse to grant RISK_OFFICER and TREASURER to the same address — by design.',
   );
 }
 

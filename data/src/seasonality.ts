@@ -1,9 +1,10 @@
 /**
- * Profils de saisonnalité de l'intensité d'arrivée des paiements.
+ * Seasonality profiles for the payment arrival intensity.
  *
- * Invariant central : **chaque profil a une moyenne de 1 sur son cycle**. Le volume quotidien
- * calibré est donc préservé quelle que soit la forme des profils — on peut retoucher la forme
- * sans recalibrer l'intensité. Cet invariant est testé (data/test/seasonality.test.ts).
+ * Central invariant: **every profile has mean 1 over its cycle**. The calibrated daily
+ * volume is therefore preserved whatever the shape of the profiles — the shape can be
+ * adjusted without recalibrating the intensity. This invariant is tested
+ * (data/test/seasonality.test.ts).
  */
 
 function normalize(raw: readonly number[]): readonly number[] {
@@ -12,9 +13,9 @@ function normalize(raw: readonly number[]): readonly number[] {
 }
 
 /**
- * Profil horaire (UTC), bimodal : creux nocturne, montée matinale, pic de milieu de matinée,
- * second pic en début d'après-midi, décroissance en soirée.
- * Forme typique des paiements de détail et de PME en zone euro.
+ * Hourly profile (UTC), bimodal: overnight trough, morning ramp, mid-morning peak, second
+ * peak in early afternoon, evening decay.
+ * The typical shape of retail and SME payments in the euro area.
  */
 const HOUR_RAW = [
   0.15, 0.10, 0.08, 0.07, 0.08, 0.12, 0.25, 0.55,
@@ -24,18 +25,18 @@ const HOUR_RAW = [
 export const HOUR_PROFILE = normalize(HOUR_RAW);
 
 /**
- * Profil hebdomadaire, indexé comme `Date.getUTCDay()` (0 = dimanche).
- * Calibré pour un creux de week-end de l'ordre de −60 % par rapport à la semaine
- * (SPEC §17.1), ce qui est le point de contrôle testé.
+ * Weekly profile, indexed like `Date.getUTCDay()` (0 = Sunday).
+ * Calibrated for a weekend trough of roughly −60% against the weekday level
+ * (SPEC §17.1), which is the checkpoint under test.
  */
 const DOW_RAW = [0.45, 1.25, 1.30, 1.30, 1.30, 1.35, 0.60];
 export const DOW_PROFILE = normalize(DOW_RAW);
 
 /**
- * Profil par quantième du mois (index 0 = le 1er).
- * Deux effets de paie : pic marqué le 1er, plateau haut en fin de mois.
- * Les mois de moins de 31 jours n'utilisent pas les dernières entrées, ce qui introduit
- * un biais résiduel de quelques pour cent sur la moyenne annuelle — borné par le test.
+ * Day-of-month profile (index 0 = the 1st).
+ * Two payroll effects: a sharp peak on the 1st, a high plateau at month end.
+ * Months shorter than 31 days do not use the last entries, which introduces a residual
+ * bias of a few percent on the annual mean — bounded by the test.
  */
 const DOM_RAW = [
   1.90, 1.45, 1.30, 0.95, 0.85, 0.82, 0.80, 0.80, 0.82, 0.85,
@@ -44,7 +45,7 @@ const DOM_RAW = [
 ];
 export const DOM_PROFILE = normalize(DOM_RAW);
 
-/** Multiplicateur d'intensité pour un instant donné. */
+/** Intensity multiplier for a given instant. */
 export function seasonalFactor(ts: number): number {
   const d = new Date(ts);
   return (

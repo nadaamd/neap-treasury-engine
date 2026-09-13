@@ -6,33 +6,33 @@ import {MockERC20} from "./MockERC20.sol";
 
 /**
  * @title MockFxVenue
- * @notice Lieu d'exécution déterministe : prix pivot paramétrable, spread, et impact en
- *         racine carrée de la taille.
+ * @notice A deterministic execution venue: configurable mid price, spread, and impact in
+ *         the square root of size.
  *
- * @dev Le modèle d'impact reprend celui du moteur hors chaîne :
+ * @dev The impact model matches the off-chain engine's:
  *
- *          coût_relatif = spread + eta · √(taille / profondeur)
+ *          relative_cost = spread + eta · √(size / depth)
  *
- *      La racine carrée n'est pas décorative — c'est la forme empirique classique de
- *      l'impact de marché, et sa concavité fait que le coût *marginal* décroît avec la
- *      taille alors que le coût *total* croît plus vite que linéairement. C'est ce qui
- *      rend l'arbitrage entre gros ordres rares et petits ordres fréquents non trivial.
+ *      The square root is not decorative — it is the classic empirical form of market
+ *      impact, and its concavity means the *marginal* cost falls with size while the
+ *      *total* cost grows faster than linearly. That is what makes the trade-off between
+ *      rare large orders and frequent small ones non-trivial.
  *
- *      `eta` n'est pas calibré (SPEC §4.6) : la profondeur réelle du carnet d'Arc est
- *      inconnue. Il est donc paramétrable et sa valeur doit être affichée avec tout
- *      résultat chiffré.
+ *      `eta` is uncalibrated (SPEC §4.6): Arc's real book depth is unknown. It is
+ *      therefore configurable, and its value must be displayed with any number derived
+ *      from it.
  *
- *      Les deux jetons sont supposés à six décimales, comme l'USDC.
+ *      Both tokens are assumed to have six decimals, like USDC.
  */
 contract MockFxVenue is IFxVenue {
     uint256 private constant WAD = 1e18;
     uint256 private constant BPS = 10_000;
 
     struct Pair {
-        /// @dev Unités de tokenOut par unité de tokenIn, en WAD.
+        /// @dev Units of tokenOut per unit of tokenIn, in WAD.
         uint256 rateWad;
         uint16 spreadBps;
-        /// @dev Coefficient d'impact, en points de base à profondeur pleine.
+        /// @dev Impact coefficient, in basis points at full depth.
         uint16 etaBps;
         uint256 depth;
         bool enabled;
@@ -88,7 +88,7 @@ contract MockFxVenue is IFxVenue {
         if (costBps >= BPS) revert CostExceedsNotional();
 
         // Toutes les multiplications avant les divisions : diviser d'abord perdrait de la
-        // précision sur les petits montants, et un moteur de trésorerie place des ordres
+        // precision on small amounts, and a treasury engine places orders
         // dont la taille varie de plusieurs ordres de grandeur.
         amountOut = amountIn * p.rateWad * (BPS - costBps) / (WAD * BPS);
         quoteExpiry = _toUint64(block.timestamp) + quoteTtl;
@@ -107,18 +107,17 @@ contract MockFxVenue is IFxVenue {
         bytes32 expected;
         (amountOut,, expected) = quote(tokenIn, tokenOut, amountIn);
 
-        // Le prix exécuté doit être celui qui a été annoncé. Sans ce contrôle, un carnet
-        // qui s'est vidé entre l'annonce et l'exécution servirait au pire prix disponible.
+        // The executed price must be the quoted one. Without this check, a book that
+        // emptied between quote and execution would fill at the worst available price.
         if (expected != quoteId) revert QuoteMismatch(expected, quoteId);
         if (amountOut < minAmountOut) revert SlippageExceeded(amountOut, minAmountOut);
 
-        // L'événement précède les appels externes : un appel réentrant pourrait sinon
-        // réordonner ou fabriquer des journaux sur lesquels s'appuient les consommateurs
-        // hors chaîne. Si un transfert échoue, la transaction entière est annulée et
-        // l'événement disparaît avec elle.
+        // The event precedes the external calls: otherwise a re-entrant call could
+        // reorder or fabricate logs that off-chain consumers rely on. If a transfer fails,
+        // the whole transaction reverts and the event disappears with it.
         emit Settled(tokenIn, tokenOut, amountIn, amountOut);
 
-        // Débit et crédit dans le même appel : c'est l'hypothèse d'atomicité de l'interface.
+        // Debit and credit in the same call: this is the interface's atomicity assumption.
         if (!MockERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn)) {
             revert TransferFailed(tokenIn);
         }
@@ -139,13 +138,13 @@ contract MockFxVenue is IFxVenue {
 
     function _toUint64(uint256 v) private pure returns (uint64) {
         if (v > type(uint64).max) revert TimestampOverflow(v);
-        // Le linter signale tout cast rétrécissant. Ici la ligne précédente *est* la garde
-        // qui le rend sûr — c'est la raison d'être de cette fonction.
+        // The linter flags every narrowing cast. Here the preceding line *is* the guard
+        // that makes it safe — that is the whole point of this function.
         // forge-lint: disable-next-line(unsafe-typecast)
         return uint64(v);
     }
 
-    /// @dev Racine carrée entière par la méthode babylonienne.
+    /// @dev Integer square root by the Babylonian method.
     function _sqrt(uint256 x) private pure returns (uint256 y) {
         if (x == 0) return 0;
         uint256 z = (x + 1) / 2;

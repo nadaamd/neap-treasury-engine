@@ -1,50 +1,50 @@
 /**
- * Mesures de risque de marché — décision D4.
+ * Market risk measures — decision D4.
  *
- * Trois estimateurs sont fournis et comparés, parce que l'écart entre eux *est* le
- * résultat intéressant :
+ * Three estimators are provided and compared, because the gap between them *is* the
+ * interesting result:
  *
- *   • VaR normale         — le langage du métier, sert à l'affichage ;
- *   • ES normale          — cohérente, mais suppose la normalité ;
- *   • ES par FHS          — simulation historique filtrée, retenue pour la décision.
+ *   • Normal VaR  — the language of the business, used for display;
+ *   • Normal ES   — coherent, but assumes normality;
+ *   • FHS ES      — filtered historical simulation, the one the decision uses.
  *
- * Pourquoi 97,5 % pour l'ES et 99 % pour la VaR ? Parce que sous hypothèse gaussienne
- * ES_97,5 ≈ VaR_99 (2,338 σ contre 2,326 σ). Le comité de Bâle a choisi ce couple dans
- * FRTB précisément pour que le passage de la VaR à l'ES ne change pas le niveau de
- * capital sur des distributions normales — tout en rendant la mesure sensible à ce qui
- * se passe *au-delà* du quantile. L'écart entre les deux mesure donc l'épaisseur de la
- * queue, et rien d'autre. C'est un test que ce module vérifie.
+ * Why 97.5% for ES and 99% for VaR? Because under a Gaussian assumption
+ * ES_97.5 ≈ VaR_99 (2.338 σ against 2.326 σ). The Basel committee picked that pair in
+ * FRTB precisely so that moving from VaR to ES would not change the capital level on
+ * normal distributions — while making the measure sensitive to what happens *beyond*
+ * the quantile. The gap between the two therefore measures tail thickness, and nothing
+ * else. This module has a test for exactly that.
  */
 
 import { quadForm } from '../linalg.ts';
 import type { Matrix, Vector } from '../linalg.ts';
 
-/** Quantile normal à 99 %. */
+/** Normal quantile at 99%. */
 export const Z_99 = 2.3263478740408408;
-/** Quantile normal à 97,5 %. */
+/** Normal quantile at 97.5%. */
 export const Z_975 = 1.959963984540054;
 
 function normalPdf(z: number): number {
   return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
 }
 
-/** Multiplicateur d'ES gaussienne : φ(z_α) / (1 − α). */
+/** Gaussian ES multiplier: φ(z_α) / (1 − α). */
 export function normalEsFactor(alpha: number, z: number): number {
   return normalPdf(z) / (1 - alpha);
 }
 
-/** Volatilité du portefeuille : √(wᵀ Σ w). */
+/** Portfolio volatility: √(wᵀ Σ w). */
 export function portfolioSigma(weights: Vector, sigma: Matrix): number {
   const v = quadForm(weights, sigma);
   return Math.sqrt(Math.max(v, 0));
 }
 
-/** VaR gaussienne, en montant, pour un horizon de `horizonDays` jours. */
+/** Gaussian VaR, as an amount, over a `horizonDays`-day horizon. */
 export function normalVaR(sigmaP: number, horizonDays: number, z: number = Z_99): number {
   return z * sigmaP * Math.sqrt(horizonDays);
 }
 
-/** ES gaussienne, en montant. */
+/** Gaussian ES, as an amount. */
 export function normalES(sigmaP: number, horizonDays: number, alpha = 0.975): number {
   const z = alpha === 0.975 ? Z_975 : Z_99;
   return normalEsFactor(alpha, z) * sigmaP * Math.sqrt(horizonDays);
@@ -52,15 +52,15 @@ export function normalES(sigmaP: number, horizonDays: number, alpha = 0.975): nu
 
 export interface FhsInput {
   /**
-   * Résidus standardisés z_{t,i} = r_{t,i} / σ_{t,i}, matrice T × n.
-   * Les vecteurs transversaux sont conservés tels quels : c'est ce qui préserve la
-   * corrélation empirique et la dépendance de queue entre devises. Rééchantillonner
-   * chaque devise indépendamment détruirait exactement l'information qui compte.
+   * Standardised residuals z_{t,i} = r_{t,i} / σ_{t,i}, a T × n matrix.
+   * Cross-sectional vectors are kept as they are: that is what preserves the empirical
+   * correlation and the tail dependence between currencies. Resampling each currency
+   * independently would destroy exactly the information that matters.
    */
   readonly residuals: readonly (readonly number[])[];
-  /** Volatilité conditionnelle courante par devise. */
+  /** Current conditional volatility per currency. */
   readonly currentVol: Vector;
-  /** Exposition signée par devise, en numéraire. */
+  /** Signed exposure per currency, in numeraire. */
   readonly weights: Vector;
   readonly horizonDays: number;
   readonly alpha: number;
@@ -69,20 +69,20 @@ export interface FhsInput {
 export interface FhsResult {
   readonly es: number;
   readonly var: number;
-  /** Nombre de scénarios dans la queue effectivement moyennés. */
+  /** Number of tail scenarios actually averaged. */
   readonly tailCount: number;
 }
 
 /**
- * Simulation historique filtrée.
+ * Filtered historical simulation.
  *
- * Le filtrage consiste à diviser les rendements passés par la volatilité qui régnait
- * alors, puis à remultiplier par la volatilité d'aujourd'hui. On réutilise donc la
- * *forme* de la distribution historique — ses queues, son asymétrie, sa dépendance
- * transversale — sans importer son niveau de volatilité, qui est périmé.
+ * Filtering means dividing past returns by the volatility that prevailed at the time,
+ * then multiplying back by today's volatility. So the *shape* of the historical
+ * distribution is reused — its tails, its skew, its cross-sectional dependence —
+ * without importing its volatility level, which is stale.
  *
- * C'est ce qui distingue la FHS de la simulation historique brute, laquelle sous-estime
- * le risque après une période calme et le surestime après une crise.
+ * That is what separates FHS from raw historical simulation, which underestimates risk
+ * after a quiet period and overestimates it after a crisis.
  */
 export function filteredHistoricalES(input: FhsInput): FhsResult {
   const { residuals, currentVol, weights, horizonDays, alpha } = input;
@@ -97,7 +97,7 @@ export function filteredHistoricalES(input: FhsInput): FhsResult {
     losses.push(-pnl);
   }
 
-  losses.sort((a, b) => b - a); // pertes décroissantes
+  losses.sort((a, b) => b - a); // losses in decreasing order
   const tailCount = Math.max(1, Math.ceil(losses.length * (1 - alpha)));
   const tail = losses.slice(0, tailCount);
   const es = tail.reduce((a, b) => a + b, 0) / tailCount;
@@ -105,13 +105,12 @@ export function filteredHistoricalES(input: FhsInput): FhsResult {
 }
 
 /**
- * Majoration pour risque de base stablecoin — SPEC §1.5.
+ * Stablecoin basis risk add-on — SPEC §1.5.
  *
- * Couvrir une exposition EUR avec de l'EURC laisse un risque résiduel de décrochage du
- * peg, de défaut de l'émetteur et de liquidité de rachat. Ce risque est structurellement
- * invisible dans un historique court : le peg tient jusqu'au jour où il ne tient plus.
- * On le traite donc par une majoration forfaitaire assumée plutôt qu'en faisant semblant
- * qu'il n'existe pas.
+ * Hedging a EUR exposure with EURC leaves residual risk: peg break, issuer default,
+ * redemption liquidity. That risk is structurally invisible in a short history — the peg
+ * holds until the day it does not. So it is handled with an explicit flat add-on rather
+ * than by pretending it does not exist.
  */
 export function basisAddOn(exposures: Vector, haircutBps: number): number {
   const h = haircutBps / 10_000;
@@ -132,7 +131,7 @@ export interface RiskCapital {
   readonly es975Normal: number;
   readonly es975Fhs: number | null;
   readonly basis: number;
-  /** Capital de risque retenu pour la décision : ES (FHS si disponible) + base. */
+  /** Risk capital used by the decision: ES (FHS when available) + basis. */
   readonly total: number;
 }
 

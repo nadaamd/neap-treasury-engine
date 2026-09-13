@@ -1,4 +1,4 @@
-/** Tests de la couche d'encodage on-chain — keccak256, ABI, EIP-712. */
+/** On-chain encoding layer tests — keccak256, ABI, EIP-712. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,11 +21,11 @@ import type { OnchainOrder, OnchainReport } from '../src/onchain/abi.ts';
 
 describe('keccak256', () => {
   /**
-   * Node expose `sha3-256`, qui n'est pas la même fonction : la normalisation SHA-3 a
-   * changé l'octet de bourrage de 0x01 à 0x06 après la publication de Keccak. Ethereum a
-   * gardé la version d'origine. Ces vecteurs vérifient qu'on implémente bien celle-là.
+   * Node exposes `sha3-256`, which is not the same function: SHA-3 standardisation
+   * changed the padding byte from 0x01 to 0x06 after Keccak was published. Ethereum kept
+   * the original. These vectors check that we implement that one.
    */
-  test('vecteurs de référence', () => {
+  test('reference vectors', () => {
     assert.equal(
       keccak256Hex(''),
       '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
@@ -41,31 +41,31 @@ describe('keccak256', () => {
   });
 
   /**
-   * Le débit de Keccak-256 est de 136 octets. Les erreurs de bourrage se cachent
-   * exactement aux frontières de bloc : une entrée de 135 octets tient dans un bloc avec
-   * le bourrage, 136 en exige un second entièrement fait de bourrage.
+   * The Keccak-256 rate is 136 bytes. Padding bugs hide exactly at block boundaries: a
+   * 135-byte input fits in one block with its padding, 136 requires a second block made
+   * entirely of padding.
    */
-  test('les frontières de bloc sont franchies correctement', () => {
+  test('block boundaries are crossed correctly', () => {
     const seen = new Set<string>();
     for (const n of [0, 1, 135, 136, 137, 271, 272]) {
       const h = keccak256Hex('a'.repeat(n));
-      assert.match(h, /^0x[0-9a-f]{64}$/, `empreinte mal formée pour ${n} octets`);
-      assert.ok(!seen.has(h), `collision improbable sur ${n} octets`);
+      assert.match(h, /^0x[0-9a-f]{64}$/, `malformed digest for ${n} bytes`);
+      assert.ok(!seen.has(h), `improbable collision at ${n} bytes`);
       seen.add(h);
     }
   });
 
-  test('l’aller-retour hexadécimal est fidèle', () => {
+  test('the hex round trip is faithful', () => {
     const hex = `0x${'0f1e2d3c'.repeat(8)}`;
     assert.equal(toHex(fromHex(hex)), hex);
   });
 
-  test('une chaîne hexadécimale impaire est rejetée', () => {
+  test('an odd-length hex string is rejected', () => {
     assert.throws(() => fromHex('0xabc'), RangeError);
   });
 });
 
-describe('encodage ABI', () => {
+describe('ABI encoding', () => {
   const orders: OnchainOrder[] = [
     {
       sell: '0x1111111111111111111111111111111111111111',
@@ -76,28 +76,28 @@ describe('encodage ABI', () => {
   ];
   const salt = `0x${'ab'.repeat(32)}`;
 
-  test('le tableau dynamique est précédé de son décalage puis de sa longueur', () => {
+  test('the dynamic array is preceded by its offset then its length', () => {
     const encoded = toHex(encodeOrdersAndSalt(orders, salt));
-    // Mot 0 : décalage 0x40. Mot 1 : le sel. Mot 2 : la longueur.
+    // Word 0: offset 0x40. Word 1: the salt. Word 2: the length.
     assert.equal(encoded.slice(2, 66), '40'.padStart(64, '0'));
     assert.equal(encoded.slice(66, 130), 'ab'.repeat(32));
     assert.equal(encoded.slice(130, 194), '1'.padStart(64, '0'));
   });
 
-  test('chaque ordre occupe exactement quatre mots', () => {
+  test('each order occupies exactly four words', () => {
     const one = encodeOrdersAndSalt(orders, salt).length;
     const two = encodeOrdersAndSalt([...orders, ...orders], salt).length;
     assert.equal(two - one, 4 * 32);
   });
 
-  test('une adresse mal formée est rejetée', () => {
+  test('a malformed address is rejected', () => {
     assert.throws(
       () => encodeOrdersAndSalt([{ ...orders[0]!, sell: '0x1234' }], salt),
       RangeError,
     );
   });
 
-  test('l’engagement dépend du sel', () => {
+  test('the commitment depends on the salt', () => {
     assert.notEqual(
       ordersCommitment(orders, salt),
       ordersCommitment(orders, `0x${'cd'.repeat(32)}`),
@@ -122,18 +122,17 @@ describe('EIP-712', () => {
   };
 
   /**
-   * Les métriques de risque sont signées. L'extension de signe sur 256 bits est le
-   * détail d'encodage le plus facile à rater et le plus silencieux quand on le rate :
-   * l'encodage reste bien formé, seule l'empreinte diffère — et la signature est
-   * rejetée sans que rien n'indique pourquoi.
+   * Risk metrics are signed integers. Sign extension to 256 bits is the encoding detail
+   * easiest to get wrong and quietest when you do: the encoding stays well formed, only
+   * the digest differs — and the signature is rejected with nothing to say why.
    */
-  test('une métrique négative change l’empreinte de structure', () => {
+  test('a negative metric changes the struct hash', () => {
     const positive = reportStructHash({ ...report, esAfterBps: 45n });
     const negative = reportStructHash({ ...report, esAfterBps: -45n });
     assert.notEqual(positive, negative);
   });
 
-  test('le séparateur de domaine dépend de la chaîne et du contrat', () => {
+  test('the domain separator depends on the chain and the contract', () => {
     const a = domainSeparator(1n, '0x1111111111111111111111111111111111111111');
     const b = domainSeparator(31_337n, '0x1111111111111111111111111111111111111111');
     const c = domainSeparator(1n, '0x2222222222222222222222222222222222222222');
@@ -141,12 +140,12 @@ describe('EIP-712', () => {
     assert.notEqual(a, c);
   });
 
-  test('l’empreinte signée est préfixée par 0x1901', () => {
+  test('the signed digest is prefixed with 0x1901', () => {
     const d = reportDigest(report, 31_337n, '0x1111111111111111111111111111111111111111');
     assert.match(d, /^0x[0-9a-f]{64}$/);
   });
 
-  test('la clé d’idempotence dépend de l’engagement sur les ordres', () => {
+  test('the idempotency key depends on the order commitment', () => {
     assert.notEqual(
       reportId(report),
       reportId({ ...report, ordersCommitment: `0x${'44'.repeat(32)}` }),
@@ -154,17 +153,17 @@ describe('EIP-712', () => {
   });
 });
 
-describe('conformité avec les contrats', () => {
+describe('conformance with the contracts', () => {
   const path = new URL('../../contracts/test/fixtures/conformance.json', import.meta.url);
   const fixture = JSON.parse(readFileSync(path, 'utf8'));
 
   /**
-   * Le jeu versionné est lu par une suite Solidity qui recalcule tout de son côté. Ce
-   * test-ci vérifie l'autre sens : que le fichier soit bien ce que le moteur produit
-   * aujourd'hui. Sans lui, régénérer le jeu ferait passer les deux suites tout en ayant
-   * silencieusement changé le contrat.
+   * The committed fixture is read by a Solidity suite that recomputes everything on its
+   * side. This test checks the other direction: that the file really is what the engine
+   * produces today. Without it, regenerating the fixture would make both suites pass
+   * while silently changing the contract.
    */
-  test('le jeu versionné correspond à ce que le moteur produit', () => {
+  test('the committed fixture matches what the engine produces', () => {
     const orders: OnchainOrder[] = fixture.orders.map((o: Record<string, unknown>) => ({
       sell: o.sell as string,
       buy: o.buy as string,
@@ -194,21 +193,21 @@ describe('conformité avec les contrats', () => {
     assert.equal(typeHash(EIP712_DOMAIN_TYPE_STRING), fixture.domainTypeHash);
   });
 
-  test('le jeu exerce bien une métrique négative', () => {
+  test('the fixture does exercise a negative metric', () => {
     assert.ok(fixture.report.esAfterBps < 0);
   });
 
   /**
-   * Confrontation à l'implémentation de référence d'Ethereum lorsqu'elle est disponible.
-   * Le test est ignoré si Foundry n'est pas installé : la suite doit rester exécutable
-   * sur une machine qui n'a que Node.
+   * Cross-checked against Ethereum's reference implementation when it is available. The
+   * test is skipped if Foundry is not installed: the suite must stay runnable on a
+   * machine that only has Node.
    */
-  test('keccak256 concorde avec cast', (t) => {
+  test('keccak256 agrees with cast', (t) => {
     let cast: string;
     try {
       cast = execFileSync('cast', ['keccak', 'abc'], { encoding: 'utf8' }).trim();
     } catch {
-      t.skip('cast indisponible');
+      t.skip('cast unavailable');
       return;
     }
     assert.equal(cast, keccak256Hex('abc'));

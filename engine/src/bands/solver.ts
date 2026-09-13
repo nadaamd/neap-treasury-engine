@@ -1,19 +1,18 @@
 /**
- * Résolution numérique des bandes — décision D3.
+ * Numerical band solving — decision D3.
  *
- * Recherche par motif (pattern search) sur le triplet (bas, cible, haut), amorcée par la
- * solution analytique de Miller-Orr et évaluée par simulation sur des trajectoires
- * communes à tous les candidats.
+ * Pattern search over the triple (lower, target, upper), warm-started from the
+ * Miller-Orr closed form and evaluated by simulation on paths shared by every candidate.
  *
- * Pourquoi une recherche par motif plutôt qu'un gradient : la fonction objectif est
- * évaluée par simulation, donc bruitée et non différentiable. Un gradient numérique y
- * serait dominé par le bruit. La recherche par motif ne suppose rien d'autre que la
- * possibilité d'évaluer J, et son critère d'arrêt — le pas devient plus petit que la
- * tolérance — est interprétable en unités monétaires.
+ * Why pattern search rather than a gradient: the objective is evaluated by simulation,
+ * so it is noisy and non-differentiable. A numerical gradient would be dominated by that
+ * noise. Pattern search assumes nothing beyond the ability to evaluate J, and its
+ * stopping criterion — the step falls below the tolerance — is readable in currency
+ * units.
  *
- * Pourquoi l'amorçage par Miller-Orr : il place le point de départ dans le bon ordre de
- * grandeur. Sans lui, la recherche partirait d'un point arbitraire et consommerait
- * l'essentiel de son budget d'évaluations à traverser l'espace.
+ * Why the Miller-Orr warm start: it places the starting point in the right order of
+ * magnitude. Without it, the search would start from an arbitrary point and spend most
+ * of its evaluation budget just crossing the space.
  */
 
 import { millerOrrBands } from './millerOrr.ts';
@@ -25,14 +24,14 @@ import type { TailModel } from './tail.ts';
 export interface SolveOptions {
   readonly paths: readonly (readonly number[])[];
   readonly costs: CostParams;
-  /** Modèle de queue servant à tarifer le risque de rupture en espérance. */
+  /** Tail model used to price breach risk in expectation. */
   readonly tail: TailModel;
   readonly warmStart: Bands;
-  /** Plancher opérationnel : le seuil bas ne peut pas descendre en dessous. */
+  /** Operational floor: the lower threshold cannot go below it. */
   readonly floor: number;
-  /** Pas initial de la recherche, en monnaie. */
+  /** Initial search step, in currency. */
   readonly initialStep: number;
-  /** Arrêt lorsque le pas passe sous ce seuil. */
+  /** Stop once the step falls below this threshold. */
   readonly tolerance: number;
   readonly maxEvaluations: number;
 }
@@ -45,7 +44,7 @@ export interface SolveResult {
   readonly finalStep: number;
 }
 
-/** Projette un triplet candidat sur le domaine admissible : floor ≤ bas ≤ cible ≤ haut. */
+/** Projects a candidate triple onto the feasible set: floor ≤ lower ≤ target ≤ upper. */
 function project(b: Bands, floor: number): Bands {
   const lower = Math.max(floor, b.lower);
   const target = Math.max(lower, b.target);
@@ -76,7 +75,7 @@ export function solveBands(o: SolveOptions): SolveResult {
       for (const sign of [1, -1]) {
         if (evaluations >= maxEvaluations) break;
         const candidate = project({ ...best, [axis]: best[axis] + sign * step }, floor);
-        // La projection peut ramener le candidat sur le point courant : inutile de l'évaluer.
+        // Projection can map the candidate back onto the current point: no need to evaluate.
         if (
           candidate.lower === best.lower &&
           candidate.target === best.target &&
@@ -93,14 +92,14 @@ export function solveBands(o: SolveOptions): SolveResult {
       }
     }
 
-    // Aucun voisin ne fait mieux : on raffine la maille.
+    // No neighbour does better: refine the mesh.
     if (!improved) step /= 2;
   }
 
   return { bands: best, outcome: bestOutcome, warmStartOutcome, evaluations, finalStep: step };
 }
 
-/** Chaîne complète : bandes analytiques d'amorçage, puis raffinement numérique. */
+/** Full chain: analytic warm-start bands, then numerical refinement. */
 export function solveBandsFromScratch(
   millerOrr: MillerOrrInput,
   paths: readonly (readonly number[])[],

@@ -149,8 +149,8 @@ contract ReportVerifierTest is Test {
     /*                             Idempotence                            */
     /* ------------------------------------------------------------------ */
 
-    /// @dev Rejouer un rapport signifierait un rééquilibrage exécuté deux fois, donc une
-    ///      position doublée. C'est le défaut le plus coûteux imaginable ici.
+    /// @dev Replaying a report would mean a rebalance executed twice, hence a doubled
+    ///      position. That is the most expensive defect imaginable here.
     function test_replayIsRejected() public {
         ReportVerifier.RebalanceReport memory r = _report();
         bytes memory att = _attestation(r);
@@ -161,8 +161,8 @@ contract ReportVerifierTest is Test {
         verifier.verify(r, att, sigs);
     }
 
-    /// @dev Deux plans différents au même epoch restent deux rapports distincts :
-    ///      l'engagement sur les ordres entre dans la clé d'idempotence.
+    /// @dev Two different plans in the same epoch remain two distinct reports: the order
+    ///      commitment is part of the idempotency key.
     function test_reportIdDependsOnTheOrdersCommitment() public view {
         ReportVerifier.RebalanceReport memory a = _report();
         ReportVerifier.RebalanceReport memory b = _report();
@@ -171,7 +171,7 @@ contract ReportVerifierTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                          Contrôles de temps                        */
+    /*                             Time checks                            */
     /* ------------------------------------------------------------------ */
 
     function test_expiredReportIsRejected() public {
@@ -229,8 +229,8 @@ contract ReportVerifierTest is Test {
         verifier.verify(second, att, sigs);
     }
 
-    /// @dev Cadence minimale : borne le préjudice d'un opérateur compromis et coupe court
-    ///      à un attaquant qui provoquerait des rééquilibrages coûteux à répétition.
+    /// @dev Minimum cadence: bounds the damage from a compromised operator and cuts off
+    ///      an attacker triggering expensive rebalances in a loop.
     function test_epochsCannotBeTooClose() public {
         ReportVerifier.RebalanceReport memory first = _report();
         verifier.verify(first, _attestation(first), _one(_sign(keyA, first)));
@@ -247,10 +247,10 @@ contract ReportVerifierTest is Test {
     }
 
     /**
-     * @dev Le parcours de crise de la spec (§2.3) exige un déclenchement hors cycle :
-     *      un choc de flux vide un corridor entre deux epochs et il faut décider tout de
+     * @dev The spec's crisis path (§2.3) requires an off-cycle trigger: a flow shock
+     *      empties a corridor between two epochs and a decision is needed right
      *      suite. Imposer la stricte croissance du seul epoch interdirait ce rapport
-     *      supplémentaire — d'où la séquence sur le couple (epoch, nonce).
+     *      extra report — hence the sequence over the (epoch, nonce) pair.
      */
     function test_outOfCycleReportIsAllowedWithinTheSameEpoch() public {
         ReportVerifier.RebalanceReport memory first = _report();
@@ -269,7 +269,7 @@ contract ReportVerifierTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                     Cohérence avec la politique                    */
+    /*                   Consistency with the policy                      */
     /* ------------------------------------------------------------------ */
 
     function test_stalePolicyVersionIsRejected() public {
@@ -281,7 +281,7 @@ contract ReportVerifierTest is Test {
         verifier.verify(r, att, sigs);
     }
 
-    /// @dev Décision D5 : un rapport doit être lié au jeu de paramètres qui l'a produit.
+    /// @dev Decision D5: a report must be bound to the parameter set that produced it.
     function test_bandParamsMismatchIsRejected() public {
         ReportVerifier.RebalanceReport memory r = _report();
         r.bandParamsHash = keccak256("autres parametres");
@@ -317,8 +317,8 @@ contract ReportVerifierTest is Test {
         verifier.verify(r, att, sigs);
     }
 
-    /// @dev Le tri strict des signataires est ce qui rend impossible d'atteindre le
-    ///      quorum en présentant deux fois la même signature.
+    /// @dev Strict signer ordering is what makes it impossible to reach the quorum by
+    ///      presenting the same signature twice.
     function test_duplicateSignatureCannotReachQuorum() public {
         vm.prank(admin);
         verifier.setThreshold(2);
@@ -360,8 +360,8 @@ contract ReportVerifierTest is Test {
         verifier.verify(r, att, sigs);
     }
 
-    /// @dev Sans la borne EIP-2 sur s, toute signature admet une seconde forme valide —
-    ///      donc deux identifiants pour un même rapport, et l'idempotence tombe.
+    /// @dev Without the EIP-2 bound on s, every signature admits a second valid form —
+    ///      hence two identifiers for one report, and idempotency falls apart.
     function test_malleableSignatureIsRejected() public {
         ReportVerifier.RebalanceReport memory r = _report();
         (uint8 v, bytes32 rr, bytes32 s) = vm.sign(keyA, verifier.digest(r));
@@ -378,9 +378,9 @@ contract ReportVerifierTest is Test {
     /*                             Attestation                            */
     /* ------------------------------------------------------------------ */
 
-    /// @dev LE test qui justifie le paramètre `payloadHash` de l'interface. Sans lui,
-    ///      une attestation valide pourrait être recyclée sur un tout autre rapport :
-    ///      elle prouverait qu'une enclave existe, pas que *ce* contenu en est sorti.
+    /// @dev THE test that justifies the interface's `payloadHash` parameter. Without it,
+    ///      a valid attestation could be recycled onto an entirely different report: it
+    ///      would prove an enclave exists, not that *this* content came out of it.
     function test_attestationCannotBeRecycledOnAnotherReport() public {
         ReportVerifier.RebalanceReport memory a = _report();
         ReportVerifier.RebalanceReport memory b = _report();
@@ -428,8 +428,8 @@ contract ReportVerifierTest is Test {
         verifier.setThreshold(0);
     }
 
-    /// @dev Une signature reste liée à sa chaîne : le séparateur de domaine est recalculé
-    ///      si le chainid change, ce qui neutralise le rejeu après une bifurcation.
+    /// @dev A signature stays bound to its chain: the domain separator is recomputed if
+    ///      the chainid changes, which neutralises replay after a fork.
     function test_domainSeparatorFollowsTheChain() public {
         bytes32 before = verifier.domainSeparator();
         vm.chainId(block.chainid + 1);

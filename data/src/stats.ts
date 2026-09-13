@@ -1,4 +1,4 @@
-/** Statistiques descriptives — support des tests de validité du générateur (SPEC §17.2). */
+/** Descriptive statistics — support for the generator validity tests (SPEC §17.2). */
 
 export function mean(xs: readonly number[]): number {
   if (xs.length === 0) return 0;
@@ -16,11 +16,11 @@ export function stdev(xs: readonly number[]): number {
 }
 
 /**
- * Kurtosis non centrée (une gaussienne vaut 3).
+ * Uncentred kurtosis (a Gaussian gives 3).
  *
- * Estimateur bruité sur des lois à queue lourde — c'est attendu : on ne teste que le
- * signe de l'excès, pas sa valeur. Une queue mince ici signifierait que la VaR calculée
- * plus loin sous-estimerait le risque de rupture.
+ * A noisy estimator on heavy-tailed laws — which is expected: only the sign of the
+ * excess is tested, not its value. A thin tail here would mean the VaR computed
+ * downstream underestimates breach risk.
  */
 export function kurtosis(xs: readonly number[]): number {
   const m = mean(xs);
@@ -31,7 +31,7 @@ export function kurtosis(xs: readonly number[]): number {
   return m4 / m2 ** 2;
 }
 
-/** Autocorrélation empirique au retard `lag`. */
+/** Empirical autocorrelation at lag `lag`. */
 export function autocorrelation(xs: readonly number[], lag: number): number {
   const n = xs.length;
   if (lag <= 0 || lag >= n) return Number.NaN;
@@ -46,7 +46,7 @@ export function autocorrelation(xs: readonly number[], lag: number): number {
   return den === 0 ? 0 : num / den;
 }
 
-/** Empreinte déterministe d'une série de nombres — support du test de reproductibilité. */
+/** Deterministic fingerprint of a number series — support for the reproducibility test. */
 export function fingerprint(values: readonly number[]): string {
   let h1 = 0x811c9dc5;
   let h2 = 0x01000193;
@@ -63,14 +63,14 @@ export function fingerprint(values: readonly number[]): string {
 }
 
 /**
- * Statistique de Ljung-Box sur `m` retards.
+ * Ljung-Box statistic over `m` lags.
  *
  *   Q = T(T+2) Σ_{k=1..m} ρ_k² / (T−k)
  *
- * Appliquée aux rendements *au carré*, c'est le test standard de détection d'effets
- * ARCH : elle agrège la corrélation sérielle sur plusieurs retards au lieu de parier
- * sur un retard isolé. Sous l'hypothèse nulle d'absence d'autocorrélation, Q suit
- * approximativement une loi du khi-deux à m degrés de liberté.
+ * Applied to *squared* returns, this is the standard test for ARCH effects: it aggregates
+ * serial correlation over several lags instead of betting on one isolated lag. Under the
+ * null hypothesis of no autocorrelation, Q approximately follows a chi-squared law with m
+ * degrees of freedom.
  */
 export function ljungBox(xs: readonly number[], m: number): number {
   const T = xs.length;
@@ -82,14 +82,14 @@ export function ljungBox(xs: readonly number[], m: number): number {
   return T * (T + 2) * q;
 }
 
-/** Valeurs critiques du khi-deux au seuil de 1 %, indexées par les degrés de liberté. */
+/** Chi-squared critical values at the 1% level, indexed by degrees of freedom. */
 export const CHI2_99: Readonly<Record<number, number>> = {
   5: 15.086,
   10: 23.209,
   20: 37.566,
 };
 
-/** Mélange déterministe de Fisher-Yates — sert de contrôle négatif dans les tests. */
+/** Deterministic Fisher-Yates shuffle — used as a negative control in the tests. */
 export function shuffled<T>(xs: readonly T[], nextU32: () => number): T[] {
   const out = xs.slice();
   for (let i = out.length - 1; i > 0; i--) {

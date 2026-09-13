@@ -1,45 +1,44 @@
 /**
- * Estimation de la matrice de covariance avec shrinkage de Ledoit-Wolf (2004).
+ * Covariance matrix estimation with Ledoit-Wolf (2004) shrinkage.
  *
- * Problème traité : avec n devises et T observations, la covariance empirique est
- * d'autant plus mal conditionnée que T/n est petit. Son inverse — utilisée par toute
- * optimisation de portefeuille ou tout ratio de couverture — amplifie alors le bruit
- * d'estimation au lieu de l'atténuer.
+ * The problem: with n currencies and T observations, the sample covariance is more
+ * ill-conditioned the smaller T/n is. Its inverse — used by any portfolio optimisation
+ * or hedge ratio — then amplifies estimation noise instead of damping it.
  *
- * Le shrinkage tire l'estimateur vers une cible bien conditionnée (ici m·I, où m est la
- * variance moyenne), avec une intensité choisie pour minimiser l'erreur quadratique
- * attendue. L'intensité est calculée, pas réglée à la main — c'est tout l'intérêt.
+ * Shrinkage pulls the estimator towards a well-conditioned target (here m·I, where m is
+ * the average variance), with an intensity chosen to minimise expected squared error.
+ * The intensity is computed, not hand-tuned — that is the whole point.
  *
- * Ledoit, O. & Wolf, M. (2004), « A well-conditioned estimator for large-dimensional
- * covariance matrices », Journal of Multivariate Analysis.
+ * Ledoit, O. & Wolf, M. (2004), "A well-conditioned estimator for large-dimensional
+ * covariance matrices", Journal of Multivariate Analysis.
  */
 
 import { frobeniusNormSq, identity, trace, zeros } from '../linalg.ts';
 import type { Matrix } from '../linalg.ts';
 
 export interface ShrinkageResult {
-  /** Estimateur retenu : δ·cible + (1−δ)·empirique. */
+  /** Retained estimator: δ·target + (1−δ)·sample. */
   readonly sigma: Matrix;
-  /** Covariance empirique, conservée pour comparaison. */
+  /** Sample covariance, kept for comparison. */
   readonly sample: Matrix;
-  /** Cible du shrinkage : m·I. */
+  /** Shrinkage target: m·I. */
   readonly target: Matrix;
-  /** Intensité δ ∈ [0,1] — 0 = empirique pure, 1 = cible pure. */
+  /** Intensity δ ∈ [0,1] — 0 = pure sample, 1 = pure target. */
   readonly intensity: number;
 }
 
-/** `x` est une matrice T × n de rendements (lignes = dates, colonnes = devises). */
+/** `x` is a T × n matrix of returns (rows = dates, columns = currencies). */
 export function ledoitWolf(x: readonly (readonly number[])[]): ShrinkageResult {
   const T = x.length;
-  if (T < 2) throw new RangeError('au moins deux observations sont requises');
+  if (T < 2) throw new RangeError('at least two observations are required');
   const n = x[0]!.length;
 
-  // Centrage.
+  // Centring.
   const means = new Array<number>(n).fill(0);
   for (const row of x) for (let j = 0; j < n; j++) means[j] = means[j]! + row[j]! / T;
   const c: number[][] = x.map((row) => row.map((v, j) => v - means[j]!));
 
-  // Covariance empirique (diviseur T, cohérent avec la dérivation de Ledoit-Wolf).
+  // Sample covariance (divisor T, consistent with the Ledoit-Wolf derivation).
   const sample = zeros(n);
   for (const row of c) {
     for (let i = 0; i < n; i++) {
@@ -47,14 +46,14 @@ export function ledoitWolf(x: readonly (readonly number[])[]): ShrinkageResult {
     }
   }
 
-  // Cible : variance moyenne sur la diagonale.
+  // Target: average variance on the diagonal.
   const m = trace(sample) / n;
   const target = identity(n).map((row) => row.map((v) => v * m));
 
-  // Dispersion de l'empirique autour de la cible.
+  // Dispersion of the sample estimator around the target.
   const d2 = frobeniusNormSq(sample.map((row, i) => row.map((v, j) => v - target[i]![j]!)));
 
-  // Variance d'estimation de l'empirique.
+  // Estimation variance of the sample estimator.
   let b2bar = 0;
   for (const row of c) {
     let acc = 0;
@@ -78,8 +77,8 @@ export function ledoitWolf(x: readonly (readonly number[])[]): ShrinkageResult {
     }
   }
 
-  // Symétrisation défensive : les erreurs d'arrondi peuvent désaligner Σ[i][j] et Σ[j][i],
-  // ce qui fait échouer Cholesky sur une matrice pourtant définie positive.
+  // Defensive symmetrisation: rounding errors can misalign Σ[i][j] and Σ[j][i], which
+  // makes Cholesky fail on a matrix that is in fact positive definite.
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const avg = (sigma[i]![j]! + sigma[j]![i]!) / 2;

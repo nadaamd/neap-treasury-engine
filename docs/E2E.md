@@ -1,63 +1,64 @@
-# Scénario de bout en bout — trace de référence
+# End-to-end scenario — reference trace
 
-> `npm run e2e`. Nœud local éphémère, comptes anvil déterministes.
+> `npm run e2e`. Ephemeral local node, deterministic anvil accounts.
 
 ```
 
-01  Démarrage du nœud local
-    bloc 0
 
-02  Déploiement du système
-    politique 0x5FbDB2315678afecb367f032d93F642f64180aa3
-    vérificateur 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-    coffre 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82
+01  Starting the local node
+    block 0
 
-03  Séparation des devoirs — le contrat refuse le cumul
-    refus : SeparationOfDutiesViolated
-    le déployeur détient RISK_OFFICER, il ne peut donc pas être trésorier
-    trésorier distinct : 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-    signataire du DON : 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+02  Deploying the system
+    policy 0x5FbDB2315678afecb367f032d93F642f64180aa3
+    verifier 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+    vault 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82
 
-04  Le responsable des risques met la politique en file
-    deux changements en attente, délai de 24 heures
+03  Separation of duties — the contract refuses the overlap
+    refused: SeparationOfDutiesViolated
+    the deployer holds RISK_OFFICER, so it cannot be treasurer
+    separate treasurer: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+    DON signer: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
 
-05  Le délai s’écoule, puis les changements s’appliquent
-    version de politique : 2
+04  The risk officer queues the policy
+    two pending changes, 24-hour timelock
 
-06  Approvisionnement du coffre
-    USDC 20 000 000 · EURC 92 000
-    équivalent 100 000 — sous le seuil bas de 400 000
+05  The timelock elapses, then the changes apply
+    policy version: 2
 
-07  Le moteur décide
-    PROPOSE — 1 ordre
-    acheter 458 620 EURC contre 500 000 USDC
-    ES 6 → 36 bps · engagement 0x42fd8bf64d581856…
+06  Funding the vault
+    USDC 20,000,000 · EURC 92,000
+    equivalent 100,000 — below the lower threshold of 400,000
 
-08  Signature du rapport par le quorum
-    empreinte EIP-712 identique des deux côtés : 0x808c86a7abf3ab8e…
+07  The engine decides
+    PROPOSE — 1 order
+    buy 458,620 EURC against 500,000 USDC
+    ES 6 → 36 bps · commitment 0x42fd8bf64d581856…
 
-09  L’opérateur soumet le rapport
-    plan 0xdc218c7e9e81719e… · état AwaitingApproval
+08  The quorum signs the report
+    identical EIP-712 digest on both sides: 0x1b173d63b507904d…
 
-10  Le notionnel dépasse le seuil : approbation humaine requise
-    exécution refusée avant approbation : WrongStatus
-    auto-approbation refusée : Unauthorized
-    approuvé par le trésorier · état Ready
+09  The operator submits the report
+    plan 0xdc218c7e9e81719e… · status AwaitingApproval
 
-11  Exécution
-    USDC 20 000 000 → 19 500 000   (-500 000)
-    EURC 92 000 → 551 632   (+459 632)
-    état Settled
+10  Notional exceeds the threshold: human approval required
+    execution refused before approval: WrongStatus
+    self-approval refused: Unauthorized
+    approved by the treasurer · status Ready
 
-12  Le rejeu est refusé
-    refus : WrongStatus
+11  Execution
+    USDC 20,000,000 → 19,500,000   (-500,000)
+    EURC 92,000 → 551,632   (+459,632)
+    status Settled
 
-13  Contrôles
-    ✔ le plan est réglé
-    ✔ le montant dépensé est celui du plan
-    ✔ le montant reçu respecte le minimum
-    ✔ le taux obtenu est proche du taux de référence
+12  Replay is refused
+    refused: WrongStatus
 
-✔ Chaîne complète vérifiée : déploiement → politique → décision → signature → soumission → approbation → exécution
+13  Checks
+    ✔ the plan is settled
+    ✔ the amount spent matches the plan
+    ✔ the amount received meets the minimum
+    ✔ the realised rate is close to the reference rate
+
+✔ Full chain verified: deployment → policy → decision → signature → submission → approval → execution
 
 ```

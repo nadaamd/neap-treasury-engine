@@ -1,60 +1,60 @@
-/** Types du domaine « flux de paiement ». Voir SPEC §15.1. */
+/** Domain types for payment flows. See SPEC §15.1. */
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'BRL';
 
 /**
- * Régime de coût du corridor.
+ * Cost regime of a corridor.
  *
- * FAST : règlement stablecoin sur Arc — coût fixe de l'ordre du cent, finalité sub-seconde.
- * SLOW : rail de correspondant bancaire — coût fixe de plusieurs dizaines de dollars, J+1/J+2.
+ * FAST: stablecoin settlement on Arc — fixed cost around a cent, sub-second finality.
+ * SLOW: correspondent-bank rail — fixed cost of tens of dollars, T+1/T+2.
  *
- * Le ratio des coûts fixes entre les deux régimes est la seule quantité vraiment
- * structurante du modèle (SPEC §17.3) : c'est lui qui produit l'effondrement du buffer.
+ * The ratio of fixed costs between the two regimes is the only truly structural quantity
+ * in the model (SPEC §17.3): it is what produces the buffer collapse.
  */
 export type Rail = 'FAST' | 'SLOW';
 
 export interface CorridorSpec {
   readonly id: string;
-  /** Devise reçue lorsque le corridor est emprunté dans le sens base → quote. */
+  /** Currency received when the corridor is used in the base → quote direction. */
   readonly base: Currency;
-  /** Devise payée dans ce même sens. */
+  /** Currency paid in that same direction. */
   readonly quote: Currency;
   readonly rail: Rail;
-  /** Volume quotidien, en équivalent USD. */
+  /** Daily volume, in USD equivalent. */
   readonly dailyVolumeUsd: number;
-  /** Taille moyenne d'un paiement, en équivalent USD. */
+  /** Average payment size, in USD equivalent. */
   readonly avgTicketUsd: number;
-  /** Paramètre de forme de la log-normale des montants : plus il est grand, plus la queue est épaisse. */
+  /** Shape parameter of the log-normal amount distribution: larger means fatter tail. */
   readonly tailSigma: number;
   /**
-   * Déséquilibre directionnel ∈ [-1, 1].
-   * 0 = corridor équilibré ; +0.5 = 75 % des paiements vont de base vers quote.
-   * C'est ce terme qui crée le drift, et donc qui invalide les bandes symétriques
-   * de Miller-Orr (SPEC §4.2).
+   * Directional imbalance ∈ [-1, 1].
+   * 0 = balanced corridor; +0.5 = 75% of payments go from base to quote.
+   * This term is what creates the drift, and therefore what invalidates Miller-Orr's
+   * symmetric bands (SPEC §4.2).
    */
   readonly imbalance: number;
-  /** Coût fixe d'un rééquilibrage sur ce rail, en USD. */
+  /** Fixed cost of a rebalance on this rail, in USD. */
   readonly gammaFixedUsd: number;
-  /** Latence de règlement, en secondes. */
+  /** Settlement latency, in seconds. */
   readonly latencySec: number;
-  /** Coefficient d'impact de marché — non calibrable (SPEC §4.6), exposé en paramètre. */
+  /** Market impact coefficient — not calibratable (SPEC §4.6), exposed as a parameter. */
   readonly etaImpact: number;
-  /** Profondeur exploitable indicative, en USD. */
+  /** Indicative usable depth, in USD. */
   readonly maxDepthUsd: number;
 }
 
 export interface FlowEvent {
-  /** Horodatage, ms depuis epoch. */
+  /** Timestamp, ms since epoch. */
   readonly ts: number;
   readonly corridorId: string;
-  /** Devise dont le solde augmente. */
+  /** Currency whose balance increases. */
   readonly receive: Currency;
-  /** Devise dont le solde diminue. */
+  /** Currency whose balance decreases. */
   readonly pay: Currency;
   /**
-   * Montant en équivalent USD.
-   * La conversion vers les unités natives de chaque devise se fait dans la couche moteur,
-   * qui dispose des taux ; le générateur reste agnostique au marché.
+   * Amount in USD equivalent.
+   * Conversion into each currency's native units happens in the engine layer, which has
+   * the rates; the generator stays market-agnostic.
    */
   readonly notionalUsd: number;
 }

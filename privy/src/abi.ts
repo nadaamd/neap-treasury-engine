@@ -1,9 +1,9 @@
 /**
- * Fragment d'ABI fourni à Privy pour décoder la calldata.
+ * ABI fragment handed to Privy for decoding calldata.
  *
- * Volontairement réduit aux fonctions que les politiques autorisent : Privy n'a besoin
- * de décoder que ce sur quoi il statue, et une ABI complète donnerait à lire au moteur
- * de politiques des fonctions qu'aucune règle ne mentionne.
+ * Deliberately narrowed to the functions the policies allow: Privy only needs to decode
+ * what it rules on, and a full ABI would expose the policy engine to functions no rule
+ * mentions.
  */
 
 export const VAULT_ABI_FRAGMENT: readonly unknown[] = [

@@ -3,28 +3,27 @@ pragma solidity 0.8.28;
 
 /**
  * @title IFxVenue
- * @notice Lieu d'exécution d'une jambe de change.
+ * @notice Execution venue for one FX leg.
  *
- * @dev Décision D8. Le moteur ne dépend jamais d'un lieu particulier : il parle à cette
- *      interface, implémentée par `MockFxVenue` — déterministe, utilisé par le backtest.
+ * @dev Decision D8. The engine never depends on a particular venue: it talks to this
+ *      interface, implemented by `MockFxVenue` — deterministic, used by the backtest.
  *
- *      Ce n'est pas un repli : le backtest **exige** un lieu d'exécution rejouable, et le
- *      fait que backtest et exécution partagent la même interface est ce qui rend le
- *      backtest opposable — la politique testée est littéralement la politique exécutée.
+ *      This is not a fallback: the backtest **requires** a replayable execution venue, and
+ *      the fact that backtest and execution share the same interface is what makes the
+ *      backtest binding — the policy tested is literally the policy executed.
  *
- *      **Ce que cette interface ne décrit pas : StableFX** (décision D21). Le moteur FX
- *      d'Arc ne s'appelle pas depuis un contrat. Son flux est en trois temps — demande de
- *      cotation à plusieurs teneurs, acceptation hors chaîne pour la vitesse, puis
- *      règlement par escrow avec Permit2 et confirmation d'intention en données typées.
- *      L'adaptateur correspondant vit donc hors chaîne, pas ici. On l'a vérifié dans la
- *      documentation plutôt que supposé : `docs/JALON-0.md`.
+ *      **What this interface does not describe: StableFX** (decision D21). Arc's FX engine
+ *      is not called from a contract. Its flow has three stages — request a quote from
+ *      several makers, accept off-chain for speed, then settle through escrow with Permit2
+ *      and a typed-data intent confirmation. The corresponding adapter therefore lives
+ *      off-chain, not here. This was verified in the documentation rather than assumed.
  */
 interface IFxVenue {
     /**
-     * @notice Prix indicatif pour une taille donnée.
-     * @dev Le `quoteId` lie l'exécution au prix annoncé. Un lieu réel signerait ce
-     *      quote hors chaîne ; le mock le dérive de ses paramètres courants, ce qui
-     *      suffit à détecter une exécution à un prix qui n'est plus celui annoncé.
+     * @notice Indicative price for a given size.
+     * @dev The `quoteId` binds execution to the quoted price. A real venue would sign that
+     *      quote off-chain; the mock derives it from its current parameters, which is
+     *      enough to detect execution at a price that is no longer the quoted one.
      */
     function quote(address tokenIn, address tokenOut, uint256 amountIn)
         external
@@ -32,15 +31,14 @@ interface IFxVenue {
         returns (uint256 amountOut, uint64 quoteExpiry, bytes32 quoteId);
 
     /**
-     * @notice Règlement livraison contre paiement.
-     * @dev L'appelant doit avoir approuvé `amountIn` de `tokenIn`.
+     * @notice Payment-versus-payment settlement.
+     * @dev The caller must have approved `amountIn` of `tokenIn`.
      *
-     *      **Atomicité.** Du point de vue de l'appelant, le débit de `tokenIn` et le
-     *      crédit de `tokenOut` réussissent ou échouent ensemble — ce qui élimine le
-     *      risque de règlement Herstatt. C'était une hypothèse à vérifier ; la
-     *      documentation de StableFX la confirme pour son escrow PvP (« both sides
-     *      complete or neither does »). La machine à états du coffre n'a donc pas besoin
-     *      d'état de compensation (D20).
+     *      **Atomicity.** From the caller's point of view, the `tokenIn` debit and the
+     *      `tokenOut` credit succeed or fail together — which eliminates Herstatt
+     *      settlement risk. This was an assumption to verify; the StableFX documentation
+     *      confirms it for its PvP escrow ("both sides complete or neither does"). The
+     *      vault state machine therefore needs no compensation state (D20).
      */
     function settlePvP(
         address tokenIn,

@@ -1,13 +1,13 @@
 /**
- * Générateur de flux de paiement — SPEC §17.
+ * Payment flow generator — SPEC §17.
  *
- * Processus de Poisson composé à intensité saisonnière :
- *   arrivées  N_h ~ Poisson( lambda_daily / 24 · s_hour · s_dow · s_dom )
- *   montants  X_i ~ LogNormal de moyenne `avgTicketUsd` et de forme `tailSigma`
- *   direction Bernoulli pilotée par le déséquilibre du corridor
+ * Compound Poisson process with seasonal intensity:
+ *   arrivals  N_h ~ Poisson( lambda_daily / 24 · s_hour · s_dow · s_dom )
+ *   amounts   X_i ~ LogNormal with mean `avgTicketUsd` and shape `tailSigma`
+ *   direction Bernoulli driven by the corridor imbalance
  *
- * Déterminisme : un seul Rng, parcouru dans un ordre fixe (heure croissante, puis
- * corridors dans l'ordre du tableau). Même seed ⇒ même sortie, octet pour octet.
+ * Determinism: a single Rng, consumed in a fixed order (increasing hour, then corridors
+ * in array order). Same seed ⇒ same output, byte for byte.
  */
 
 import { Rng } from './random.ts';
@@ -18,7 +18,7 @@ const HOUR_MS = 3_600_000;
 
 export interface GenerateOptions {
   readonly seed: number;
-  /** Début de la simulation, aligné sur une heure UTC. */
+  /** Start of the simulation, aligned on a UTC hour. */
   readonly startTs: number;
   readonly days: number;
   readonly corridors: readonly CorridorSpec[];
@@ -27,10 +27,10 @@ export interface GenerateOptions {
 export function generateFlows(opts: GenerateOptions): FlowEvent[] {
   const { seed, startTs, days, corridors } = opts;
   if (!Number.isInteger(days) || days <= 0) {
-    throw new RangeError(`days doit être un entier positif, reçu ${days}`);
+    throw new RangeError(`days must be a positive integer, received ${days}`);
   }
   if (startTs % HOUR_MS !== 0) {
-    throw new RangeError('startTs doit être aligné sur une heure UTC');
+    throw new RangeError('startTs must be aligned on a UTC hour');
   }
 
   const rng = new Rng(seed);
@@ -60,9 +60,9 @@ export function generateFlows(opts: GenerateOptions): FlowEvent[] {
     }
   }
 
-  // Tri stable sur l'horodatage : les événements d'une même heure sont générés
-  // dans le désordre. `Array.prototype.sort` est stable depuis ES2019, l'ordre
-  // d'insertion départage donc les ex æquo — le déterminisme est préservé.
+  // Stable sort on the timestamp: events within the same hour are generated out of
+  // order. `Array.prototype.sort` has been stable since ES2019, so insertion order
+  // breaks ties — determinism is preserved.
   events.sort((a, b) => a.ts - b.ts);
   return events;
 }

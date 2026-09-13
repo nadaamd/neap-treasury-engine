@@ -1,5 +1,5 @@
 # ==========================================================================
-# WORKFLOW — NEAP, décision de rééquilibrage confidentielle
+# WORKFLOW — NEAP, confidential rebalancing decision
 # ==========================================================================
 staging-settings:
   user-workflow:

@@ -3,16 +3,15 @@ pragma solidity 0.8.28;
 
 /**
  * @title IAttestationVerifier
- * @notice Vérifie qu'un rapport a bien été produit par l'enclave attendue.
+ * @notice Verifies that a report was indeed produced by the expected enclave.
  *
- * @dev Décision D9. Le moteur de risque est une fonction pure exécutable soit dans le
- *      handler TEE de Chainlink CRE, soit dans un runner local isolé. Cette interface
- *      est la seule pièce qui change entre les deux — d'où un adaptateur, et non un
- *      appel en dur.
+ * @dev Decision D9. The risk engine is a pure function runnable either inside Chainlink
+ *      CRE's TEE handler or inside an isolated local runner. This interface is the only
+ *      piece that changes between the two — hence an adapter, not a hard-coded call.
  *
- *      `payloadHash` n'est pas décoratif : sans lui, une attestation valide pourrait
- *      être rejouée avec un tout autre rapport. L'attestation doit prouver que *ce*
- *      contenu précis est sorti de l'enclave, pas seulement qu'une enclave existe.
+ *      `payloadHash` is not decorative: without it, a valid attestation could be replayed
+ *      with an entirely different report. The attestation must prove that *this* precise
+ *      content came out of the enclave, not merely that an enclave exists.
  */
 interface IAttestationVerifier {
     function verify(bytes calldata attestation, bytes32 expectedMeasurement, bytes32 payloadHash)

@@ -12,9 +12,9 @@
     "exactOptionalPropertyTypes": true,
     "types": []
   },
-  // Le code source uniquement. Les tests et les scripts s'appuient sur les modules
-  // intégrés de Node (`node:test`, `process`, `import.meta`), dont les déclarations
-  // exigeraient @types/node — une dépendance que ce dépôt n'a pas. Le workflow CRE a son
-  // propre tsconfig, aligné sur le SDK.
+  // Source code only. The tests and scripts rely on Node built-ins (`node:test`,
+  // `process`, `import.meta`), whose declarations would require @types/node — a dependency
+  // this repository does not have. The CRE workflow has its own tsconfig, aligned with the
+  // SDK.
   "include": ["data/src/**/*.ts", "data/calibration/**/*.ts", "engine/src/**/*.ts", "app/src/**/*.ts", "cre/handler/**/*.ts", "privy/src/**/*.ts"]
 }

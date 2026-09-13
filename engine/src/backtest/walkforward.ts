@@ -1,17 +1,17 @@
 /**
- * Protocole walk-forward — décision D10, SPEC §18.1.
+ * Walk-forward protocol — decision D10, SPEC §18.1.
  *
- *   pour chaque fenêtre w :
- *       calibration  sur [t0, t_w)          ← passé strict
- *       évaluation   sur [t_w, t_{w+1})     ← futur jamais vu
+ *   for each window w:
+ *       calibration  over [t0, t_w)          ← strict past
+ *       evaluation   over [t_w, t_{w+1})     ← future never seen
  *
- * Aucun paramètre utilisé à l'instant t ne peut avoir été estimé avec une donnée
- * postérieure à t. La contrainte est simple à énoncer et facile à violer par
- * inadvertance — d'où le canari de la suite de tests, qui injecte une valeur extrême
- * dans le futur et vérifie qu'aucune décision antérieure n'en est affectée.
+ * No parameter used at time t may have been estimated with data later than t. The
+ * constraint is simple to state and easy to violate by accident — hence the canary in
+ * the test suite, which injects an extreme value into the future and checks that no
+ * earlier decision is affected by it.
  *
- * La seule exception est délibérée et porte un nom : CLAIRVOYANT calibre sur la fenêtre
- * d'évaluation. Ce n'est pas une politique, c'est une borne supérieure.
+ * The single exception is deliberate and has a name: CLAIRVOYANT calibrates on the
+ * evaluation window. It is not a policy, it is a reference bound.
  */
 
 import { CORRIDORS } from '../../../data/calibration/corridors.ts';
@@ -86,9 +86,8 @@ export function runSeed(seed: number, cfg: BacktestConfig): SeedResult {
   const flows = {} as Record<Currency, number[]>;
   for (const c of CURRENCIES) flows[c] = buckets.map((b) => b.net[c]);
 
-  // Le marché est tiré d'un autre germe : rien ne lie les chocs de change aux flux de
-  // paiement, et supposer une dépendance qu'on ne sait pas mesurer serait pire que de
-  // l'ignorer.
+  // The market is drawn from a different seed: nothing ties FX shocks to payment flows,
+  // and assuming a dependence we cannot measure would be worse than ignoring it.
   const market = simulateMarket(seed + 500_000, totalDays);
 
   const totals = {} as Record<PolicyKind, WindowMetrics>;
@@ -101,7 +100,7 @@ export function runSeed(seed: number, cfg: BacktestConfig): SeedResult {
     const calibration = slice(flows, 0, calibEndDay * EPOCHS_PER_DAY);
     const evaluation = slice(flows, calibEndDay * EPOCHS_PER_DAY, evalEndDay * EPOCHS_PER_DAY);
 
-    // Volatilité et résidus arrêtés au dernier jour de calibration — jamais au-delà.
+    // Volatility and residuals stop at the last calibration day — never beyond.
     const dailyVol = {} as Record<Currency, number>;
     const residuals: number[][] = [];
     const currentVol: number[] = [];
@@ -165,8 +164,8 @@ export function runBacktest(cfg: BacktestConfig): BacktestSummary {
     metrics[kind] = perKey;
   }
 
-  // Calculé par germe puis agrégé : agréger d'abord les coûts puis diviser masquerait la
-  // dispersion, qui est précisément ce qu'on veut rapporter.
+  // Computed per seed then aggregated: aggregating costs first and dividing afterwards
+  // would hide the dispersion, which is precisely what we want to report.
   const estimation = results
     .map((r) => (r.byPolicy.NEAP.totalCost - r.byPolicy.CLAIRVOYANT.totalCost)
       / r.byPolicy.CLAIRVOYANT.totalCost)

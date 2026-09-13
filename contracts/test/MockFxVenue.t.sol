@@ -48,16 +48,15 @@ contract MockFxVenueTest is Test {
     function test_quoteAppliesRateAndSpread() public view {
         uint256 amountIn = 1_000e6;
         (uint256 out,,) = venue.quote(address(usdc), address(eurc), amountIn);
-        // Le spread de 2 bps s'applique, l'impact est négligeable à cette taille.
+        // The 2 bps spread applies; impact is negligible at this size.
         uint256 mid = amountIn * RATE / WAD;
         assertLt(out, mid);
         assertGt(out, mid * 9990 / 10_000);
     }
 
-    /// @dev L'impact suit √(taille/profondeur) : quadrupler la taille double le coût
-    ///      *relatif*. C'est la forme empirique classique, et sa concavité est ce qui
-    ///      rend l'arbitrage « gros ordres rares contre petits ordres fréquents »
-    ///      non trivial.
+    /// @dev Impact follows √(size/depth): quadrupling the size doubles the *relative*
+    ///      cost. That is the classic empirical form, and its concavity is what makes the
+    ///      "rare large orders versus frequent small ones" trade-off non-trivial.
     function test_impactFollowsSquareRoot() public view {
         uint256 small = 100_000e6;
         uint256 large = 400_000e6;
@@ -73,8 +72,8 @@ contract MockFxVenueTest is Test {
         assertApproxEqRel(impactLarge, impactSmall * 2, 0.02e18);
     }
 
-    /// @dev Le coût total est superlinéaire : scinder un ordre en deux moitiés coûte
-    ///      moins cher en impact que de l'exécuter d'un bloc.
+    /// @dev Total cost is superlinear: splitting an order in two halves costs less impact
+    ///      than executing it in one block.
     function test_totalCostIsSuperlinear() public view {
         uint256 whole = 800_000e6;
         (uint256 outWhole,,) = venue.quote(address(usdc), address(eurc), whole);
@@ -96,7 +95,7 @@ contract MockFxVenueTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                              Règlement                              */
+    /*                              Settlement                             */
     /* ------------------------------------------------------------------ */
 
     function test_settlementMovesBothLegs() public {
@@ -114,9 +113,9 @@ contract MockFxVenueTest is Test {
         assertEq(eurc.balanceOf(vault), eurcBefore + expected);
     }
 
-    /// @dev Contrôle de déviation : régler une taille différente de celle annoncée
-    ///      change le prix, donc l'identifiant du quote ne correspond plus. Sans ce
-    ///      contrôle, un carnet vidé entre l'annonce et l'exécution servirait au pire prix.
+    /// @dev Deviation check: settling a size different from the quoted one changes the
+    ///      price, so the quote identifier no longer matches. Without this check, a book
+    ///      emptied between quote and execution would fill at the worst price.
     function test_settlingADifferentSizeIsRejected() public {
         uint256 amountIn = 500_000e6;
         (, bytes32 id) = _quoted(amountIn);
@@ -137,9 +136,8 @@ contract MockFxVenueTest is Test {
         _settle(amountIn, expected + 1, id, vault);
     }
 
-    /// @dev Atomicité : si la jambe entrante ne peut pas être débitée, rien ne bouge.
-    ///      C'est l'hypothèse que l'interface impose à tout lieu d'exécution, et la
-    ///      question posée à Arc au jalon 0.
+    /// @dev Atomicity: if the incoming leg cannot be debited, nothing moves. This is the
+    ///      assumption the interface imposes on every execution venue.
     function test_settlementIsAtomicWhenTheInboundLegFails() public {
         address broke = makeAddr("broke");
         uint256 amountIn = 500_000e6;
@@ -165,8 +163,8 @@ contract MockFxVenueTest is Test {
         assertLe(out, amountIn * RATE / WAD);
     }
 
-    /// @dev Au-delà d'une certaine taille le coût atteindrait le notionnel : le lieu
-    ///      refuse plutôt que de coter un prix absurde.
+    /// @dev Beyond a certain size the cost would reach the notional: the venue refuses
+    ///      rather than quoting an absurd price.
     function test_absurdSizeIsRejectedRatherThanPricedNonsensically() public {
         venue.configure(address(usdc), address(eurc), RATE, 2, 5000, DEPTH);
         vm.expectRevert(MockFxVenue.CostExceedsNotional.selector);

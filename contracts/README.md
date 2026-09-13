@@ -1,6 +1,6 @@
-# Contrats (L3)
+# Contracts (L3)
 
-- `TreasuryPolicy`   autorité : rôles, séparation des devoirs, limites, timelock
-- `ReportVerifier`   signature DON, attestation TEE, nonce, fraîcheur, idempotence
-- `RebalanceVault`   soldes opérationnels, bornes de sanité, exécution, journal
-- `ExecutionRouter`  IFxVenue → MockFxVenue | ArcFxVenue, contrôle de déviation
+- `TreasuryPolicy`  authority: roles, separation of duties, limits, timelock
+- `ReportVerifier`  DON signatures, TEE attestation, nonce, freshness, idempotency
+- `RebalanceVault`  operational balances, sanity bounds, execution, audit log
+- `IFxVenue`        execution venue → `MockFxVenue` | `PausedFxVenue`, deviation check

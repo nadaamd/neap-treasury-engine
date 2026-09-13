@@ -1,20 +1,20 @@
 /**
- * Simulateur de trajectoires de change.
+ * FX path simulator.
  *
- * Tient lieu d'historique de marché tant que les Data Streams ne sont pas câblés
- * (SPEC §5.2). Il ne s'agit pas de prédire le change mais de produire des séries
- * qui possèdent les deux propriétés qui comptent pour le moteur de risque :
+ * Stands in for market history until Data Streams are wired in (SPEC §5.2). The point is
+ * not to predict FX but to produce series with the two properties that matter to the risk
+ * engine:
  *
- *   1. **groupement de volatilité** — les périodes agitées succèdent aux périodes agitées ;
- *      c'est ce qui donne son sens à la volatilité EWMA plutôt qu'à une variance glissante ;
- *   2. **queues épaisses** — innovations de Student, pas gaussiennes ; c'est ce qui creuse
- *      l'écart entre l'ES normale et l'ES par simulation historique filtrée.
+ *   1. **volatility clustering** — turbulent periods follow turbulent periods; this is
+ *      what makes EWMA volatility meaningful rather than a rolling variance;
+ *   2. **fat tails** — Student innovations, not Gaussian ones; this is what opens the gap
+ *      between normal ES and filtered historical simulation ES.
  *
- * Un simulateur gaussien homoscédastique rendrait les deux estimateurs identiques et
- * viderait la décision D4 de son contenu.
+ * A homoscedastic Gaussian simulator would make both estimators identical and empty
+ * decision D4 of its content.
  *
- * Modèle : GARCH(1,1) par devise, innovations de Student standardisées, corrélation
- * transversale imposée par Cholesky.
+ * Model: GARCH(1,1) per currency, standardised Student innovations, cross-sectional
+ * correlation imposed by Cholesky.
  */
 
 import { Rng } from './random.ts';
@@ -22,17 +22,17 @@ import type { Currency } from './types.ts';
 import { cholesky } from '../../engine/src/linalg.ts';
 import type { Matrix } from '../../engine/src/linalg.ts';
 
-/** Devises détenues, hors numéraire. Le USD est le numéraire : son rendement est nul par construction. */
+/** Currencies held, excluding the numeraire. USD is the numeraire: its return is zero by construction. */
 export const RISK_CURRENCIES: readonly Currency[] = ['EUR', 'GBP', 'BRL'];
 
 export interface GarchSpec {
-  /** Volatilité annualisée de long terme, en fraction (0.07 = 7 %). */
+  /** Long-run annualised volatility, as a fraction (0.07 = 7%). */
   readonly annualVol: number;
-  /** Poids du choc récent. */
+  /** Weight of the recent shock. */
   readonly alpha: number;
-  /** Persistance. */
+  /** Persistence. */
   readonly beta: number;
-  /** Degrés de liberté de la loi de Student (ν > 4 pour que la kurtosis soit finie). */
+  /** Degrees of freedom of the Student law (ν > 4 so that kurtosis is finite). */
   readonly nu: number;
 }
 
@@ -42,7 +42,7 @@ export const FX_SPECS: Readonly<Record<string, GarchSpec>> = {
   BRL: { annualVol: 0.16, alpha: 0.12, beta: 0.85, nu: 5 },
 };
 
-/** Corrélations transversales des rendements quotidiens contre USD. */
+/** Cross-sectional correlations of daily returns against USD. */
 export const FX_CORRELATION: Matrix = [
   [1.0, 0.70, 0.30],
   [0.70, 1.0, 0.28],
@@ -51,7 +51,7 @@ export const FX_CORRELATION: Matrix = [
 
 const TRADING_DAYS = 252;
 
-/** Innovation de Student standardisée (variance unitaire), ν entier. */
+/** Standardised Student innovation (unit variance), integer ν. */
 function studentT(rng: Rng, nu: number): number {
   const z = rng.normal();
   let chi2 = 0;
@@ -60,20 +60,20 @@ function studentT(rng: Rng, nu: number): number {
     chi2 += g * g;
   }
   const t = z / Math.sqrt(chi2 / nu);
-  return t / Math.sqrt(nu / (nu - 2)); // standardisation : variance = 1
+  return t / Math.sqrt(nu / (nu - 2)); // standardisation: variance = 1
 }
 
 export interface MarketPath {
-  /** Rendements logarithmiques quotidiens, indexés par devise. */
+  /** Daily log returns, indexed by currency. */
   readonly returns: Readonly<Record<string, number[]>>;
-  /** Volatilité conditionnelle quotidienne réalisée par le modèle — sert de témoin aux tests. */
+  /** Daily conditional volatility realised by the model — used as a control in the tests. */
   readonly conditionalVol: Readonly<Record<string, number[]>>;
 }
 
 export function simulateMarket(seed: number, days: number): MarketPath {
   const rng = new Rng(seed);
   const chol = cholesky(FX_CORRELATION);
-  if (chol === null) throw new Error('matrice de corrélation de change non définie positive');
+  if (chol === null) throw new Error('FX correlation matrix is not positive definite');
 
   const names = RISK_CURRENCIES;
   const n = names.length;
@@ -93,7 +93,7 @@ export function simulateMarket(seed: number, days: number): MarketPath {
   });
 
   for (let t = 0; t < days; t++) {
-    // Innovations standardisées puis corrélées par Cholesky.
+    // Standardised innovations, then correlated through Cholesky.
     const raw = names.map((c) => studentT(rng, FX_SPECS[c]!.nu));
     const correlated = new Array<number>(n).fill(0);
     for (let i = 0; i < n; i++) {

@@ -1,8 +1,8 @@
 /**
- * Exécution d'une politique sur une fenêtre d'évaluation.
+ * Running a policy over an evaluation window.
  *
- * Un seul moteur pour les quatre politiques : elles ne diffèrent que par leurs bandes et
- * leur cadence de décision. Toute autre différence fausserait la comparaison.
+ * One engine for all four policies: they differ only in their bands and in how often
+ * they decide. Any other difference would bias the comparison.
  */
 
 import type { Currency } from '../../../data/src/types.ts';
@@ -13,11 +13,11 @@ import type { PolicyBands, WindowMetrics } from './types.ts';
 
 export interface SimulationInput {
   readonly policy: PolicyBands;
-  /** Flux nets par devise, un élément par epoch. */
+  /** Net flows per currency, one element per epoch. */
   readonly flows: Record<Currency, readonly number[]>;
-  /** Résidus standardisés disponibles à la date de départ — jamais au-delà (D10). */
+  /** Standardised residuals available at the start date — never beyond it (D10). */
   readonly residuals: readonly (readonly number[])[];
-  /** Volatilité conditionnelle courante par devise, dans l'ordre de CURRENCIES. */
+  /** Current conditional volatility per currency, in CURRENCIES order. */
   readonly currentVol: readonly number[];
 }
 
@@ -48,8 +48,8 @@ export function runPolicy(input: SimulationInput): WindowMetrics {
       carryCost += cfg.costs.carryRate * Math.max(balance[c]!, 0);
       capitalAcc += Math.max(balance[c]!, 0);
 
-      // Une politique calendaire ne regarde l'état qu'à heure fixe ; les autres à chaque
-      // epoch. C'est la seule autre différence entre les politiques comparées.
+      // A calendar policy only inspects state at a fixed time; the others do so every
+      // epoch. That is the only other difference between the compared policies.
       const shouldLook = policy.calendarOnly ? endOfDay : true;
       if (!shouldLook) continue;
 

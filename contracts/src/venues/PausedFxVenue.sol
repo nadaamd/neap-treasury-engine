@@ -5,20 +5,20 @@ import {IFxVenue} from "../interfaces/IFxVenue.sol";
 
 /**
  * @title PausedFxVenue
- * @notice Lieu d'exécution qui refuse tout, explicitement.
+ * @notice An execution venue that refuses everything, explicitly.
  *
- * @dev Destiné au déploiement mainnet tant qu'aucun lieu réel n'est accessible.
- *      StableFX est une intégration API réservée aux institutions vérifiées et son
- *      adaptateur vit hors chaîne (D21) : le coffre n'a donc pas de contrepartie
- *      crédible sur mainnet au moment du déploiement.
+ * @dev Intended for mainnet deployment for as long as no real venue is reachable.
+ *      StableFX is an API integration restricted to verified institutions and its adapter
+ *      lives off-chain (D21): the vault therefore has no credible counterparty on mainnet
+ *      at deployment time.
  *
- *      Deux options se présentaient. Déployer le mock de test — un lieu incapable de
- *      sourcer la moindre liquidité, qui prendrait l'apparence d'un piège si quelqu'un
- *      l'alimentait. Ou déployer un refus explicite. Le second dit la vérité : le
- *      système est en place, vérifiable, et prouvablement inopérant jusqu'à ce qu'un
- *      administrateur y branche un vrai lieu par `setVenue`.
+ *      There were two options. Deploy the test mock — a venue unable to source any
+ *      liquidity, which would look like a trap if anyone funded it. Or deploy an explicit
+ *      refusal. The second tells the truth: the system is in place, verifiable, and
+ *      provably inoperative until an administrator wires a real venue in through
+ *      `setVenue`.
  *
- *      Un contrat qui refuse franchement vaut mieux qu'un contrat qui fait semblant.
+ *      A contract that refuses plainly beats a contract that pretends.
  */
 contract PausedFxVenue is IFxVenue {
     error VenueNotConfigured();

@@ -1,8 +1,8 @@
 /**
- * Serveur du tableau de bord.
+ * Dashboard server.
  *
- * `node:http` et rien d'autre. Le jour de la démonstration, une chaîne de dépendances
- * qui refuse de s'installer coûte plus cher que tout ce qu'elle aurait apporté.
+ * `node:http` and nothing else. On demo day, a dependency chain that refuses to install
+ * costs more than everything it would have brought.
  */
 
 import { createServer } from 'node:http';
@@ -37,8 +37,8 @@ function paramsFrom(url: URL): EpisodeParams {
   const shockAt = url.searchParams.get('shockAt');
   return {
     seed: Math.trunc(num(url.searchParams.get('seed'), DEFAULT_PARAMS.seed)),
-    // Borné : un épisode se calcule à la demande, il ne doit pas pouvoir bloquer le
-    // serveur pendant une démonstration.
+    // Bounded: an episode is computed on demand and must not be able to block the
+    // server during a demo.
     days: Math.min(Math.max(Math.trunc(num(url.searchParams.get('days'), DEFAULT_PARAMS.days)), 1), 10),
     kappa: Math.min(Math.max(num(url.searchParams.get('kappa'), DEFAULT_PARAMS.kappa), 0), 5),
     etaScale: Math.min(Math.max(num(url.searchParams.get('eta'), DEFAULT_PARAMS.etaScale), 0.1), 10),
@@ -64,13 +64,13 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // Points d'entrée consommés par le handler confidentiel pendant la simulation.
+    // Endpoints consumed by the confidential handler during simulation.
     if (url.pathname === '/api/cre/treasury') {
-      const expected = process.env.SECRET_TREASURY_API_TOKEN ?? 'jeton-de-simulation';
+      const expected = process.env.SECRET_TREASURY_API_TOKEN ?? 'simulation-token';
       const body = treasuryPayload(req.headers.authorization, expected);
       if (body === null) {
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end('{"error":"jeton absent ou invalide"}');
+        res.end('{"error":"missing or invalid token"}');
         return;
       }
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
@@ -91,19 +91,19 @@ const server = createServer(async (req, res) => {
         res.end(raw);
       } catch {
         res.writeHead(404, { 'content-type': 'application/json' });
-        res.end('{"error":"backtest absent — lancer node engine/scripts/backtest.ts --json results/backtest.json"}');
+        res.end('{"error":"no backtest — run node engine/scripts/backtest.ts --json results/backtest.json"}');
       }
       return;
     }
 
-    // La page d'accueil convainc, le tableau de bord sert à travailler : deux surfaces,
-    // deux adresses. `/app` sans extension est une adresse qu'on peut dire à voix haute.
+    // The landing page persuades, the dashboard is for working: two surfaces, two
+    // addresses. `/app` without an extension is an address you can say out loud.
     const requested =
       url.pathname === '/' ? '/index.html' : url.pathname === '/app' ? '/app.html' : url.pathname;
-    // Sécurité élémentaire : on ne sert que ce qui est sous public/.
+    // Elementary safety: only what lives under public/ is served.
     const target = join(PUBLIC, requested);
     if (!target.startsWith(PUBLIC)) {
-      res.writeHead(403).end('interdit');
+      res.writeHead(403).end('forbidden');
       return;
     }
     const body = await readFile(target);
@@ -111,25 +111,25 @@ const server = createServer(async (req, res) => {
     res.end(body);
   } catch {
     res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('introuvable');
+    res.end('not found');
   }
 });
 
 /**
- * Un port occupé est le cas d'erreur le plus banal en développement, et la trace de pile
- * que Node produit par défaut n'aide personne. On dit ce qui se passe et comment s'en
- * sortir — y compris cinq minutes avant une démonstration.
+ * A busy port is the most mundane error in development, and the stack trace Node prints
+ * by default helps nobody. Say what is happening and how to get out of it — including
+ * five minutes before a demo.
  */
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Le port ${PORT} est déjà occupé.`);
-    console.error(`  · pour libérer :        pkill -f "node app/server.ts"`);
-    console.error(`  · pour un autre port :  PORT=5174 npm run dev`);
+    console.error(`Port ${PORT} is already in use.`);
+    console.error(`  · to free it:          pkill -f "node app/server.ts"`);
+    console.error(`  · to use another port: PORT=5174 npm run dev`);
     process.exit(1);
   }
   throw err;
 });
 
 server.listen(PORT, () => {
-  console.log(`NEAP — tableau de bord sur http://localhost:${PORT}`);
+  console.log(`NEAP — dashboard on http://localhost:${PORT}`);
 });

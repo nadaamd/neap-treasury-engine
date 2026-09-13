@@ -1,12 +1,12 @@
 /**
- * Produit le jeu de conformité partagé entre le moteur et les contrats.
+ * Produces the conformance fixture shared by the engine and the contracts.
  *
  *   node engine/scripts/fixtures.ts
  *
- * Le fichier engendré est lu par une suite Solidity qui recalcule tout de son côté. Deux
- * implémentations indépendantes du même encodage, confrontées à chaque exécution des
- * tests : c'est la seule façon d'attraper une divergence avant qu'un rapport ne soit
- * rejeté en production pour une virgule dans une signature de type.
+ * The generated file is read by a Solidity suite that recomputes everything on its side.
+ * Two independent implementations of the same encoding, cross-checked on every test run:
+ * it is the only way to catch a divergence before a report gets rejected in production
+ * over a comma in a type signature.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -40,9 +40,9 @@ const orders: OnchainOrder[] = [
 
 const commitment = ordersCommitment(orders, salt);
 
-// Les métriques de risque sont signées : une valeur négative vérifie que l'extension de
-// signe sur 256 bits est bien faite des deux côtés. C'est le cas d'encodage le plus
-// facile à rater et le plus silencieux quand on le rate.
+// Risk metrics are signed integers: a negative value checks that sign extension to 256
+// bits is done correctly on both sides. It is the encoding case easiest to get wrong and
+// quietest when you do.
 const report: OnchainReport = {
   epoch: 100n,
   nonce: 7n,
@@ -87,10 +87,10 @@ const fixture = {
   reportId: reportId(report),
 };
 
-// Sélecteurs des fonctions que les politiques Privy autorisent. Une signature mal
-// recopiée produirait une politique qui bloque exactement ce qu'elle devait permettre,
-// et l'erreur ne se verrait qu'au moment d'une approbation refusée en pleine
-// démonstration. La suite Solidity les confronte aux contrats compilés.
+// Selectors of the functions the Privy policies allow. A mistyped signature would produce
+// a policy that blocks exactly what it was meant to permit, and the error would only
+// surface as an approval refused in the middle of a demo. The Solidity suite checks them
+// against the compiled contracts.
 const selectors = Object.fromEntries(
   Object.entries(ALLOWED_CALLS).flatMap(([role, signatures]) =>
     signatures.map((sig) => [sig, { role, selector: selector(sig) }]),
@@ -100,7 +100,7 @@ Object.assign(fixture as Record<string, unknown>, { selectors });
 
 const target = new URL('../../contracts/test/fixtures/conformance.json', import.meta.url);
 writeFileSync(target, `${JSON.stringify(fixture, null, 2)}\n`);
-console.log(`jeu de conformité écrit : ${target.pathname}`);
+console.log(`conformance fixture written: ${target.pathname}`);
 console.log(`  commitment  ${fixture.ordersCommitment}`);
 console.log(`  structHash  ${fixture.reportStructHash}`);
 console.log(`  reportId    ${fixture.reportId}`);

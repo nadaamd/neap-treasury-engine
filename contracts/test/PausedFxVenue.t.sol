@@ -11,8 +11,8 @@ contract PausedFxVenueTest is Test {
         venue = new PausedFxVenue();
     }
 
-    /// @dev Le refus doit être explicite et nommé. Un lieu qui renverrait zéro laisserait
-    ///      le coffre croire à une cotation nulle plutôt qu'à une absence de lieu.
+    /// @dev The refusal must be explicit and named. A venue returning zero would let the
+    ///      vault believe in a zero quote rather than in the absence of a venue.
     function test_quoteRefusesExplicitly() public {
         vm.expectRevert(PausedFxVenue.VenueNotConfigured.selector);
         venue.quote(address(1), address(2), 1e6);
@@ -23,8 +23,8 @@ contract PausedFxVenueTest is Test {
         venue.settlePvP(address(1), address(2), 1e6, 0, address(3), bytes32(0));
     }
 
-    /// @dev Aucun état, donc rien à compromettre : c'est tout l'intérêt d'un lieu inerte
-    ///      déployé sur mainnet en attendant qu'un vrai lieu soit accessible.
+    /// @dev No state, hence nothing to compromise: that is the whole point of an inert
+    ///      venue deployed on mainnet while waiting for a real one.
     function test_holdsNothing() public view {
         assertEq(address(venue).balance, 0);
     }

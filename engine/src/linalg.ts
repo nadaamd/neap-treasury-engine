@@ -1,12 +1,12 @@
 /**
- * Algèbre linéaire minimale pour des matrices de covariance de petite dimension (n ≤ 8).
+ * Minimal linear algebra for small-dimension covariance matrices (n ≤ 8).
  *
- * Aucune dépendance : le moteur doit rester une fonction pure portable dans le handler
- * CRE (décision D9), donc sans bibliothèque native ni WASM.
+ * No dependencies: the engine must stay a pure function portable into the CRE handler
+ * (decision D9), hence no native library and no WASM.
  */
 
 export type Matrix = number[][];
-/** Les fonctions n'écrivent jamais dans un vecteur : le type l'énonce. */
+/** Functions never write into a vector: the type says so. */
 export type Vector = readonly number[];
 
 export function zeros(n: number, m: number = n): Matrix {
@@ -25,7 +25,7 @@ export function trace(a: Matrix): number {
   return s;
 }
 
-/** Produit scalaire de Frobenius normalisé : ⟨A,B⟩ = tr(A Bᵀ) / n. Convention de Ledoit-Wolf. */
+/** Normalised Frobenius inner product: ⟨A,B⟩ = tr(A Bᵀ) / n. Ledoit-Wolf convention. */
 export function frobeniusInner(a: Matrix, b: Matrix): number {
   const n = a.length;
   let s = 0;
@@ -39,7 +39,7 @@ export function frobeniusNormSq(a: Matrix): number {
   return frobeniusInner(a, a);
 }
 
-/** Forme quadratique wᵀ A w. */
+/** Quadratic form wᵀ A w. */
 export function quadForm(w: Vector, a: Matrix): number {
   let s = 0;
   for (let i = 0; i < w.length; i++) {
@@ -51,9 +51,9 @@ export function quadForm(w: Vector, a: Matrix): number {
 }
 
 /**
- * Décomposition de Cholesky. Renvoie null si la matrice n'est pas définie positive —
- * c'est le test de positivité le moins cher, et il sert de contrôle de sanité sur toute
- * matrice de covariance estimée.
+ * Cholesky decomposition. Returns null when the matrix is not positive definite — this
+ * is the cheapest positivity test, and it doubles as a sanity check on any estimated
+ * covariance matrix.
  */
 export function cholesky(a: Matrix): Matrix | null {
   const n = a.length;
@@ -74,10 +74,10 @@ export function cholesky(a: Matrix): Matrix | null {
 }
 
 /**
- * Valeurs propres d'une matrice symétrique par rotations de Jacobi cycliques.
+ * Eigenvalues of a symmetric matrix by cyclic Jacobi rotations.
  *
- * Choisi pour sa robustesse en petite dimension et parce qu'il tient en quarante lignes
- * sans dépendance. Renvoie les valeurs propres triées par ordre décroissant.
+ * Chosen for its robustness in small dimension and because it fits in forty lines with
+ * no dependency. Returns the eigenvalues sorted in decreasing order.
  */
 export function symmetricEigenvalues(a: Matrix, maxSweeps = 100, tol = 1e-14): number[] {
   const n = a.length;
@@ -119,11 +119,11 @@ export function symmetricEigenvalues(a: Matrix, maxSweeps = 100, tol = 1e-14): n
 }
 
 /**
- * Conditionnement spectral λ_max / λ_min.
+ * Spectral condition number λ_max / λ_min.
  *
- * C'est la mesure qui justifie le shrinkage : une covariance estimée sur peu
- * d'observations est mal conditionnée, et son inverse — utilisée par toute optimisation
- * de portefeuille — amplifie alors le bruit d'estimation.
+ * This is the measure that justifies shrinkage: a covariance estimated on few
+ * observations is ill-conditioned, and its inverse — used by any portfolio
+ * optimisation — then amplifies estimation noise instead of damping it.
  */
 export function conditionNumber(a: Matrix): number {
   const ev = symmetricEigenvalues(a);

@@ -1,54 +1,53 @@
 /**
- * Politiques Privy dérivées du modèle de rôles de NEAP.
+ * Privy policies derived from NEAP's role model.
  *
- * ─── Pourquoi deux couches de contrôle ───────────────────────────────────────
- * La séparation des devoirs est déjà imposée on-chain (D7) : `TreasuryPolicy` refuse
- * qu'une même adresse détienne à la fois RISK_OFFICER et TREASURER, et le coffre refuse
- * une exécution non approuvée. Alors pourquoi la redire côté portefeuille ?
+ * ─── Why two layers of control ───────────────────────────────────────────────
+ * Separation of duties is already enforced on-chain (D7): `TreasuryPolicy` refuses to let
+ * one address hold both RISK_OFFICER and TREASURER, and the vault refuses an unapproved
+ * execution. So why restate it at the wallet level?
  *
- * Parce que les deux couches échouent différemment. Le contrat protège contre un
- * opérateur qui tenterait une action interdite ; la politique Privy protège contre une
- * **clé compromise** qui tenterait autre chose — signer un transfert vers une adresse
- * arbitraire, appeler un contrat étranger, vider un solde. Le contrat ne voit jamais ces
- * transactions-là ; il n'a aucun moyen de les empêcher.
+ * Because the two layers fail differently. The contract protects against an operator
+ * attempting a forbidden action; the Privy policy protects against a **compromised key**
+ * attempting something else entirely — signing a transfer to an arbitrary address,
+ * calling a foreign contract, draining a balance. The contract never sees those
+ * transactions; it has no way to prevent them.
  *
- * Une clé volée passe l'authentification. Elle ne passe pas une politique qui n'autorise
- * que trois sélecteurs vers deux adresses.
+ * A stolen key passes authentication. It does not pass a policy that allows three
+ * selectors towards two addresses.
  *
- * ─── Ce que chaque couche sait faire ─────────────────────────────────────────
- *   contrat   → qui a le droit de faire quoi, et dans quelles limites de montant
- *   Privy     → quelles transactions cette clé peut signer, tout court
+ * ─── What each layer can do ──────────────────────────────────────────────────
+ *   contract  → who may do what, and within which amount limits
+ *   Privy     → which transactions this key may sign at all
  *
- * Aucune des deux ne remplace l'autre.
+ * Neither replaces the other.
  */
 
 import { keccak256Hex } from '../../engine/src/onchain/keccak.ts';
 
 export type Role = 'OPERATOR' | 'TREASURER' | 'RISK_OFFICER';
 
-/** Sélecteur de fonction : les quatre premiers octets du keccak de la signature. */
+/** Function selector: the first four bytes of the keccak of the signature. */
 export function selector(signature: string): string {
   return keccak256Hex(signature).slice(0, 10);
 }
 
 /**
- * Ce que chaque rôle a le droit de signer.
+ * What each role may sign.
  *
- * La liste est délibérément courte. Un rôle qui peut appeler quatre fonctions sur deux
- * contrats est un rôle dont on peut raisonner sur le pire cas.
+ * The list is deliberately short. A role that can call four functions on two contracts is
+ * a role whose worst case can be reasoned about.
  */
 export const ALLOWED_CALLS: Readonly<Record<Role, readonly string[]>> = {
-  // L'opérateur soumet et exécute. Il ne peut ni approuver, ni toucher aux limites.
+  // The operator submits and executes. It can neither approve nor touch the limits.
   OPERATOR: [
     'submit((uint64,uint64,uint64,uint64,uint32,bytes32,bytes32,bytes32,int32,int32,uint128,uint128),bytes,bytes[])',
     'execute(bytes32,(address,address,uint128,uint128)[],bytes32)',
   ],
-  // Le trésorier n'a qu'un seul geste : approuver. C'est le rôle le plus sensible et
-  // c'est celui dont la surface est la plus étroite.
+  // The treasurer has a single action: approve. It is the most sensitive role and the
+  // one with the narrowest surface.
   TREASURER: ['approve(bytes32)'],
-  // Le responsable des risques met des changements en file. Il n'exécute rien — même
-  // l'application d'un changement mûr est ouverte à tous, parce qu'elle n'est pas un
-  // pouvoir.
+  // The risk officer queues changes. It executes nothing — even applying a matured
+  // change is open to anyone, because it is not a power.
   RISK_OFFICER: [
     'queueCurrencyPolicy(address,(uint128,uint128,uint128,uint128,uint128,uint128))',
     'queueRiskParams((uint32,uint32,uint32,uint32,uint32,uint128))',
@@ -81,17 +80,17 @@ export interface PolicyDocument {
 export interface PolicyTargets {
   readonly vault: string;
   readonly treasuryPolicy: string;
-  /** ABI minimale servant à Privy pour décoder la calldata. */
+  /** Minimal ABI used by Privy to decode calldata. */
   readonly abi: readonly unknown[];
 }
 
 /**
- * Le champ de la calldata portant le nom de la fonction appelée.
+ * The calldata field carrying the name of the called function.
  *
- * ⚠️ À confirmer au premier provisionnement réel : la documentation établit l'existence
- * de `field_source: 'ethereum_calldata'` et l'obligation de fournir une ABI, sans figer
- * le nom du champ. On l'isole ici plutôt que de le disséminer — si l'API le refuse, elle
- * le dira, et une seule constante changera.
+ * ⚠️ To be confirmed at the first real provisioning: the documentation establishes that
+ * `field_source: 'ethereum_calldata'` exists and that an ABI must be supplied, without
+ * fixing the field name. It is isolated here rather than scattered — if the API rejects
+ * it, it will say so, and a single constant changes.
  */
 export const CALLDATA_FUNCTION_FIELD = 'function';
 
@@ -100,12 +99,11 @@ function targetOf(role: Role, targets: PolicyTargets): string {
 }
 
 /**
- * Construit la politique d'un rôle.
+ * Builds the policy for a role.
  *
- * Trois conditions cumulatives : la destination, la fonction, et l'absence de transfert
- * de valeur native. La troisième est celle qu'on oublie — un portefeuille autorisé à
- * appeler un contrat reste autorisé à lui **envoyer** du gaz, et sur Arc le gaz est de
- * l'USDC.
+ * Three cumulative conditions: the destination, the function, and the absence of native
+ * value transfer. The third is the one that gets forgotten — a wallet allowed to call a
+ * contract stays allowed to **send** it gas, and on Arc gas is USDC.
  */
 export function buildPolicy(role: Role, targets: PolicyTargets): PolicyDocument {
   const to = targetOf(role, targets);
@@ -117,7 +115,7 @@ export function buildPolicy(role: Role, targets: PolicyTargets): PolicyDocument 
     chain_type: 'ethereum',
     rules: [
       {
-        name: `${role} : appels autorisés`,
+        name: `${role}: allowed calls`,
         method: 'eth_sendTransaction',
         action: 'ALLOW',
         conditions: [
@@ -129,16 +127,16 @@ export function buildPolicy(role: Role, targets: PolicyTargets): PolicyDocument 
             value: selectors,
             abi: targets.abi,
           },
-          // Sur Arc le gaz est de l'USDC : un portefeuille autorisé à appeler un contrat
-          // resterait autorisé à lui transférer de la valeur si on ne le disait pas.
+          // On Arc, gas is USDC: a wallet allowed to call a contract would stay allowed
+          // to transfer value to it unless this is said explicitly.
           { field_source: 'ethereum_transaction', field: 'value', operator: 'eq', value: '0' },
         ],
       },
       {
-        // Refus explicite en fin de liste. Une politique qui n'autorise que trois appels
-        // sans refuser le reste dépend de l'ordre d'évaluation du moteur — mieux vaut ne
-        // pas en dépendre.
-        name: `${role} : tout le reste est refusé`,
+        // Explicit denial at the end of the list. A policy that allows three calls
+        // without denying the rest depends on the engine's evaluation order — better not
+        // to depend on it.
+        name: `${role}: everything else is denied`,
         method: 'eth_sendTransaction',
         action: 'DENY',
         conditions: [],
@@ -156,12 +154,12 @@ export function buildAllPolicies(targets: PolicyTargets): Record<Role, PolicyDoc
 }
 
 /**
- * Seuil de quorum par rôle.
+ * Quorum threshold per role.
  *
- * Le trésorier approuve les mouvements au-delà du seuil d'auto-approbation : c'est le
- * geste le plus lourd de conséquences du système, donc le seul à exiger deux clés. Un
- * quorum sur l'opérateur ralentirait chaque epoch sans rien protéger que le contrat ne
- * protège déjà.
+ * The treasurer approves movements above the auto-approval threshold: the most
+ * consequential action in the system, hence the only one requiring two keys. A quorum on
+ * the operator would slow down every epoch without protecting anything the contract does
+ * not already protect.
  */
 export const QUORUM: Readonly<Record<Role, { threshold: number; keys: number }>> = {
   OPERATOR: { threshold: 1, keys: 1 },

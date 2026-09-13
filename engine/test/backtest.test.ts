@@ -1,4 +1,4 @@
-/** Tests du protocole de backtest — SPEC §18, décision D10. */
+/** Backtest protocol tests — SPEC §18, decision D10. */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,34 +31,33 @@ function flowsFor(seed: number, days: number): Record<Currency, number[]> {
   return out;
 }
 
-describe('protocole walk-forward', () => {
-  test('le backtest est reproductible germe par germe', () => {
+describe('walk-forward protocol', () => {
+  test('the backtest is reproducible seed by seed', () => {
     assert.deepEqual(runSeed(1000, CFG), runSeed(1000, CFG));
   });
 
-  test('des germes différents produisent des résultats différents', () => {
+  test('different seeds produce different results', () => {
     assert.notDeepEqual(runSeed(1000, CFG), runSeed(1001, CFG));
   });
 
-  test('les quatre politiques sont évaluées', () => {
+  test('all four policies are evaluated', () => {
     const r = runSeed(1000, CFG);
-    for (const k of POLICIES) assert.ok(r.byPolicy[k], `politique ${k} manquante`);
+    for (const k of POLICIES) assert.ok(r.byPolicy[k], `policy ${k} missing`);
   });
 
   /**
-   * Le canari d'anticipation.
+   * The lookahead canary.
    *
-   * On injecte un choc gigantesque dans la portion *future* de la série de flux, puis on
-   * reconstruit les bandes à partir de la seule fenêtre de calibration. Si le résultat
-   * change, c'est qu'une information postérieure à la date de décision a fui vers l'amont
-   * — le défaut le plus insidieux d'un backtest, parce qu'il embellit les résultats sans
-   * jamais provoquer d'erreur.
+   * A gigantic shock is injected into the *future* portion of the flow series, then the
+   * bands are rebuilt from the calibration window alone. If the result changes,
+   * information later than the decision date has leaked upstream — the most insidious
+   * defect in a backtest, because it flatters the results without ever raising an error.
    *
-   * Le contre-test est tout aussi nécessaire : le même choc injecté dans la fenêtre de
-   * calibration *doit* déplacer les bandes. Sans lui, un canari qui ne détecte rien
-   * pourrait simplement être un canari mort.
+   * The counter-test is just as necessary: the same shock injected into the calibration
+   * window *must* move the bands. Without it, a canary that detects nothing could simply
+   * be a dead canary.
    */
-  test('aucune information future ne remonte vers les décisions antérieures', () => {
+  test('no future information reaches earlier decisions', () => {
     const days = CFG.warmupDays + CFG.evalDays;
     const calibEpochs = CFG.warmupDays * EPOCHS_PER_DAY;
     const clean = flowsFor(2024, days);
@@ -83,67 +82,66 @@ describe('protocole walk-forward', () => {
 
     const reference = build(clean);
 
-    // Choc dans le futur : les bandes ne doivent pas bouger d'un dollar.
+    // Shock in the future: the bands must not move by a dollar.
     const futureShock = slice(clean, 0, clean.EUR.length);
     futureShock.EUR[calibEpochs + 10] = -500_000_000;
-    assert.deepEqual(build(futureShock), reference, 'fuite d’information depuis le futur');
+    assert.deepEqual(build(futureShock), reference, 'information leaked from the future');
 
-    // Contre-test : le même choc dans le passé doit, lui, déplacer les bandes.
+    // Counter-test: the same shock in the past must move the bands.
     const pastShock = slice(clean, 0, clean.EUR.length);
     pastShock.EUR[calibEpochs - 10] = -500_000_000;
-    assert.notDeepEqual(build(pastShock), reference, 'le canari ne détecte plus rien');
+    assert.notDeepEqual(build(pastShock), reference, 'the canary no longer detects anything');
 
     void market;
   });
 });
 
-describe('politiques', () => {
+describe('policies', () => {
   const days = CFG.warmupDays;
   const flows = flowsFor(2024, days);
   const dailyVol = {} as Record<Currency, number>;
   for (const c of CURRENCIES) dailyVol[c] = 0.005;
   const input = { calibration: flows, evaluation: flows, dailyVol, cfg: CFG, seed: 5 };
 
-  test('toutes les politiques produisent des bandes ordonnées et positives', () => {
+  test('every policy produces ordered, positive bands', () => {
     for (const k of POLICIES) {
       const { bands } = buildPolicy(k, input);
       for (const c of CURRENCIES) {
         const b = bands[c];
-        assert.ok(b.lower >= 0, `${k}/${c} : seuil bas négatif`);
-        assert.ok(b.lower <= b.target && b.target <= b.upper, `${k}/${c} : bandes désordonnées`);
-        assert.ok(Number.isFinite(b.target), `${k}/${c} : cible non finie`);
+        assert.ok(b.lower >= 0, `${k}/${c}: negative lower threshold`);
+        assert.ok(b.lower <= b.target && b.target <= b.upper, `${k}/${c}: bands out of order`);
+        assert.ok(Number.isFinite(b.target), `${k}/${c}: non-finite target`);
       }
     }
   });
 
   /**
-   * Le dimensionnement conservateur doit rester positif même sur un corridor
-   * structurellement *entrant*.
+   * Conservative sizing must stay positive even on a structurally *inbound* corridor.
    *
-   * Un premier jet mesurait la pire sortie nette journalière ; sur l'euro, dont les flux
-   * sont massivement entrants, elle vaut zéro. La bande devenait dérisoire et la
-   * politique censée être la plus prudente accumulait quatre cent quarante ruptures.
-   * Un solde net positif sur la journée ne dit rien du creux traversé en cours de route.
+   * A first attempt measured the worst daily net outflow; on the euro, whose flows are
+   * overwhelmingly inbound, that is zero. The band became negligible and the policy
+   * supposed to be the most prudent racked up four hundred and forty breaches. A positive
+   * net balance over the day says nothing about the trough crossed along the way.
    */
-  test('le buffer conservateur reste substantiel sur un corridor entrant', () => {
+  test('the conservative buffer stays substantial on an inbound corridor', () => {
     const { bands } = buildPolicy('STATIC', input);
     for (const c of CURRENCIES) {
-      assert.ok(bands[c].target > 100_000, `${c} : cible statique dérisoire (${bands[c].target})`);
+      assert.ok(bands[c].target > 100_000, `${c}: negligible static target (${bands[c].target})`);
     }
   });
 
-  test('seule la politique calendaire est marquée comme telle', () => {
+  test('only the calendar policy is flagged as such', () => {
     for (const k of POLICIES) {
       assert.equal(buildPolicy(k, input).calendarOnly, k === 'CALENDAR');
     }
   });
 
-  test('l’ES par unité d’exposition croît avec la volatilité', () => {
+  test('ES per unit of exposure grows with volatility', () => {
     assert.ok(esPerUnit(0.01) > esPerUnit(0.005));
   });
 });
 
-describe('exécution d’une politique', () => {
+describe('running a policy', () => {
   const days = CFG.warmupDays;
   const flows = flowsFor(2024, days);
   const market = simulateMarket(999, days);
@@ -160,24 +158,24 @@ describe('exécution d’une politique', () => {
 
   const run = () => runPolicy({ policy, flows, residuals, currentVol });
 
-  test('le résultat est déterministe', () => {
+  test('the result is deterministic', () => {
     assert.deepEqual(run(), run());
   });
 
-  test('le coût total est la somme du portage et de l’exécution', () => {
+  test('total cost is the sum of carry and execution', () => {
     const m = run();
     assert.ok(Math.abs(m.totalCost - (m.carryCost + m.executionCost)) < 1e-6);
   });
 
-  test('toutes les grandeurs sont positives ou nulles', () => {
+  test('every quantity is non-negative', () => {
     const m = run();
     for (const [name, v] of Object.entries(m)) {
-      assert.ok(v >= 0, `${name} négatif : ${v}`);
+      assert.ok(v >= 0, `${name} is negative: ${v}`);
     }
   });
 
-  /// Une politique calendaire ne peut pas rééquilibrer plus d'une fois par jour et par devise.
-  test('la cadence calendaire est respectée', () => {
+  /// A calendar policy cannot rebalance more than once per day per currency.
+  test('the calendar cadence is respected', () => {
     const calendar = buildPolicy('CALENDAR', {
       calibration: flows,
       evaluation: flows,
@@ -191,10 +189,10 @@ describe('exécution d’une politique', () => {
   });
 });
 
-describe('agrégation', () => {
+describe('aggregation', () => {
   const summary = runBacktest(CFG);
 
-  test('les intervalles de confiance reposent sur tous les germes', () => {
+  test('the confidence intervals use every seed', () => {
     for (const k of POLICIES) {
       assert.equal(summary.metrics[k].capital.n, CFG.seeds.length);
       assert.ok(summary.metrics[k].capital.halfWidth >= 0);
@@ -202,26 +200,25 @@ describe('agrégation', () => {
   });
 
   /**
-   * Le résultat central du backtest : les bandes optimisées immobilisent nettement moins
-   * de capital que le pré-financement conservateur. Le seuil est volontairement lâche —
-   * on teste que la thèse tient, pas qu'elle atteigne un chiffre précis, lequel dépend
-   * d'hypothèses assumées comme non calibrées.
+   * The central result of the backtest: optimised bands tie up far less capital than
+   * conservative pre-funding. The threshold is deliberately loose — what is tested is
+   * that the thesis holds, not that it reaches a precise figure, which depends on
+   * assumptions explicitly declared as uncalibrated.
    */
-  test('les bandes optimisées libèrent la majorité du capital immobilisé', () => {
+  test('optimised bands release most of the idle capital', () => {
     const ratio = summary.metrics.NEAP.capital.mean / summary.metrics.STATIC.capital.mean;
-    assert.ok(ratio < 0.5, `capital NEAP / STATIC = ${ratio.toFixed(3)}, attendu < 0,5`);
+    assert.ok(ratio < 0.5, `NEAP / STATIC capital = ${ratio.toFixed(3)}, expected < 0.5`);
   });
 
-  test('le risque de change baisse dans la même proportion', () => {
+  test('FX risk falls in the same proportion', () => {
     assert.ok(summary.metrics.NEAP.es.mean < summary.metrics.STATIC.es.mean);
   });
 
   /**
-   * Contrôle d'honnêteté. NEAP rééquilibre bien plus souvent que le pré-financement
-   * conservateur : si le rapport prétendait le contraire, c'est que la simulation
-   * compterait mal.
+   * An honesty check. NEAP rebalances far more often than conservative pre-funding: if
+   * the report claimed otherwise, the simulation would be counting wrong.
    */
-  test('NEAP passe bien plus d’ordres que le pré-financement conservateur', () => {
+  test('NEAP places far more orders than conservative pre-funding', () => {
     assert.ok(summary.metrics.NEAP.rebalances.mean > summary.metrics.STATIC.rebalances.mean * 5);
   });
 });

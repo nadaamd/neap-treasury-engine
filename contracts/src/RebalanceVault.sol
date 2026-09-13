@@ -14,23 +14,22 @@ interface IERC20Minimal {
 
 /**
  * @title RebalanceVault
- * @notice Détient les soldes opérationnels, révèle et exécute un plan de rééquilibrage.
+ * @notice Holds the operational balances, reveals and executes a rebalancing plan.
  *
- * @dev **Le contrat n'exécute pas le modèle, il contraint le modèle.**
+ * @dev **The contract does not run the model, it constrains the model.**
  *
- *      Le coffre ne fait jamais confiance au rapport. Même signé par le quorum, même
- *      attesté par l'enclave attendue, un plan reste soumis à des bornes que le contrat
- *      applique seul :
+ *      The vault never trusts the report. Even signed by the quorum, even attested by the
+ *      expected enclave, a plan remains subject to bounds the contract applies on its own:
  *
- *        1. plafond par ordre unitaire ;
- *        2. plafond de notionnel cumulé sur l'epoch ;
- *        3. plafond glissant sur vingt-quatre heures ;
- *        4. écart maximal entre le prix obtenu et l'oracle.
+ *        1. cap per single order;
+ *        2. cap on cumulative notional over the epoch;
+ *        3. rolling twenty-four-hour cap;
+ *        4. maximum gap between the obtained price and the oracle.
  *
- *      Ces bornes ne sont pas une redondance de politesse. Si le moteur déraille — une
- *      volatilité estimée à zéro, une calibration corrompue, un paramètre mal converti —
- *      il produira un plan parfaitement signé et parfaitement absurde. Les bornes sont
- *      ce qui transforme une panne de modèle en incident borné.
+ *      These bounds are not polite redundancy. If the engine goes wrong — a volatility
+ *      estimated at zero, a corrupted calibration, a badly converted parameter — it will
+ *      produce a perfectly signed and perfectly absurd plan. The bounds are what turns a
+ *      model failure into a bounded incident.
  */
 contract RebalanceVault {
     uint256 private constant WAD = 1e18;
@@ -60,16 +59,16 @@ contract RebalanceVault {
 
     TreasuryPolicy public immutable POLICY;
     ReportVerifier public immutable VERIFIER;
-    /// @notice Devise de financement : toute jambe de change en passe par elle.
+    /// @notice Funding currency: every FX leg passes through it.
     address public immutable NUMERAIRE;
 
     IFxVenue public venue;
     IPriceOracle public oracle;
 
     mapping(bytes32 reportId => Plan) public plans;
-    /// @notice Notionnel exécuté par epoch, dans la devise de financement.
+    /// @notice Notional executed per epoch, in the funding currency.
     mapping(uint64 epoch => uint256) public epochNotional;
-    /// @notice Notionnel exécuté par heure absolue — la fenêtre glissante s'appuie dessus.
+    /// @notice Notional executed per absolute hour — the rolling window builds on it.
     mapping(uint256 hourIndex => uint256) public hourlyNotional;
 
     uint256 private _locked;
@@ -140,8 +139,8 @@ contract RebalanceVault {
         IFxVenue venue_,
         IPriceOracle oracle_
     ) {
-        // Vérifications écrites en ligne plutôt que déléguées : le linter ne suit pas
-        // l'appel à un assistant et signalerait une écriture d'adresse non gardée.
+        // Checks written inline rather than delegated: the linter does not follow a
+        // helper call and would flag an unguarded address write.
         if (numeraire_ == address(0)) revert ZeroAddress();
         if (address(venue_) == address(0)) revert ZeroAddress();
         if (address(oracle_) == address(0)) revert ZeroAddress();
@@ -162,11 +161,11 @@ contract RebalanceVault {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                            Machine à états                              */
+    /*                              State machine                              */
     /* ---------------------------------------------------------------------- */
 
-    /// @notice Soumet un rapport : le vérificateur en juge la provenance, le coffre en
-    ///         retient le notionnel et décide si une approbation humaine est requise.
+    /// @notice Submits a report: the verifier judges its provenance, the vault records
+    ///         the notional and decides whether human approval is required.
     function submit(
         ReportVerifier.RebalanceReport calldata report,
         bytes calldata attestation,
@@ -182,13 +181,13 @@ contract RebalanceVault {
             grossNotional: report.grossNotional,
             ordersCommitment: report.ordersCommitment
         });
-        // L'événement suit l'appel au vérificateur, qui est le seul appel externe et
-        // dont l'échec annulerait toute la transaction, événement compris.
+        // The event follows the call to the verifier, which is the only external call and
+        // whose failure would revert the whole transaction, event included.
         // forge-lint: disable-next-line(reentrancy-events)
         emit PlanSubmitted(id, report.epoch, needsApproval);
     }
 
-    /// @notice Approbation par le trésorier, requise au-delà du seuil.
+    /// @notice Approval by the treasurer, required above the threshold.
     function approve(bytes32 id) external onlyRole(POLICY.TREASURER()) {
         _requireNotPaused();
         Plan storage p = plans[id];
@@ -201,10 +200,10 @@ contract RebalanceVault {
     }
 
     /**
-     * @notice Révèle le plan et l'exécute.
-     * @param salt Aléa de l'engagement. Sans lui, un observateur pourrait retrouver le
-     *             plan par recherche exhaustive : l'espace des montants quantifiés est
-     *             petit, et un hachage sans sel ne cache rien.
+     * @notice Reveals the plan and executes it.
+     * @param salt Randomness of the commitment. Without it, an observer could recover the
+     *             plan by exhaustive search: the space of quantised amounts is small, and
+     *             an unsalted hash hides nothing.
      */
     function execute(bytes32 id, Order[] calldata orders, bytes32 salt)
         external
@@ -227,26 +226,26 @@ contract RebalanceVault {
         _accumulate(p.epoch, notional);
         _executeAll(id, orders);
 
-        // Le plan est déjà marqué réglé et l'état accumulé avant l'exécution : cet
-        // événement clôt une transaction dont plus rien ne dépend d'un appel externe.
+        // The plan is already marked settled and the state accumulated before execution:
+        // this event closes a transaction where nothing further depends on an external
+        // call.
         // forge-lint: disable-next-line(reentrancy-events)
         emit PlanSettled(id, notional, orders.length);
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                      Bornes indépendantes du rapport                    */
+    /*                     Bounds independent of the report                    */
     /* ---------------------------------------------------------------------- */
 
     /**
-     * Les règles `calls-loop` et `require-revert-in-loop` sont neutralisées sur les deux
-     * blocs qui suivent, et pour une seule et même raison : **un plan de rééquilibrage
-     * est atomique**.
+     * The `calls-loop` and `require-revert-in-loop` rules are disabled on the two blocks
+     * that follow, for one and the same reason: **a rebalancing plan is atomic**.
      *
-     * Le linter met en garde contre l'échec d'un lot entier à cause d'un élément fautif.
-     * C'est exactement le comportement voulu. Exécuter partiellement un plan — vendre de
-     * l'euro sans acheter la livre prévue — laisserait la trésorerie dans une position
-     * que personne n'a décidée, pire que l'inaction. Mieux vaut échouer en bloc et
-     * redécider à l'epoch suivant : le moteur recalculera à partir de l'état réel.
+     * The linter warns against a whole batch failing because of one bad element. That is
+     * exactly the intended behaviour. Partially executing a plan — selling euros without
+     * buying the intended pounds — would leave the treasury in a position nobody decided,
+     * worse than inaction. Better to fail as a block and decide again at the next epoch:
+     * the engine will recompute from the real state.
      */
     // forge-lint: disable-start(calls-loop, require-revert-in-loop)
     function _checkBounds(Order[] calldata orders, Plan storage p)
@@ -257,8 +256,8 @@ contract RebalanceVault {
         for (uint256 i = 0; i < orders.length; i++) {
             Order calldata o = orders[i];
 
-            // Toute jambe passe par la devise de financement : c'est ce qui rend les
-            // notionnels commensurables et donc les plafonds cumulables.
+            // Every leg passes through the funding currency: that is what makes the
+            // notionals commensurable, and therefore the caps additive.
             bool sellsNumeraire = o.sell == NUMERAIRE;
             bool buysNumeraire = o.buy == NUMERAIRE;
             if (sellsNumeraire == buysNumeraire) revert LegMustTouchNumeraire(o.sell, o.buy);
@@ -274,9 +273,9 @@ contract RebalanceVault {
             notional += legNotional;
         }
 
-        // Le notionnel révélé doit correspondre à celui qui a fondé la décision
-        // d'approbation. Sinon, un trésorier approuverait un montant et l'opérateur en
-        // exécuterait un autre.
+        // The revealed notional must match the one the approval decision was based on.
+        // Otherwise a treasurer would approve one amount and the operator would execute
+        // another.
         if (notional != p.grossNotional) revert NotionalMismatch(notional, p.grossNotional);
 
         address first = orders[0].sell == NUMERAIRE ? orders[0].buy : orders[0].sell;
@@ -293,12 +292,12 @@ contract RebalanceVault {
     // forge-lint: disable-end(calls-loop, require-revert-in-loop)
 
     /**
-     * @notice Notionnel exécuté sur les vingt-quatre dernières heures.
-     * @dev Fenêtre réellement glissante, découpée en vingt-quatre seaux horaires indexés
-     *      par heure absolue. Une fenêtre à remise à zéro périodique aurait coûté deux
-     *      accès au stockage au lieu de vingt-quatre, mais elle laisse passer deux fois
-     *      la limite de part et d'autre d'une frontière — un trou de trop pour une
-     *      contrainte dont la raison d'être est de borner un opérateur compromis.
+     * @notice Notional executed over the last twenty-four hours.
+     * @dev A genuinely rolling window, split into twenty-four hourly buckets indexed by
+     *      absolute hour. A periodically reset window would have cost two storage reads
+     *      instead of twenty-four, but it lets twice the limit through on either side of a
+     *      boundary — one hole too many for a constraint whose whole purpose is to bound a
+     *      compromised operator.
      */
     function _rolling24h() public view returns (uint256 total) {
         uint256 currentHour = block.timestamp / 1 hours;
@@ -313,20 +312,20 @@ contract RebalanceVault {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                                Exécution                                */
+    /*                                Execution                                */
     /* ---------------------------------------------------------------------- */
 
     /**
-     * Mêmes neutralisations que pour `_checkBounds`, plus trois autres.
+     * Same suppressions as for `_checkBounds`, plus three more.
      *
-     * `unused-return` : le lieu d'exécution renvoie aussi une échéance de cotation, dont
-     * le coffre n'a pas l'usage — c'est le lieu qui la fait respecter.
+     * `unused-return`: the venue also returns a quote expiry, which the vault has no use
+     * for — the venue is the one that enforces it.
      *
-     * `reentrancy-events` et `reentrancy-no-eth` : le point d'entrée `execute` porte
-     * `nonReentrant`, et tout l'état du plan est écrit avant le premier appel externe.
-     * Le lieu d'exécution est par ailleurs fixé par l'administrateur, pas par le rapport.
-     * Un lieu malveillant pourrait rappeler le coffre, mais il ne trouverait ni fonction
-     * réentrante ouverte, ni état encore modifiable.
+     * `reentrancy-events` and `reentrancy-no-eth`: the `execute` entry point carries
+     * `nonReentrant`, and all plan state is written before the first external call. The
+     * venue is moreover set by the administrator, not by the report. A malicious venue
+     * could call back into the vault, but it would find neither an open re-entrant
+     * function nor any state still mutable.
      */
     // forge-lint: disable-start(calls-loop, require-revert-in-loop, unused-return, reentrancy-events, reentrancy-no-eth)
     function _executeAll(bytes32 id, Order[] calldata orders) private {
@@ -350,11 +349,11 @@ contract RebalanceVault {
     }
 
     /**
-     * @notice Refuse une exécution dont le prix s'écarte trop de l'oracle.
-     * @dev C'est la protection la plus importante du système. Un lieu d'exécution dont le
-     *      carnet s'est vidé, ou qui est malveillant, servirait au pire prix disponible
-     *      sans que rien ne le signale : le rapport serait valide, les bornes de taille
-     *      respectées, et la trésorerie perdrait la différence en silence.
+     * @notice Refuses an execution whose price departs too far from the oracle.
+     * @dev This is the system's most important protection. A venue whose book has emptied,
+     *      or which is malicious, would fill at the worst available price with nothing to
+     *      signal it: the report would be valid, the size bounds respected, and the
+     *      treasury would lose the difference in silence.
      */
     function _requireWithinOracleBand(
         address sell,
@@ -367,7 +366,7 @@ contract RebalanceVault {
         if (referenceWad == 0 || updatedAt == 0) revert OracleUnavailable(sell, buy);
 
         uint256 executedWad = amountOut * WAD / amountIn;
-        // Seule la dégradation compte : obtenir mieux que l'oracle n'est pas un incident.
+        // Only degradation counts: doing better than the oracle is not an incident.
         if (executedWad >= referenceWad) return;
 
         uint256 shortfallBps = (referenceWad - executedWad) * BPS / referenceWad;

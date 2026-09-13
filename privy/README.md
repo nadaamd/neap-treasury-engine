@@ -1,52 +1,50 @@
-# L6 — gouvernance opérationnelle, org wallets Privy
+# L6 — operational governance, Privy org wallets
 
-## Pourquoi deux couches de contrôle
+## Why two layers of control
 
-La séparation des devoirs est déjà imposée on-chain (D7) : `TreasuryPolicy` refuse qu'une
-même adresse détienne à la fois `RISK_OFFICER` et `TREASURER`, et le coffre refuse une
-exécution non approuvée. Alors pourquoi la redire côté portefeuille ?
+Separation of duties is already enforced on-chain (D7): `TreasuryPolicy` refuses to let one
+address hold both `RISK_OFFICER` and `TREASURER`, and the vault refuses an unapproved
+execution. So why restate it at the wallet level?
 
-**Parce que les deux couches échouent différemment.**
+**Because the two layers fail differently.**
 
-| | Ce que ça protège | Ce que ça ne voit pas |
+| | What it protects | What it cannot see |
 |---|---|---|
-| Contrat | qui a le droit de faire quoi, dans quelles limites de montant | une transaction qui ne lui est pas adressée |
-| Politique Privy | quelles transactions cette clé peut signer, tout court | la cohérence métier d'un appel autorisé |
+| Contract | who may do what, within which amount limits | a transaction not addressed to it |
+| Privy policy | which transactions this key may sign at all | the business coherence of an allowed call |
 
-Une clé compromise passe l'authentification. Elle peut signer un transfert vers une
-adresse arbitraire, appeler un contrat étranger, vider un solde — et le contrat n'en
-saura jamais rien, parce que ces transactions ne passent pas par lui. Une politique qui
-n'autorise que trois sélecteurs vers deux adresses, elle, les refuse.
+A compromised key passes authentication. It can sign a transfer to an arbitrary address,
+call a foreign contract, drain a balance — and the contract will never know, because those
+transactions never go through it. A policy that allows only three selectors towards two
+addresses does refuse them.
 
-Aucune des deux couches ne remplace l'autre.
+Neither layer replaces the other.
 
-## Ce que chaque rôle peut signer
+## What each role may sign
 
-| Rôle | Destination | Fonctions | Quorum |
+| Role | Destination | Functions | Quorum |
 |---|---|---|---|
-| `OPERATOR` | coffre | `submit`, `execute` | 1 / 1 |
-| `TREASURER` | coffre | `approve` | **2 / 3** |
-| `RISK_OFFICER` | politique | `queueCurrencyPolicy`, `queueRiskParams`, `commitBandParams` | 1 / 2 |
+| `OPERATOR` | vault | `submit`, `execute` | 1 / 1 |
+| `TREASURER` | vault | `approve` | **2 / 3** |
+| `RISK_OFFICER` | policy | `queueCurrencyPolicy`, `queueRiskParams`, `commitBandParams` | 1 / 2 |
 
-Chaque politique ajoute une troisième condition qu'on oublie facilement : **valeur native
-strictement nulle**. Un portefeuille autorisé à *appeler* un contrat reste autorisé à lui
-*envoyer* de la valeur — et sur Arc, le gaz est de l'USDC, donc la valeur native est de
-l'argent.
+Every policy adds a third condition that is easy to forget: **strictly zero native value**.
+A wallet allowed to *call* a contract stays allowed to *send* it value — and on Arc, gas is
+USDC, so native value is money.
 
-Chaque politique se termine par un refus explicite sans condition. Une liste
-d'autorisations sans refus final dépend de l'ordre d'évaluation du moteur, et mieux vaut
-ne pas en dépendre.
+Every policy ends with an unconditional explicit denial. An allow-list with no final denial
+depends on the engine's evaluation order, and it is better not to depend on it.
 
-Un seul rôle exige plusieurs signatures : le trésorier. C'est le geste le plus lourd de
-conséquences du système. Un quorum sur l'opérateur alourdirait chaque epoch de quinze
-minutes sans rien protéger que le contrat ne protège déjà.
+Only one role requires multiple signatures: the treasurer. It is the most consequential
+action in the system. A quorum on the operator would weigh down every fifteen-minute epoch
+without protecting anything the contract does not already protect.
 
-## Sélecteurs, vérifiés dans les deux sens
+## Selectors, checked in both directions
 
-Les sélecteurs autorisés sont calculés en TypeScript avec notre propre keccak256, puis
-**confrontés au bytecode compilé** par la suite Solidity de conformité. Une signature mal
-recopiée produirait une politique qui bloque exactement ce qu'elle devait permettre — et
-l'erreur ne se verrait qu'au moment d'une approbation refusée en pleine démonstration.
+The allowed selectors are computed in TypeScript with our own keccak256, then **checked
+against the compiled bytecode** by the Solidity conformance suite. A mistyped signature
+would produce a policy that blocks exactly what it was meant to permit — and the error
+would only surface as an approval refused in the middle of a demo.
 
 ```
 0x6d7885e8  OPERATOR      submit(...)
@@ -57,24 +55,24 @@ l'erreur ne se verrait qu'au moment d'une approbation refusée en pleine démons
 0x97b00759  RISK_OFFICER  commitBandParams(bytes32)
 ```
 
-## Provisionner
+## Provisioning
 
 ```bash
-cp privy/.env.example privy/.env   # renseigner PRIVY_APP_ID et PRIVY_APP_SECRET
-node privy/scripts/provision.ts <adresse-coffre> <adresse-treasury-policy>
+cp privy/.env.example privy/.env   # fill in PRIVY_APP_ID and PRIVY_APP_SECRET
+node privy/scripts/provision.ts <vault-address> <treasury-policy-address>
 ```
 
-Le script crée une politique et un portefeuille par rôle, puis écrit `privy/wallets.json`.
-Il échoue bruyamment si ce fichier existe déjà, plutôt que de créer des doublons
-silencieux.
+The script creates one policy and one wallet per role, then writes `privy/wallets.json`. It
+fails loudly if that file already exists, rather than silently creating duplicates.
 
-Étape suivante, à faire sciemment : attribuer les rôles on-chain à ces adresses via
-`TreasuryPolicy.grantRole`. Le contrat refusera d'attribuer `RISK_OFFICER` et `TREASURER`
-à la même adresse — c'est l'invariant, et il s'applique aussi aux portefeuilles Privy.
+Next step, to be done deliberately: grant the on-chain roles to those addresses through
+`TreasuryPolicy.grantRole`. The contract will refuse to grant `RISK_OFFICER` and
+`TREASURER` to the same address — that is the invariant, and it applies to the Privy
+wallets too.
 
-## Point à confirmer au premier provisionnement
+## To confirm at the first real provisioning
 
-La documentation établit l'existence de `field_source: 'ethereum_calldata'` et
-l'obligation de fournir une ABI, sans figer le nom du champ portant la fonction appelée.
-Il est isolé dans une seule constante, `CALLDATA_FUNCTION_FIELD`. Si l'API le refuse,
-elle le dira, et une seule ligne changera.
+The documentation establishes that `field_source: 'ethereum_calldata'` exists and that an
+ABI must be supplied, without fixing the name of the field carrying the called function. It
+is isolated in a single constant, `CALLDATA_FUNCTION_FIELD`. If the API rejects it, it will
+say so, and one line changes.

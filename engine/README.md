@@ -1,8 +1,9 @@
-# Moteur quantitatif (L2)
+# Quantitative engine (L2)
 
-Fonction pure, sans I/O — exécutable dans le handler CRE ou dans un runner local (D9).
+Pure function, no I/O — runnable inside the CRE handler or in a local runner (D9).
 
-- `flows/`  prévision des flux nets par corridor
-- `risk/`   volatilité EWMA, covariance Ledoit-Wolf, ES 97.5 % par FHS
-- `bands/`  résolution des bandes (Monte-Carlo warm-starté par Miller-Orr)
-- `policy/` fonction objectif J et règle de décision
+- `risk/`     EWMA volatility, Ledoit-Wolf covariance, ES 97.5% by FHS
+- `bands/`    band solving (Monte-Carlo, warm-started by Miller-Orr)
+- `policy/`   objective function J and the decision rule
+- `backtest/` walk-forward protocol and the four compared policies
+- `onchain/`  keccak256, ABI encoding, EIP-712 — mirrors the contracts

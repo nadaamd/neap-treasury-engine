@@ -1,16 +1,15 @@
 /**
- * Évaluation d'une politique de bandes par simulation, et fonction objectif J.
+ * Simulation-based evaluation of a band policy, and the objective function J.
  *
- * J = E[ Σ_t ( r·B_t                coût de portage
- *             + γ·1{rééquilibrage}  coût fixe
- *             + coût variable       spread + impact
- *             + κ·ES(B_t)           coût du risque de change
- *             + c_b·1{B_t < 0} ) ]  coût de rupture
+ * J = E[ Σ_t ( r·B_t              carry cost
+ *             + γ·1{rebalance}    fixed cost
+ *             + variable cost     spread + impact
+ *             + κ·ES(B_t)         FX risk cost
+ *             + c_b·1{B_t < 0} ) ] breach cost
  *
- * C'est la **seule** règle de décision du système (SPEC §4.1). Les bandes ne sont pas
- * une entrée du modèle mais le résultat de la minimisation de J : la bande de Miller-Orr
- * est le cas particulier qu'on retrouve quand on annule les termes de risque et de
- * rupture et qu'on suppose les flux sans dérive.
+ * This is the system's **only** decision rule (SPEC §4.1). The bands are not an input of
+ * the model but the result of minimising J: the Miller-Orr band is the special case you
+ * recover once the risk and breach terms are zeroed out and flows are assumed driftless.
  */
 
 import { Rng } from '../../../data/src/random.ts';
@@ -18,32 +17,32 @@ import type { Bands } from './millerOrr.ts';
 import type { TailModel } from './tail.ts';
 
 export interface CostParams {
-  /** Coût fixe par rééquilibrage. */
+  /** Fixed cost per rebalance. */
   readonly gammaFixed: number;
-  /** Coût variable proportionnel, en points de base. */
+  /** Proportional variable cost, in basis points. */
   readonly spreadBps: number;
-  /** Coefficient d'impact — NON CALIBRÉ, exposé en paramètre (SPEC §4.6). */
+  /** Impact coefficient — UNCALIBRATED, exposed as a parameter (SPEC §4.6). */
   readonly etaImpact: number;
-  /** Profondeur de référence pour l'impact en racine carrée. */
+  /** Reference depth for square-root impact. */
   readonly depth: number;
-  /** Coût de portage par période. */
+  /** Carry cost per period. */
   readonly carryRate: number;
-  /** Aversion au risque. */
+  /** Risk aversion. */
   readonly kappa: number;
-  /** ES par unité d'exposition sur l'horizon d'une période. */
+  /** ES per unit of exposure over a one-period horizon. */
   readonly esPerUnit: number;
   /**
-   * Coût d'une rupture de solde. Fortement asymétrique : pénalité de service plus
-   * financement d'urgence. C'est ce terme, et lui seul, qui justifie l'existence d'un
-   * buffer — sans lui l'optimum serait un solde nul.
+   * Cost of a balance breach. Strongly asymmetric: service penalty plus emergency
+   * funding. This term, and this term alone, is what justifies holding a buffer at all —
+   * without it the optimum would be a zero balance.
    *
-   * Il est facturé **en espérance** — coût × P(flux < −solde) — et non en comptant les
-   * ruptures observées : voir l'exposé du problème de résolution dans `tail.ts`.
+   * It is charged **in expectation** — cost × P(flow < −balance) — rather than by
+   * counting observed breaches: see the resolution problem laid out in `tail.ts`.
    */
   readonly breachCost: number;
 }
 
-/** Coût d'exécution d'un ordre de taille `q` : spread proportionnel + impact en racine carrée. */
+/** Execution cost of an order of size `q`: proportional spread + square-root impact. */
 export function executionCost(q: number, p: CostParams): number {
   const size = Math.abs(q);
   if (size === 0) return 0;
@@ -53,30 +52,30 @@ export function executionCost(q: number, p: CostParams): number {
 }
 
 export interface PolicyOutcome {
-  /** Coût total moyen par trajectoire. */
+  /** Average total cost per path. */
   readonly cost: number;
   readonly carry: number;
   readonly fixed: number;
   readonly variable: number;
   readonly risk: number;
   readonly breach: number;
-  /** Nombre moyen de rééquilibrages par trajectoire. */
+  /** Average number of rebalances per path. */
   readonly rebalances: number;
-  /** Nombre moyen de ruptures effectivement *observées* — diagnostic, non tarifé. */
+  /** Average number of breaches actually *observed* — diagnostic, not priced. */
   readonly breaches: number;
-  /** Probabilité de rupture moyenne par période, telle que tarifée. */
+  /** Average per-period breach probability, as priced. */
   readonly breachProbability: number;
-  /** Solde moyen porté — la métrique de capital immobilisé. */
+  /** Average balance carried — the idle capital metric. */
   readonly avgBalance: number;
 }
 
 /**
- * Évalue une politique de bandes sur un jeu de trajectoires de flux nets.
+ * Evaluates a band policy on a set of net flow paths.
  *
- * Les trajectoires sont fournies par l'appelant et **réutilisées à l'identique** pour
- * tous les candidats de la recherche : c'est la technique des nombres aléatoires
- * communs. Sans elle, l'optimiseur compare des candidats évalués sur des tirages
- * différents et poursuit le bruit de simulation plutôt que le minimum.
+ * The paths are supplied by the caller and **reused identically** across every candidate
+ * in the search: this is the common random numbers technique. Without it, the optimiser
+ * compares candidates evaluated on different draws and chases simulation noise rather
+ * than the minimum.
  */
 export function evaluatePolicy(
   bands: Bands,
@@ -98,8 +97,8 @@ export function evaluatePolicy(
   for (const path of paths) {
     let b = bands.target;
     for (const flow of path) {
-      // Le risque de rupture est tarifé sur le solde *avant* le choc : c'est
-      // l'information dont dispose le moteur au moment de décider.
+      // Breach risk is priced on the balance *before* the shock: that is the
+      // information the engine actually has at decision time.
       const pBreach = tail.probBelow(-b);
       breach += p.breachCost * pBreach;
       breachProbAcc += pBreach;
@@ -138,12 +137,12 @@ export function evaluatePolicy(
 }
 
 /**
- * Rééchantillonnage bootstrap de flux nets historiques.
+ * Bootstrap resampling of historical net flows.
  *
- * Tirage indépendant avec remise : préserve la distribution marginale des flux nets —
- * donc les queues épaisses héritées des montants log-normaux — mais détruit leur
- * autocorrélation. Limitation assumée : un bootstrap par blocs conserverait la
- * dépendance temporelle, au prix d'un paramètre de longueur de bloc à calibrer.
+ * Independent draws with replacement: preserves the marginal distribution of net flows —
+ * hence the fat tails inherited from log-normal amounts — but destroys their
+ * autocorrelation. An accepted limitation: a block bootstrap would keep the temporal
+ * dependence, at the price of a block-length parameter to calibrate.
  */
 export function bootstrapPaths(
   history: readonly number[],
@@ -151,7 +150,7 @@ export function bootstrapPaths(
   pathLength: number,
   seed: number,
 ): number[][] {
-  if (history.length === 0) throw new RangeError('historique vide');
+  if (history.length === 0) throw new RangeError('empty history');
   const rng = new Rng(seed);
   const paths: number[][] = [];
   for (let m = 0; m < pathCount; m++) {

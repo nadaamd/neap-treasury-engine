@@ -7,20 +7,20 @@ solc_version = "0.8.28"
 optimizer = true
 optimizer_runs = 200
 via_ir = false
-# Les avertissements de licence et de taille de code sont des erreurs : sur un dépôt
-# destiné à être lu par des juges, un build bruyant coûte plus cher qu'il ne rapporte.
+# License and code-size warnings are errors: in a repository meant to be read by judges,
+# a noisy build costs more than it is worth.
 deny = "warnings"
 
-# Lecture seule, et strictement sur le dossier du jeu de conformité. Foundry ferme
-# l'accès au système de fichiers par défaut, et c'est une bonne chose : un test qui peut
-# lire n'importe quoi peut aussi exfiltrer n'importe quoi. On ouvre le minimum.
+# Read-only, and strictly on the conformance fixture folder. Foundry closes filesystem
+# access by default, and that is a good thing: a test that can read anything can also
+# exfiltrate anything. We open the minimum.
 fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 
 [lint]
-# Le code de production est traité en strict : tout avertissement est une erreur.
-# Les tests sont exclus du linter, parce que leurs conventions diffèrent légitimement —
-# ignorer la valeur de retour d'un appel dont on ne teste que la révocation n'est pas un
-# défaut, c'est le propos du test.
+# Production code is treated strictly: every warning is an error.
+# Tests are excluded from the linter, because their conventions legitimately differ —
+# ignoring the return value of a call whose revert is the only thing under test is not a
+# defect, it is the point of the test.
 ignore = ["**/*.t.sol"]
 
 [fmt]
