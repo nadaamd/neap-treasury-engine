@@ -298,6 +298,9 @@
   /* Full width, no reading measure: the heading and its lead run edge to edge, like the
      grid of blocks that follows them. */
   .wide-head h2 { max-width: none; }
+  /* One sentence per line: the two clauses are a pair, and breaking them where the
+     measure happens to run out would hide that. */
+  .wide-head h2 .ln { display: block; }
   .wide-head .lead { max-width: none; margin-bottom: 0; }
 
   /* Three columns across the full measure, same grid as the architecture row. Stacked,
@@ -565,7 +568,10 @@
   <section id="architecture" class="raised">
     <div class="wrap">
       <div class="wide-head">
-        <h2>Positions stay inside the enclave. The contract still doesn't trust the model.</h2>
+        <h2>
+          <span class="ln">Positions stay inside the enclave.</span>
+          <span class="ln">The contract still doesn't trust the model.</span>
+        </h2>
         <p class="lead">
           Live balances, upcoming commitments and internal limits map an institution's liquidity
           position precisely enough for a counterparty to trade against it. They never leave the
