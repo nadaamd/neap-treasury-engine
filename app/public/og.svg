@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1F2041"/>
+  <rect x="96" y="126" width="332" height="15" rx="7.5" fill="#FFC857"/>
+  <rect x="96" y="150" width="332" height="15" rx="7.5" fill="#FFC857"/>
+  <text x="96" y="300" font-family="Georgia, serif" font-size="112" fill="#ffffff">NEAP<tspan fill="#FFC857">.</tspan></text>
+  <text x="96" y="374" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#ffffff">Instant payments need pre-funded cash.</text>
+  <text x="96" y="422" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#FFC857">NEAP cuts that cash by 84.6%.</text>
+  <text x="96" y="536" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#b9b6cd">Intraday multi-currency treasury engine</text>
+  <text x="96" y="574" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#b9b6cd">ETHOnline 2026  ·  Arc  ·  Chainlink CRE  ·  Privy</text>
+</svg>
