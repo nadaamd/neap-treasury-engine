@@ -116,7 +116,7 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                              Outillage                             */
+    /*                               Fixtures                             */
     /* ------------------------------------------------------------------ */
 
     uint64 internal nextEpoch = 100;
@@ -177,7 +177,7 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                            Chemin nominal                          */
+    /*                              Happy path                            */
     /* ------------------------------------------------------------------ */
 
     function test_smallPlanExecutesWithoutApproval() public {
@@ -266,7 +266,7 @@ contract RebalanceVaultTest is Test {
     }
 
     /// @dev Without a salt, the space of quantised plans is small enough to be explored
-    ///      par force brute : l'engagement ne cacherait rien.
+    ///      by brute force: the commitment would hide nothing.
     function test_wrongSaltIsRejected() public {
         uint128 amount = 500_000e6;
         RebalanceVault.Order[] memory o = _orders(address(usdc), address(eurc), amount, 0);
@@ -325,7 +325,7 @@ contract RebalanceVaultTest is Test {
 
     function test_epochCumulativeLimitIsEnforced() public {
         // Two plans in the same epoch: each under the single-order cap, their sum above
-        // du plafond d'epoch.
+        // the epoch cap.
         uint128 amount = 1_800_000e6;
         RebalanceVault.Order[] memory o1 = _orders(address(usdc), address(eurc), amount, 0);
         ReportVerifier.RebalanceReport memory r1 = _report(o1, amount);
@@ -485,7 +485,7 @@ contract RebalanceVaultTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                             Suspension                             */
+    /*                                 Pause                              */
     /* ------------------------------------------------------------------ */
 
     function test_pauseBlocksExecution() public {

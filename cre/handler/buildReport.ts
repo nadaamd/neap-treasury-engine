@@ -87,7 +87,7 @@ export function buildReport(input: HandlerInput): HandlerOutput {
     const buysForeign = o.sell === chain.numeraire;
     const foreign = buysForeign ? o.buy : o.sell;
     const rate = market.rates[foreign];
-    if (rate === undefined || rate <= 0) throw new RangeError(`taux manquant pour ${foreign}`);
+    if (rate === undefined || rate <= 0) throw new RangeError(`missing rate for ${foreign}`);
 
     // The engine reasons in numeraire equivalent; the chain reasons in token units.
     const keep = (10_000 - chain.slippageBps) / 10_000;

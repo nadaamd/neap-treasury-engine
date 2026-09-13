@@ -19,18 +19,18 @@ import {MockAttestationVerifier} from "../src/mocks/MockAttestationVerifier.sol"
  *
  * @dev Three profiles from one source — `anvil`, `arc-testnet`, `arc-mainnet`.
  *
- *      What separates the profiles is not cosmetic. **The mocks are instantiated
- *      que hors mainnet, et c'est le script qui le garantit, pas une consigne.** Sur
+ *      What separates the profiles is not cosmetic. **The mocks are instantiated only
+ *      off mainnet, and the script itself guarantees that, not a convention.** On
  *      mainnet, USDC and EURC are real tokens; deploying a fake venue there would give a
  *      contract unable to source any liquidity, which would look like a trap if anyone
  *      funded it.
  *
  *      The mainnet profile therefore deploys `PausedFxVenue`: an explicit refusal,
  *      replaceable through `setVenue` the day a real venue becomes reachable. And it
- *      pauses the system right afterwards — these contracts are not audited, deploying is
- *      acceptable, y placer des fonds ne l'est pas.
+ *      pauses the system right afterwards — these contracts are not audited: deploying
+ *      them is acceptable, putting funds in them is not.
  *
- *      Usage :
+ *      Usage:
  *        forge script script/Deploy.s.sol --sig 'run(string)' anvil --broadcast
  *        forge script script/Deploy.s.sol --sig 'run(string)' arc-testnet --rpc-url $ARC_TESTNET_RPC --broadcast
  *        forge script script/Deploy.s.sol --sig 'run(string)' arc-mainnet  --rpc-url $ARC_MAINNET_RPC --broadcast
@@ -112,7 +112,7 @@ contract Deploy is Script {
 
         vm.stopBroadcast();
 
-        console.log("profil          ", profile);
+        console.log("profile         ", profile);
         console.log("TreasuryPolicy  ", address(d.policy));
         console.log("ReportVerifier  ", address(d.verifier));
         console.log("RebalanceVault  ", address(d.vault));
@@ -120,6 +120,6 @@ contract Deploy is Script {
         console.log("oracle          ", d.oracle);
         console.log("USDC            ", d.usdc);
         console.log("EURC            ", d.eurc);
-        if (isMainnet) console.log("etat            ", "EN PAUSE - lieu inerte, aucun fonds");
+        if (isMainnet) console.log("state           ", "PAUSED - inert venue, no funds");
     }
 }

@@ -87,9 +87,9 @@ contract MockFxVenue is IFxVenue {
         uint256 costBps = uint256(p.spreadBps) + _impactBps(amountIn, p.depth, p.etaBps);
         if (costBps >= BPS) revert CostExceedsNotional();
 
-        // Toutes les multiplications avant les divisions : diviser d'abord perdrait de la
-        // precision on small amounts, and a treasury engine places orders
-        // dont la taille varie de plusieurs ordres de grandeur.
+        // All multiplications before any division: dividing first would lose precision on
+        // small amounts, and a treasury engine places orders whose size spans several
+        // orders of magnitude.
         amountOut = amountIn * p.rateWad * (BPS - costBps) / (WAD * BPS);
         quoteExpiry = _toUint64(block.timestamp) + quoteTtl;
         quoteId = keccak256(abi.encode(tokenIn, tokenOut, amountIn, amountOut, quoteExpiry));
@@ -126,7 +126,7 @@ contract MockFxVenue is IFxVenue {
 
     /* ---------------------------------------------------------------- */
 
-    /// @dev eta · √(taille / profondeur), en points de base.
+    /// @dev eta · √(size / depth), in basis points.
     function _impactBps(uint256 amountIn, uint256 depth, uint16 etaBps)
         private
         pure

@@ -65,7 +65,7 @@ contract ReportVerifierTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                              Outillage                             */
+    /*                               Fixtures                             */
     /* ------------------------------------------------------------------ */
 
     function _report() internal view returns (ReportVerifier.RebalanceReport memory r) {
@@ -123,7 +123,7 @@ contract ReportVerifierTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                            Chemin nominal                          */
+    /*                              Happy path                            */
     /* ------------------------------------------------------------------ */
 
     function test_validReportIsAccepted() public {
@@ -146,7 +146,7 @@ contract ReportVerifierTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                             Idempotence                            */
+    /*                              Idempotency                           */
     /* ------------------------------------------------------------------ */
 
     /// @dev Replaying a report would mean a rebalance executed twice, hence a doubled
@@ -248,9 +248,9 @@ contract ReportVerifierTest is Test {
 
     /**
      * @dev The spec's crisis path (§2.3) requires an off-cycle trigger: a flow shock
-     *      empties a corridor between two epochs and a decision is needed right
-     *      suite. Imposer la stricte croissance du seul epoch interdirait ce rapport
-     *      extra report — hence the sequence over the (epoch, nonce) pair.
+     *      empties a corridor between two epochs and a decision is needed immediately.
+     *      Requiring strict growth of the epoch alone would forbid that extra report —
+     *      hence the sequence over the (epoch, nonce) pair.
      */
     function test_outOfCycleReportIsAllowedWithinTheSameEpoch() public {
         ReportVerifier.RebalanceReport memory first = _report();

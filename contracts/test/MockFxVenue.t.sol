@@ -42,7 +42,7 @@ contract MockFxVenueTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                            Formation du prix                        */
+    /*                          Price formation                           */
     /* ------------------------------------------------------------------ */
 
     function test_quoteAppliesRateAndSpread() public view {
@@ -95,7 +95,7 @@ contract MockFxVenueTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                              Settlement                             */
+    /*                             Settlement                             */
     /* ------------------------------------------------------------------ */
 
     function test_settlementMovesBothLegs() public {
@@ -152,7 +152,7 @@ contract MockFxVenueTest is Test {
         vm.stopPrank();
 
         assertEq(
-            eurc.balanceOf(broke), 0, "jambe sortante livree alors que la jambe entrante a echoue"
+            eurc.balanceOf(broke), 0, "outbound leg delivered although the inbound leg failed"
         );
         assertEq(eurc.balanceOf(address(venue)), venueEurcBefore);
     }

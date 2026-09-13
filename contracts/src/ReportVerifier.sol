@@ -23,7 +23,7 @@ import {IAttestationVerifier} from "./interfaces/IAttestationVerifier.sol";
  */
 contract ReportVerifier {
     /* ---------------------------------------------------------------------- */
-    /*                                 Structure                               */
+    /*                               Structure                                */
     /* ---------------------------------------------------------------------- */
 
     struct RebalanceReport {
@@ -142,7 +142,7 @@ contract ReportVerifier {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                             Administration                              */
+    /*                             Administration                             */
     /* ---------------------------------------------------------------------- */
 
     function setSigner(address signer, bool enabled) external onlyAdmin {
@@ -170,7 +170,7 @@ contract ReportVerifier {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                              Identifiants                               */
+    /*                              Identifiants                              */
     /* ---------------------------------------------------------------------- */
 
     /**
@@ -206,7 +206,7 @@ contract ReportVerifier {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                              Verification                               */
+    /*                              Verification                              */
     /* ---------------------------------------------------------------------- */
 
     /**

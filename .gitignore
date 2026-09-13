@@ -33,6 +33,7 @@ secrets/
 # Backtest output (large, reproducible from the seeds)
 data/generated/
 results/
+*.parquet
 
 # Deployment
 .vercel/

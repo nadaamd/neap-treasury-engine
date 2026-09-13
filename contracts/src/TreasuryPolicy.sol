@@ -22,7 +22,7 @@ pragma solidity 0.8.28;
  */
 contract TreasuryPolicy {
     /* ---------------------------------------------------------------------- */
-    /*                                  Roles                                  */
+    /*                                 Roles                                  */
     /* ---------------------------------------------------------------------- */
 
     /// @notice Sets the limits and the risk parameters. Cannot execute.
@@ -39,7 +39,7 @@ contract TreasuryPolicy {
     mapping(bytes32 role => mapping(address account => bool)) private _roles;
 
     /* ---------------------------------------------------------------------- */
-    /*                                Parameters                               */
+    /*                               Parameters                               */
     /* ---------------------------------------------------------------------- */
 
     struct CurrencyPolicy {
@@ -77,14 +77,14 @@ contract TreasuryPolicy {
     mapping(address token => bool) public supported;
 
     /* ---------------------------------------------------------------------- */
-    /*                              Pending queue                              */
+    /*                             Pending queue                              */
     /* ---------------------------------------------------------------------- */
 
     mapping(bytes32 id => uint256 eta) public pendingEta;
     mapping(bytes32 id => bytes payload) private _pendingPayload;
 
     /* ---------------------------------------------------------------------- */
-    /*                                  Events                                 */
+    /*                                 Events                                 */
     /* ---------------------------------------------------------------------- */
 
     event RoleGranted(bytes32 indexed role, address indexed account, address indexed by);
@@ -98,7 +98,7 @@ contract TreasuryPolicy {
     event Unpaused(address indexed by);
 
     /* ---------------------------------------------------------------------- */
-    /*                                  Errors                                 */
+    /*                                 Errors                                 */
     /* ---------------------------------------------------------------------- */
 
     error Unauthorized(bytes32 role, address account);
@@ -136,7 +136,7 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                             Role management                             */
+    /*                            Role management                             */
     /* ---------------------------------------------------------------------- */
 
     function hasRole(bytes32 role, address account) external view returns (bool) {
@@ -169,7 +169,7 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                             Emergency pause                             */
+    /*                            Emergency pause                             */
     /* ---------------------------------------------------------------------- */
 
     /// @dev Deliberately without a timelock: a delay on an emergency stop would empty it of meaning.
@@ -186,7 +186,7 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                        Timelocked parameter changes                     */
+    /*                      Timelocked parameter changes                      */
     /* ---------------------------------------------------------------------- */
 
     function queueCurrencyPolicy(address token, CurrencyPolicy calldata p)
@@ -276,7 +276,7 @@ contract TreasuryPolicy {
     }
 
     /* ---------------------------------------------------------------------- */
-    /*                        Convenience single getters                       */
+    /*                       Convenience single getters                       */
     /* ---------------------------------------------------------------------- */
 
     /// @dev The automatic getter of a public struct returns a tuple, which calling

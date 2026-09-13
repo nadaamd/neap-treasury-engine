@@ -148,7 +148,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                        Suspension d'urgence                        */
+    /*                            Emergency pause                         */
     /* ------------------------------------------------------------------ */
 
     function test_guardianPausesImmediately() public {
@@ -258,7 +258,7 @@ contract TreasuryPolicyTest is Test {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                          Validation des bandes                     */
+    /*                            Band validation                         */
     /* ------------------------------------------------------------------ */
 
     function test_incoherentBandsAreRejectedAtQueueTime() public {

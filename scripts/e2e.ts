@@ -165,7 +165,7 @@ async function main(): Promise<void> {
 
     const pick = (label: string): string => {
       const m = new RegExp(`${label}\\s+(0x[0-9a-fA-F]{40})`).exec(deployOutput);
-      if (!m) throw new Error(`adresse introuvable pour ${label}`);
+      if (!m) throw new Error(`address not found for ${label}`);
       return m[1]!;
     };
     const policy = pick('TreasuryPolicy');
@@ -193,7 +193,7 @@ async function main(): Promise<void> {
     send(ADMIN, verifier, 'setSigner(address,bool)', DON_SIGNER.address, 'true');
     detail(`DON signer: ${DON_SIGNER.address}`);
 
-    // ── Politique ─────────────────────────────────────────────────────────────
+    // ── Policy ────────────────────────────────────────────────────────────────
     say('The risk officer queues the policy');
     const currencyTuple =
       `(${units(BANDS.lower)},${units(BANDS.target)},${units(BANDS.upper)},` +
@@ -312,7 +312,7 @@ async function main(): Promise<void> {
     const measurement = call(verifier, 'expectedMeasurement()(bytes32)').trim();
     const attestation = `0x${measurement.slice(2)}${digest.slice(2)}`;
 
-    // ── Soumission ────────────────────────────────────────────────────────────
+    // ── Submission ────────────────────────────────────────────────────────────
     say('The operator submits the report');
     const reportTuple = `(${r.epoch},${r.nonce},${r.expiry},${r.inputsTimestamp},${r.policyVersion},${r.bandParamsHash},${r.inputsHash},${r.ordersCommitment},${r.esBeforeBps},${r.esAfterBps},${r.costEstimate},${r.grossNotional})`;
     send(ADMIN, vault, 'submit((uint64,uint64,uint64,uint64,uint32,bytes32,bytes32,bytes32,int32,int32,uint128,uint128),bytes,bytes[])',
@@ -322,7 +322,7 @@ async function main(): Promise<void> {
     const statusOf = () => Number(call(vault, 'statusOf(bytes32)(uint8)', reportId).split(' ')[0]);
     detail(`plan ${reportId.slice(0, 18)}… · status ${['None', 'AwaitingApproval', 'Ready', 'Settled'][statusOf()]}`);
 
-    // ── Approbation ───────────────────────────────────────────────────────────
+    // ── Approval ──────────────────────────────────────────────────────────────
     say('Notional exceeds the threshold: human approval required');
     const tooEarly = sendExpectingRevert(ADMIN, vault, 'execute(bytes32,(address,address,uint128,uint128)[],bytes32)',
       reportId, `[(${order.sell},${order.buy},${order.amountIn},${order.minAmountOut})]`, outcome.reveal.salt);
@@ -354,7 +354,7 @@ async function main(): Promise<void> {
     detail(`EURC ${fmt(before.eurc)} → ${fmt(after.eurc)}   (+${fmt(after.eurc - before.eurc)})`);
     detail(`status ${['None', 'AwaitingApproval', 'Ready', 'Settled'][statusOf()]}`);
 
-    // ── Rejeu ─────────────────────────────────────────────────────────────────
+    // ── Replay ────────────────────────────────────────────────────────────────
     say('Replay is refused');
     const replay = sendExpectingRevert(ADMIN, vault, 'execute(bytes32,(address,address,uint128,uint128)[],bytes32)',
       reportId, `[(${order.sell},${order.buy},${order.amountIn},${order.minAmountOut})]`, outcome.reveal.salt);
