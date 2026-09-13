@@ -333,20 +333,20 @@
 
   /* ── Architecture ─────────────────────────────────────────────────────── */
   .flow { margin-top: 40px; display: grid; gap: 2px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
-  /* Each card takes its sponsor's colour as a background. White clears AA on all three
-     as published — 5.85, 9.32 and 4.68 to 1 — so the brand values are used unaltered.
-     Every level of text stays pure white: the Arc blue has only 4.68 of headroom, and any
-     softening of the body text would drop it under 4.5. Hierarchy comes from size and
-     weight instead of from colour. */
+  /* Each card carries its sponsor's colour as a nine percent wash, not as a fill. A page
+     built on one restrained palette cannot take three saturated blocks without the
+     sponsors shouting over the argument. The colour identifies; it does not dominate.
+     Text returns to the page inks: 13.8 and 8.3 to 1 at worst across the three washes. */
   .stage {
-    background: var(--brand, var(--panel)); border: 0; padding: 22px 20px 24px;
-    color: #fff;
+    background: color-mix(in srgb, var(--brand, var(--accent)) 9%, var(--panel));
+    border: 1px solid color-mix(in srgb, var(--brand, var(--line)) 24%, transparent);
+    padding: 22px 20px 24px;
   }
   .stage:first-child { border-radius: 10px 0 0 10px; }
   .stage:last-child { border-radius: 0 10px 10px 0; }
   .stage h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 600; letter-spacing: 0; }
-  .stage p { margin: 0; font-size: 0.87rem; }
-  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: #fff; margin-bottom: 12px; font-weight: 600; }
+  .stage p { margin: 0; font-size: 0.87rem; color: var(--dim); }
+  .stage .who { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--brand-ink, var(--accent)); margin-bottom: 12px; font-weight: 600; }
   @media (max-width: 700px) {
     .stage, .stage:first-child, .stage:last-child { border-radius: 10px; }
     .flow { gap: 10px; }
@@ -584,19 +584,19 @@
         </p>
       </div>
       <div class="flow">
-        <div class="stage" style="--brand: #375BD2">
+        <div class="stage" style="--brand: #375BD2; --brand-ink: #2E4CAF">
           <span class="who">Chainlink CRE</span>
           <h3>Decide in a TEE</h3>
           <p>Balances go in encrypted. A signed report comes out — a commitment and basis
             points, never amounts.</p>
         </div>
-        <div class="stage" style="--brand: #4B3F72">
+        <div class="stage" style="--brand: #4B3F72; --brand-ink: #4B3F72">
           <span class="who">Privy</span>
           <h3>Authorise with two keys</h3>
           <p>Three function selectors, nothing else. A stolen key passes authentication. It
             does not pass the policy.</p>
         </div>
-        <div class="stage" style="--brand: #2775CA">
+        <div class="stage" style="--brand: #2775CA; --brand-ink: #1F5E9E">
           <span class="who">Arc</span>
           <h3>Settle PvP</h3>
           <p>Both legs, or neither. Sub-second finality, and gas in USDC makes the fixed cost
