@@ -295,10 +295,10 @@
   .bar-ci { color: var(--faint); font-size: 0.82rem; margin-left: 8px; }
 
   /* ── Mechanism ────────────────────────────────────────────────────────── */
-  /* Full width, no reading measure: the heading and the lead run edge to edge like the
-     beats below them. */
-  .mech-head h2 { max-width: none; }
-  .mech-head .lead { max-width: none; margin-bottom: 0; }
+  /* Full width, no reading measure: the heading and its lead run edge to edge, like the
+     grid of blocks that follows them. */
+  .wide-head h2 { max-width: none; }
+  .wide-head .lead { max-width: none; margin-bottom: 0; }
 
   /* Three columns across the full measure, same grid as the architecture row. Stacked,
      these read as a list of footnotes; side by side they read as three steps of one
@@ -490,7 +490,7 @@
 
   <section id="mechanism" class="raised">
     <div class="wrap">
-      <div class="mech-head">
+      <div class="wide-head">
         <h2>The saving does not come from <span class="hl">where you would guess</span>.</h2>
         <p class="lead">
           At a 6% cost of capital, carrying a million dollars for a month is noise next to
@@ -564,7 +564,7 @@
 
   <section id="architecture" class="raised">
     <div class="wrap">
-      <div class="prose">
+      <div class="wide-head">
         <h2>Positions stay inside the enclave. The contract still doesn't trust the model.</h2>
         <p class="lead">
           Live balances, upcoming commitments and internal limits map an institution's liquidity
